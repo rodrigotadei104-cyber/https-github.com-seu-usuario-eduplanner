@@ -6,7 +6,7 @@
 export type UserRole = 'admin' | 'editor' | 'viewer';
 
 export type Action =
-    | 'CREATE_CLASS' | 'EDIT_CLASS' | 'CANCEL_CLASS'
+    | 'CREATE_CLASS' | 'EDIT_CLASS' | 'CANCEL_CLASS' | 'DELETE_CLASS'
     | 'CREATE_USER' | 'EDIT_USER' | 'DEACTIVATE_USER'
     | 'VIEW_LOGS'
     | 'MANAGE_REGISTRATIONS';
@@ -20,6 +20,7 @@ const PERMISSION_MATRIX: Record<UserRole, Partial<Record<Action, boolean>>> = {
         CREATE_CLASS: true,
         EDIT_CLASS: true,
         CANCEL_CLASS: true,        // SOMENTE Admin
+        DELETE_CLASS: true,        // SOMENTE Admin (Limpeza)
         CREATE_USER: true,
         EDIT_USER: true,
         DEACTIVATE_USER: true,
@@ -30,6 +31,7 @@ const PERMISSION_MATRIX: Record<UserRole, Partial<Record<Action, boolean>>> = {
         CREATE_CLASS: true,
         EDIT_CLASS: true,
         CANCEL_CLASS: false,       // Editor NÃO pode cancelar
+        DELETE_CLASS: false,
         CREATE_USER: false,
         EDIT_USER: false,
         DEACTIVATE_USER: false,
@@ -40,6 +42,7 @@ const PERMISSION_MATRIX: Record<UserRole, Partial<Record<Action, boolean>>> = {
         CREATE_CLASS: false,       // Viewer é READ-ONLY
         EDIT_CLASS: false,
         CANCEL_CLASS: false,
+        DELETE_CLASS: false,
         CREATE_USER: false,
         EDIT_USER: false,
         DEACTIVATE_USER: false,

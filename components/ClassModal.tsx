@@ -19,7 +19,7 @@ interface ClassModalProps {
 }
 
 export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave, initialData }) => {
-  const { instrutores, cursos, materias, appSettings, currentDate, userProfile, addAula, isActionLoading } = useSchedule();
+  const { instrutores, cursos, materias, appSettings, currentDate, userProfile, addAula, deleteAula, isActionLoading } = useSchedule();
 
   const [formData, setFormData] = useState<Partial<Aula>>({
     data: new Date(),
@@ -385,21 +385,44 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-6 dark:border-slate-700 min-h-[50px]">
               {/* Action Buttons Area */}
-              <div className="flex-1">
+              <div className="flex-1 flex gap-2">
                 {canCancel && (
                   <button
                     type="button"
                     onClick={handleCancelClass}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+                    title="Cancela a aula mantendo o histórico"
                   >
                     <Ban size={16} />
-                    Cancelar Aula
+                    Cancelar
+                  </button>
+                )}
+
+                {isAdmin && initialData && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmModal({
+                        isOpen: true,
+                        title: 'Excluir Aula Permanentemente',
+                        description: 'ATENÇÃO: Esta ação removerá a aula do banco de dados definitivamente. Use para limpar registros de teste. Para manter histórico, use "Cancelar". Deseja continuar?',
+                        action: async () => {
+                          const success = await deleteAula(initialData.id);
+                          if (success) onClose();
+                        }
+                      });
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                    title="Remove a aula do banco de dados"
+                  >
+                    <Trash2 size={16} />
+                    Excluir
                   </button>
                 )}
 
                 {/* Information for Editors */}
                 {initialData && isEditor && !isFinalState && (
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <span className="text-xs text-gray-400 flex items-center gap-1 self-center ml-2">
                     <Info size={12} />
                     Edição permitida
                   </span>

@@ -334,6 +334,55 @@ export const aulaService = {
     },
 
     /**
+     * Excluir aula fisicamente (SOMENTE Admin)
+     */
+    async delete(id: string): Promise<ServiceResult> {
+        // 1. Validar permissão
+        const canDelete = await permissionService.checkPermission('DELETE_CLASS', `Aula:${id}`);
+        if (!canDelete) {
+            return { success: false, error: 'Permissão negada. Apenas administradores podem excluir aulas.' };
+        }
+
+        // 2. Buscar aula para validação de tenant
+        const { data: existing, error: fetchError } = await supabase
+            .from('aulas')
+            .select('tenant_id')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !existing) {
+            return { success: false, error: 'Aula não encontrada.' };
+        }
+
+        // 3. Validação de tenant
+        const tenantValid = await tenantService.validateTenantAccess(existing.tenant_id, 'aula', id);
+        if (!tenantValid) {
+            return { success: false, error: 'Acesso negado.' };
+        }
+
+        // 4. Executar DELETE
+        const { error: deleteError } = await supabase
+            .from('aulas')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) {
+            return { success: false, error: deleteError.message };
+        }
+
+        // 5. Audit log
+        await auditService.log({
+            action: 'DELETE',
+            entity: 'aula',
+            entityId: id,
+            details: { type: 'PHYSICAL_DELETION' },
+            result: 'success'
+        });
+
+        return { success: true };
+    },
+
+    /**
      * Métricas (EXCLUI aulas canceladas das métricas principais)
      */
     async getMetrics(): Promise<Metrics> {

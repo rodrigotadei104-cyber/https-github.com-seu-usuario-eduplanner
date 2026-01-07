@@ -514,9 +514,24 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [loadAllData, showNotification]);
 
-  const deleteAula = useCallback(async (_id: string): Promise<boolean> => {
-    showNotification('A exclusão física de aulas não é permitida.', 'error');
-    return false;
+  const deleteAula = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      setIsActionLoading(true);
+      const result = await aulaService.delete(id);
+      if (result.success) {
+        setAulas(prev => prev.filter(a => a.id !== id));
+        showNotification('Aula excluída permanentemente.', 'success');
+        return true;
+      } else {
+        showNotification(result.error || 'Erro ao excluir aula.', 'error');
+        return false;
+      }
+    } catch (error: any) {
+      showNotification(error.message || 'Erro inesperado.', 'error');
+      return false;
+    } finally {
+      setIsActionLoading(false);
+    }
   }, [showNotification]);
 
   // ============================================
