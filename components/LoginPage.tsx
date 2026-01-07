@@ -230,27 +230,7 @@ export const LoginPage: React.FC = () => {
                             )}
                         </button>
 
-                        <div className="relative my-6">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-200 dark:border-slate-700"></div>
-                            </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="px-2 bg-white text-gray-500 dark:bg-slate-800 dark:text-gray-400">ou</span>
-                            </div>
-                        </div>
 
-                        {authMode === 'login' && (
-                            <div className="space-y-3">
-                                <button
-                                    type="button"
-                                    onClick={enterDemoMode}
-                                    className="w-full bg-white border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 font-medium py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-700"
-                                >
-                                    <Sparkles size={18} className="text-amber-500" />
-                                    Visitante (Admin Demo)
-                                </button>
-                            </div>
-                        )}
                     </form>
 
                     <div className="mt-6 pt-6 border-t border-gray-100 dark:border-slate-700 text-center space-y-2">
