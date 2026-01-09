@@ -60,7 +60,25 @@ const App: React.FC = () => {
         // Verificação manual do hash (backup caso evento não dispare)
         const checkUrlForRecovery = () => {
             const hash = window.location.hash;
-            console.log('Checking URL hash:', hash);
+            const searchParams = new URLSearchParams(window.location.search);
+            const code = searchParams.get('code');
+
+            console.log('Checking URL:', { hash, code });
+
+            if (code) {
+                // PKCE Flow detected
+                console.log('Auth code detected in URL');
+                // We don't know if it's recovery or invite just from code, 
+                // but usually recovery/invite flows end up here. 
+                // We'll let the onAuthStateChange handle the event type, 
+                // but we might want to show the modal in a "loading" state or wait.
+                // However, often the type is also in query params if we put it there? 
+                // Supabase adds type=recovery in the redirect URL for implicit, 
+                // for PKCE it might be different. 
+                // Let's rely on onAuthStateChange for the specific type, OR default to recovery/invite if we can infer.
+                // Usually for invites/recovery we want to ensure the user sets a password.
+                // We'll trust the session establishment event.
+            }
 
             if (hash.includes('type=recovery')) {
                 console.log('Recovery link detected in hash!');

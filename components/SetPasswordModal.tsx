@@ -25,37 +25,66 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
     React.useEffect(() => {
         if (!isOpen) return;
 
-        // Se for recovery, capturar tokens e resetar erro
-        if (type === 'recovery') {
-            const hash = window.location.hash;
-            const hashParams = new URLSearchParams(hash.substring(1));
-            const accessToken = hashParams.get('access_token');
-            const refreshToken = hashParams.get('refresh_token');
+        const handleAuthCheck = async () => {
+            // 1. Check for PKCE Code first
+            const searchParams = new URLSearchParams(window.location.search);
+            const code = searchParams.get('code');
 
-            if (accessToken) {
-                setRecoveryTokens({
-                    access_token: accessToken,
-                    refresh_token: refreshToken || ''
-                });
+            if (code) {
+                console.log('Attempting to exchange code for session...');
+                const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+                if (error) {
+                    console.error('Error exchanging code:', error);
+                    setError('O link expirou ou é inválido. Solicite um novo convite/recuperação.');
+                    setWaitingForSession(false);
+                    return;
+                }
+
+                if (data.session) {
+                    console.log('Session established via code exchange');
+                    setWaitingForSession(false);
+                    // Remove code from URL to clean up
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return;
+                }
             }
 
-            setWaitingForSession(false);
-            setError(null);
-        } else {
-            // Para invite, verificar sessão
-            const checkSession = async () => {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                const { data: { session } } = await supabase.auth.getSession();
+            // 2. Fallback: Check for existing session (Implicit flow or already logged in)
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                setWaitingForSession(false);
+                return;
+            }
 
-                if (session) {
+            // 3. Last Resort: Check Hash (Implicit Flow manual parsing)
+            if (type === 'recovery') {
+                const hash = window.location.hash;
+                const hashParams = new URLSearchParams(hash.substring(1));
+                const accessToken = hashParams.get('access_token');
+
+                if (accessToken) {
+                    // We found a token in hash, we can try to use it manually
+                    // But ideally we want a session.
+                    // For now, we trust the manual logic in handleSubmit will use it.
+                    setRecoveryTokens({
+                        access_token: accessToken,
+                        refresh_token: hashParams.get('refresh_token') || ''
+                    });
                     setWaitingForSession(false);
-                } else {
-                    setWaitingForSession(false);
-                    setError('Sessão expirada. Use o link do e-mail de convite novamente.');
+                    setError(null);
+                    return;
                 }
-            };
-            checkSession();
-        }
+            }
+
+            // If we got here, we have no session and no valid tokens
+            setWaitingForSession(false);
+            if (type === 'invite' || type === 'recovery') {
+                setError('Sessão não encontrada ou expirada. Use o link do e-mail novamente.');
+            }
+        };
+
+        handleAuthCheck();
     }, [isOpen, type]);
 
     if (!isOpen) return null;
@@ -77,42 +106,55 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
         try {
             setLoading(true);
 
-            // 1. Logica de Reset via Edge Function (mais robusta que client-side session)
-            if (type === 'recovery') {
-                let accessToken = recoveryTokens?.access_token;
+            // 1. Tentativa com Sessão Ativa (Standard & Recommended)
+            // Se já temos sessão (via code exchange), updateUser funciona direto.
+            const { data: { session } } = await supabase.auth.getSession();
 
-                // Fallback: Tentar ler da URL se não capturou antes
-                if (!accessToken) {
-                    const hash = window.location.hash;
-                    const hashParams = new URLSearchParams(hash.substring(1));
-                    accessToken = hashParams.get('access_token') || undefined;
-                }
+            if (session) {
+                const { error: updateError } = await supabase.auth.updateUser({ password: password });
+                if (updateError) throw updateError;
 
-                if (!accessToken) {
-                    throw new Error('Token de recuperação não encontrado. Solicite um novo link.');
-                }
-
-                console.log('Calling Edge Function reset-password-secure...');
-                const { data: result, error: fnError } = await supabase.functions.invoke('reset-password-secure', {
-                    body: {
-                        accessToken: accessToken,
-                        newPassword: password
-                    }
-                });
-
-                if (fnError) throw fnError;
-                if (result?.error) throw new Error(result.error);
-
-                // Sucesso!
                 setSuccess(true);
                 setTimeout(() => {
                     onClose();
-                    // Limpar URL e recarregar para garantir estado limpo para login
-                    window.location.hash = '';
-                    window.location.reload();
+                    window.location.hash = ''; // Clean hash
+                    // Reload if it was recovery to ensure fresh state
+                    if (type === 'recovery') window.location.reload();
                 }, 2000);
-                return; // Encerrar aqui, não executar o updateUser padrão
+                return;
             }
+
+            // 2. Fallback: Edge Function com token do hash (Legado/Implicit)
+            let accessToken = recoveryTokens?.access_token;
+
+            // Tentar ler da URL se não capturou antes
+            if (!accessToken) {
+                const hash = window.location.hash;
+                const hashParams = new URLSearchParams(hash.substring(1));
+                accessToken = hashParams.get('access_token') || undefined;
+            }
+
+            if (!accessToken) {
+                throw new Error('Sessão inválida e token não encontrado. Faça login novamente ou use o link do e-mail.');
+            }
+
+            const { data: result, error: fnError } = await supabase.functions.invoke('reset-password-secure', {
+                body: {
+                    accessToken: accessToken,
+                    newPassword: password
+                }
+            });
+
+            if (fnError) throw fnError;
+            if (result?.error) throw new Error(result.error);
+
+            setSuccess(true);
+            setTimeout(() => {
+                onClose();
+                window.location.hash = '';
+                window.location.reload();
+            }, 2000);
+            return;
 
             // 2. Se for Invite ou outro caso, usar client normal
             const { error: updateError } = await supabase.auth.updateUser({ password: password });
