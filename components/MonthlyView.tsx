@@ -14,7 +14,7 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useSchedule } from '../context/ScheduleContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 // Helper para parsear data sem problema de fuso horário
 const parseLocalDate = (dateStr: string | Date): Date => {
@@ -30,7 +30,7 @@ interface MonthlyViewProps {
 }
 
 export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, onSelectDate, onEditAula }) => {
-  const { isLoading } = useSchedule();
+  const { isLoading, filters } = useSchedule();
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
@@ -38,6 +38,24 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  // Empty State Logic
+  const hasAulas = aulas.length > 0;
+  const isCancelledFilter = filters.status === 'cancelada';
+
+  if (!hasAulas && isCancelledFilter && !isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex items-center justify-center flex-col p-8">
+        <div className="bg-red-50 p-4 rounded-full mb-4">
+          <AlertCircle className="w-12 h-12 text-red-500" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Sem cancelamentos</h3>
+        <p className="text-gray-500 text-center max-w-sm">
+          Nenhuma aula cancelada encontrada neste período.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col relative overflow-hidden">

@@ -263,6 +263,14 @@ export const LoginPage: React.FC = () => {
 
             <p className="mt-8 text-gray-400 text-sm">
                 © 2026 EduPlanner. Todos os direitos reservados.
+                <br />
+                <div className="flex justify-center gap-4 mt-2">
+                    <a href="/privacy" className="hover:underline hover:text-gray-600 transition-colors">Política de Privacidade</a>
+                    <span className="text-gray-300">|</span>
+                    <a href="/terms" className="hover:underline hover:text-gray-600 transition-colors">Termos de Uso</a>
+                    <span className="text-gray-300">|</span>
+                    <a href="/about" className="hover:underline hover:text-gray-600 transition-colors">Sobre o App</a>
+                </div>
             </p>
         </div>
     );

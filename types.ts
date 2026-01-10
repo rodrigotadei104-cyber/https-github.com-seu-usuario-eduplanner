@@ -13,6 +13,7 @@ export interface Aula {
   status: ClassStatus;
   cor?: string; // Hex para identificação visual
   observacoes?: string;
+  minutosPorHora?: number; // Para cálculo de carga horária (50 ou 60)
 }
 
 export interface Instrutor {
@@ -29,6 +30,7 @@ export interface Curso {
   nome: string;
   cargaHoraria?: string; // Ex: "40h"
   cor: string;
+  minutosPorHora?: number; // 50 ou 60
 }
 
 export interface Materia {
@@ -56,7 +58,7 @@ export interface UserProfile {
   name: string;
   email: string;
   avatarInitials: string;
-  avatarUrl?: string; // New: Link to avatar image
+  avatarUrl?: string; // Mapped from 'photo_url' in database
   role: UserRole;
 }
 

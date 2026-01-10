@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Stats, Aula } from '../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, Legend } from 'recharts';
 import { Users, Clock, BookOpen, AlertCircle, CheckCircle, Calendar, Filter, ArrowRight } from 'lucide-react';
-import { format, isSameMonth, eachMonthOfInterval, startOfYear, endOfYear, getMonth, isSameDay, isSameYear, isWithinInterval, parse, differenceInMinutes, parseISO } from 'date-fns';
+import { format, isSameMonth, eachMonthOfInterval, startOfYear, endOfYear, getMonth, isSameDay, isSameYear, isWithinInterval, parse, differenceInMinutes, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Helper para parsear data sem problema de fuso horário
@@ -11,6 +11,8 @@ const parseLocalDate = (dateStr: string | Date): Date => {
   return parseISO(dateStr);
 };
 import { useSchedule } from '../context/ScheduleContext';
+import { aulaService } from '../services/aula.service';
+import { Avatar } from './Avatar';
 
 interface DashboardProps {
   stats: Stats;
@@ -18,6 +20,11 @@ interface DashboardProps {
   currentDate: Date;
   onNavigateToMonth: (date: Date) => void;
 }
+
+
+
+// --- Internal Component for Workload Reports ---
+
 
 export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToMonth }) => {
   const { setViewMode, setFilters, filters, filteredAulas } = useSchedule();
@@ -28,12 +35,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
   const months = eachMonthOfInterval({ start, end });
   const currentYearLabel = format(currentDate, 'yyyy');
 
-  // --- 1. Calculate Stats Specific to the Viewed Year ---
-  // We compute this locally to ensure the cards match the year being viewed (currentDate),
-  // while still respecting global filters (search/instructor) from 'filteredAulas'.
-  const yearStats = useMemo(() => {
-    const yearAulas = filteredAulas.filter(a =>
-      isWithinInterval(parseLocalDate(a.data), { start, end })
+  // --- 1. Calculate Stats Specific to the Viewed Month ---
+  const periodStats = useMemo(() => {
+    // Define monthly boundaries based on 'currentDate'
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+
+    const periodAulas = filteredAulas.filter(a =>
+      isWithinInterval(parseLocalDate(a.data), { start: monthStart, end: monthEnd })
     );
 
     let totalMinutes = 0;
@@ -47,7 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
 
     let activeClassesCount = 0;
 
-    yearAulas.forEach(aula => {
+    periodAulas.forEach(aula => {
       // Count status safely for breakdown chart
       if (statusCounts[aula.status as keyof typeof statusCounts] !== undefined) {
         statusCounts[aula.status as keyof typeof statusCounts]++;
@@ -69,12 +78,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
     });
 
     return {
-      totalAulas: activeClassesCount, // Headline uses only active classes
+      totalAulas: activeClassesCount,
       totalHoras: Math.round(totalMinutes / 60),
       instrutoresAtivos: instructors.size,
-      aulasPorStatus: statusCounts // Breakdown keeps all
+      aulasPorStatus: statusCounts
     };
-  }, [filteredAulas, start, end]);
+  }, [filteredAulas, currentDate]); // Re-run when currentDate changes (month navigation)
+
+  const currentMonthLabel = format(currentDate, 'MMMM yyyy', { locale: ptBR });
+  // Capitalize first letter
+  const formattedPeriodLabel = currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1);
 
 
   // --- 2. Chart Data (Annual) ---
@@ -95,7 +108,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
   const instructorStats = useMemo(() => {
     // Filter by Status (Agendada only) and Time Period
     const filtered = filteredAulas.filter(a => {
-      if (a.status !== 'agendada') return false;
+      // FIX: Agora inclui Agendada, Em Andamento e Concluída (apenas remove Cancelada)
+      if (a.status === 'cancelada') return false;
 
       const aulaDate = parseLocalDate(a.data);
 
@@ -128,9 +142,75 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
 
   const maxInstructorCount = Math.max(...instructorStats.map(i => i.count), 0);
 
+  // --- 4. Monthly Instructor Comparison & Advanced Metrics ---
+  const [comparisonYear, setComparisonYear] = useState<number>(currentDate.getFullYear());
+  const [showAllInstructors, setShowAllInstructors] = useState<boolean>(false);
+
+  // Existing comparison state
+  const [comparisonData, setComparisonData] = useState<{
+    months: string[];
+    data: { instructorName: string; values: number[]; total: number }[];
+  } | null>(null);
+
+  // NEW: Historical & Projection State
+  const [monthlyHistory, setMonthlyHistory] = useState<any[]>([]);
+  const [projection, setProjection] = useState<{ averagePerMonth: number; projectedYearTotal: number }>({ averagePerMonth: 0, projectedYearTotal: 0 });
+  const [trend, setTrend] = useState<{ currentMonth: number; previousMonth: number; growthRate: number }>({ currentMonth: 0, previousMonth: 0, growthRate: 0 });
+
+  React.useEffect(() => {
+    const fetchDeepMetrics = async () => {
+      try {
+        // 1. Instructor Comparison (Existing)
+        const report = await aulaService.getInstructorMonthlyReport(comparisonYear);
+        setComparisonData(report);
+
+        // 2. Advanced Metrics (New) - Depends on currentDate
+        const history = await aulaService.getMonthlyHistory(currentDate);
+        setMonthlyHistory(history);
+
+        const proj = await aulaService.getAnnualProjection(history);
+        setProjection({
+          averagePerMonth: proj.averageMonthly,
+          projectedYearTotal: proj.projectedTotal
+        });
+
+        const growth = await aulaService.getGrowthTrend(history);
+        setTrend(growth as any); // Type assertion until interface is shared
+
+      } catch (error) {
+        console.error('Error fetching dashboard metrics:', error);
+      }
+    };
+    fetchDeepMetrics();
+  }, [comparisonYear, currentDate]); // Re-fetch when year or month changes
+
+  // Transform data for Recharts
+  const lineChartData = useMemo(() => {
+    if (!comparisonData) return [];
+
+    return comparisonData.months.map((month, index) => {
+      const entry: any = { name: month };
+      comparisonData.data.forEach(inst => {
+        entry[inst.instructorName] = inst.values[index];
+      });
+      return entry;
+    });
+  }, [comparisonData]);
+
+  const visibleInstructors = useMemo(() => {
+    if (!comparisonData) return [];
+    return showAllInstructors ? comparisonData.data : comparisonData.data.slice(0, 3);
+  }, [comparisonData, showAllInstructors]);
+
+  const LINE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
+
+
+
+
+
   const handleNavigateToCancelled = () => {
     setFilters({ ...filters, status: 'cancelada' });
-    setViewMode('daily');
+    setViewMode('monthly');
   };
 
   const StatCard = ({ title, value, icon: Icon, color, subtext }: any) => (
@@ -152,32 +232,87 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total de Aulas"
-          value={yearStats.totalAulas}
+          value={periodStats.totalAulas}
           icon={BookOpen}
           color="bg-blue-500"
-          subtext={`Ativas em ${currentYearLabel}`}
+          subtext={`Ativas em ${formattedPeriodLabel}`}
         />
         <StatCard
           title="Horas Lecionadas"
-          value={`${yearStats.totalHoras}h`}
+          value={`${periodStats.totalHoras}h`}
           icon={Clock}
           color="bg-purple-500"
-          subtext="Carga horária total do ano"
+          subtext={`Em ${formattedPeriodLabel}`}
         />
         <StatCard
           title="Instrutores Ativos"
-          value={yearStats.instrutoresAtivos}
+          value={periodStats.instrutoresAtivos}
           icon={Users}
           color="bg-indigo-500"
-          subtext={`Neste ano de ${currentYearLabel}`}
+          subtext={`Em ${formattedPeriodLabel}`}
         />
         <StatCard
           title="Conclusão"
-          value={`${yearStats.totalAulas > 0 ? Math.round((yearStats.aulasPorStatus.concluida / yearStats.totalAulas) * 100) : 0}%`}
+          value={`${periodStats.totalAulas > 0 ? Math.round((periodStats.aulasPorStatus.concluida / periodStats.totalAulas) * 100) : 0}%`}
           icon={CheckCircle}
           color="bg-teal-500"
-          subtext={`${yearStats.aulasPorStatus.concluida} concluídas em ${currentYearLabel}`}
+          subtext={`${periodStats.aulasPorStatus.concluida} concluídas em ${formattedPeriodLabel}`}
         />
+      </div>
+
+      {/* NEW: Analytical Section (Trend, Projection, History) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+        {/* 1. Growth Trend Card */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="text-sm font-medium text-gray-500 mb-4 dark:text-gray-400">Tendência de Crescimento</h3>
+          <div className="flex items-end gap-2 mb-2">
+            <div className={`flex items-center gap-1 text-3xl font-bold ${trend.growthRate > 0 ? 'text-green-600 dark:text-green-400' : trend.growthRate < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+              {trend.growthRate > 0 ? '+' : ''}{trend.growthRate}%
+            </div>
+            <span className={`text-sm mb-1 font-medium px-2 py-0.5 rounded ${trend.growthRate > 0
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+              : trend.growthRate < 0
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+              }`}>
+              {trend.growthRate > 0 ? 'Crescimento' : trend.growthRate < 0 ? 'Queda' : 'Estável'}
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Comparativo: {trend.previousMonth} aulas (mês anterior) vs {trend.currentMonth} (atual).
+          </p>
+        </div>
+
+        {/* 2. Annual Projection Card */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="text-sm font-medium text-gray-500 mb-4 dark:text-gray-400">Projeção Anual</h3>
+          <div className="flex items-end gap-2 mb-2">
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
+              ~{projection.projectedYearTotal}
+            </span>
+            <span className="text-sm mb-1 text-gray-500 dark:text-gray-400">aulas</span>
+          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Baseado na média de {projection.averagePerMonth} aulas/mês dos últimos 12 meses.
+          </p>
+        </div>
+
+        {/* 3. Monthly History Chart (Mini) */}
+        <div className="lg:col-span-1 bg-white p-4 rounded-xl shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
+          <h3 className="text-sm font-medium text-gray-500 mb-2 dark:text-gray-400">Histórico (12 meses)</h3>
+          <div className="flex-1 min-h-[100px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyHistory}>
+                <Tooltip
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                  cursor={{ fill: '#f1f5f9' }}
+                />
+                <Bar dataKey="totalClasses" fill="#cbd5e1" radius={[2, 2, 0, 0]} activeBar={{ fill: '#3b82f6' }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -223,17 +358,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
           <h3 className="text-lg font-bold text-gray-800 mb-6 dark:text-white">Status das Aulas ({currentYearLabel})</h3>
           <div className="space-y-4">
             {[
-              { label: 'Agendada', val: yearStats.aulasPorStatus.agendada, color: 'bg-blue-500' },
-              { label: 'Em Andamento', val: yearStats.aulasPorStatus['em-andamento'], color: 'bg-yellow-500' },
-              { label: 'Concluída', val: yearStats.aulasPorStatus.concluida, color: 'bg-teal-500' },
-              { label: 'Cancelada', val: yearStats.aulasPorStatus.cancelada, color: 'bg-red-500' },
+              { label: 'Agendada', val: periodStats.aulasPorStatus.agendada, color: 'bg-blue-500' },
+              { label: 'Em Andamento', val: periodStats.aulasPorStatus['em-andamento'], color: 'bg-yellow-500' },
+              { label: 'Concluída', val: periodStats.aulasPorStatus.concluida, color: 'bg-teal-500' },
+              { label: 'Cancelada', val: periodStats.aulasPorStatus.cancelada, color: 'bg-red-500' },
             ].map((item) => {
               // Percentage base includes cancelled for Distribution view clarity
               const totalForDistribution =
-                yearStats.aulasPorStatus.agendada +
-                yearStats.aulasPorStatus['em-andamento'] +
-                yearStats.aulasPorStatus.concluida +
-                yearStats.aulasPorStatus.cancelada;
+                periodStats.aulasPorStatus.agendada +
+                periodStats.aulasPorStatus['em-andamento'] +
+                periodStats.aulasPorStatus.concluida +
+                periodStats.aulasPorStatus.cancelada;
 
               return (
                 <div key={item.label}>
@@ -261,7 +396,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
               <AlertCircle size={20} className="flex-shrink-0" />
               <div className="flex-1">
                 <span className="font-semibold block">Atenção</span>
-                {yearStats.aulasPorStatus.cancelada} aulas canceladas em {currentYearLabel}.
+                {periodStats.aulasPorStatus.cancelada} aulas canceladas em {formattedPeriodLabel}.
               </div>
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
             </button>
@@ -273,8 +408,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Aulas Agendadas por Instrutor</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Considerando apenas aulas confirmadas no período</p>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Aulas por Instrutor</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Total de aulas ativas (Agendadas, Em andamento e Concluídas)</p>
           </div>
 
           <div className="flex bg-gray-100 p-1 rounded-lg dark:bg-slate-700 self-start sm:self-auto">
@@ -312,9 +447,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {instructorStats.map((item, index) => (
               <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors dark:border-slate-700 dark:hover:bg-slate-700/50">
-                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold flex-shrink-0 dark:bg-blue-900/30 dark:text-blue-300">
-                  {item.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
-                </div>
+                <Avatar
+                  name={item.name}
+                  size="md"
+                  className="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-medium text-gray-900 truncate dark:text-white text-sm" title={item.name}>
@@ -348,6 +485,80 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
           </div>
         )}
       </div>
-    </div>
+
+
+
+      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Comparativo Mensal de Instrutores</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Evolução de aulas ativas por mês em {comparisonYear}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={comparisonYear}
+              onChange={(e) => setComparisonYear(Number(e.target.value))}
+              className="p-2 border rounded-lg text-sm bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="h-[350px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={lineChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-10" />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                dy={10}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '8px',
+                  border: 'none',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)'
+                }}
+              />
+              <Legend verticalAlign="top" height={36} iconType="circle" />
+              {visibleInstructors.map((inst, index) => (
+                <Line
+                  key={inst.instructorName}
+                  type="monotone"
+                  dataKey={inst.instructorName}
+                  name={inst.instructorName}
+                  stroke={LINE_COLORS[index % LINE_COLORS.length]}
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: LINE_COLORS[index % LINE_COLORS.length], strokeWidth: 0 }}
+                  activeDot={{ r: 6 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {comparisonData && comparisonData.data.length > 3 && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={() => setShowAllInstructors(!showAllInstructors)}
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
+            >
+              {showAllInstructors ? 'Mostrar menos' : `Ver todos (${comparisonData.data.length})`}
+            </button>
+          </div>
+        )}
+      </div>
+    </div >
   );
 };

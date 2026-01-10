@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Calendar, CalendarDays, BarChart3, Plus, Settings, LogOut, Database, Shield, Building2, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Calendar, CalendarDays, BarChart3, Plus, Settings, LogOut, Database, Shield, Building2, BookOpen, FileText, Info } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useSchedule } from '../context/ScheduleContext';
 import { EduPlannerLogo } from './EduPlannerLogo';
 import { ConfirmationModal } from './ConfirmationModal';
+import { Avatar } from './Avatar';
 
 interface SidebarProps {
     currentView: ViewMode;
@@ -76,12 +77,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
                         </p>
                     </div>
 
-                    {/* User Role Badge */}
-                    <div className="px-2 mb-6 flex items-center gap-1.5">
-                        <Shield size={12} className="text-gray-400" />
-                        <span className="text-xs uppercase font-semibold text-gray-400 tracking-wider">
-                            {getRoleLabel()}
-                        </span>
+                    {/* User Profile Section with Avatar */}
+                    <div className="px-2 mb-6 flex items-center gap-3 bg-gray-50/50 p-2 rounded-xl border border-gray-100 dark:bg-slate-800/50 dark:border-slate-700">
+                        <Avatar
+                            name={userProfile.name}
+                            url={userProfile.avatarUrl}
+                            size="lg"
+                            className="shadow-sm border-2 border-white dark:border-slate-600 flex-shrink-0"
+                        />
+                        <div className="overflow-hidden flex flex-col justify-center min-w-0">
+                            <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate leading-snug" title={userProfile.name || userProfile.email}>
+                                {userProfile.name || userProfile.email?.split('@')[0] || 'Usuário'}
+                            </p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                                <span className={`
+                                    inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider
+                                    ${isAdmin ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''}
+                                    ${isEditor ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : ''}
+                                    ${isViewer ? 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400' : ''}
+                                `}>
+                                    {getRoleLabel()}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Action Button */}
@@ -176,6 +194,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
                             <LogOut size={18} />
                             Sair
                         </button>
+
+                        <div className="pt-2">
+                            <a
+                                href="/privacy"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-blue-600 transition-colors dark:hover:text-blue-400"
+                            >
+                                <Shield size={14} />
+                                Política de Privacidade
+                            </a>
+                            <a
+                                href="/terms"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-blue-600 transition-colors dark:hover:text-blue-400"
+                            >
+                                <FileText size={14} />
+                                Termos de Uso
+                            </a>
+                            <a
+                                href="/about"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-blue-600 transition-colors dark:hover:text-blue-400"
+                            >
+                                <Info size={14} />
+                                Sobre o App
+                            </a>
+                        </div>
                     </div>
                 </div>
             </aside>

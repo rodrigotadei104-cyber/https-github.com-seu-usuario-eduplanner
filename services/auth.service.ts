@@ -23,6 +23,7 @@ export interface UserProfile {
     name: string;
     role: UserRole;
     status: 'pending' | 'active' | 'inactive';
+    photo_url?: string;
 }
 
 export const authService = {
@@ -59,7 +60,7 @@ export const authService = {
         // 2. Buscar perfil do usuário (inclui tenant_id e status)
         const { data: userProfile, error: profileError } = await supabase
             .from('users')
-            .select('id, tenant_id, status, role, name, email')
+            .select('*')
             .eq('id', authData.user.id)
             .single();
 
@@ -128,7 +129,7 @@ export const authService = {
 
         const { data, error } = await supabase
             .from('users')
-            .select('id, tenant_id, email, name, role, status')
+            .select('*')
             .eq('id', user.id)
             .single();
 

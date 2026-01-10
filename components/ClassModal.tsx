@@ -4,6 +4,7 @@ import { X, Trash2, Loader2, AlertTriangle, Check, XCircle, Lock, Info, Ban } fr
 import { useSchedule } from '../context/ScheduleContext';
 import { addMinutes, format, parseISO } from 'date-fns';
 import { ConfirmationModal } from './ConfirmationModal';
+import { Avatar } from './Avatar';
 
 // Helper para parsear data sem problema de fuso horário
 const parseLocalDate = (dateStr: string | Date): Date => {
@@ -19,7 +20,7 @@ interface ClassModalProps {
 }
 
 export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave, initialData }) => {
-  const { instrutores, cursos, materias, appSettings, currentDate, userProfile, addAula, deleteAula, isActionLoading } = useSchedule();
+  const { instrutores, cursos, materias, appSettings, currentDate, userProfile, addAula, updateAula, deleteAula, isActionLoading } = useSchedule();
 
   const [formData, setFormData] = useState<Partial<Aula>>({
     data: new Date(),
@@ -45,10 +46,12 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
   // Conflict Modal State
   const [conflictModal, setConflictModal] = useState<{
     isOpen: boolean;
+    type: 'INSTRUCTOR_CONFLICT' | 'ROOM_CONFLICT' | null;
     conflicts: Array<{ aulaId: string; materia: string; horarioInicio: string; horarioFim: string }>;
     pendingData: Partial<Aula> | null;
   }>({
     isOpen: false,
+    type: null,
     conflicts: [],
     pendingData: null
   });
@@ -109,16 +112,25 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
 
   if (!isOpen) return null;
 
-  // Salvar nova aula com verificação de conflito
-  const processSaveNew = async (dataToSave: Partial<Aula>, forceCreate: boolean = false) => {
+  // Unified Save with Conflict Validation
+  const processSaveAttempt = async (dataToSave: Partial<Aula>, force: boolean = false) => {
     if (!dataToSave.materia || !dataToSave.instrutor || !dataToSave.curso) return;
 
-    const result = await addAula(dataToSave as Omit<Aula, 'id' | 'tenantId'>, forceCreate);
+    let result;
 
-    if (result.warning === 'INSTRUCTOR_CONFLICT' && result.conflicts) {
-      // Exibir modal de conflito
+    if (initialData) {
+      // Update
+      const fullData = { ...initialData, ...dataToSave } as Aula;
+      result = await updateAula(fullData, force);
+    } else {
+      // Create
+      result = await addAula(dataToSave as Omit<Aula, 'id' | 'tenantId'>, force);
+    }
+
+    if (result.warning && result.conflicts) {
       setConflictModal({
         isOpen: true,
+        type: result.warning,
         conflicts: result.conflicts,
         pendingData: dataToSave
       });
@@ -130,25 +142,11 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
     }
   };
 
-  // Forçar criação após confirmação de conflito
-  const handleForceCreate = async () => {
+  // Forçar criação/edição após confirmação de conflito
+  const handleForceProceed = async () => {
     if (conflictModal.pendingData) {
-      setConflictModal({ isOpen: false, conflicts: [], pendingData: null });
-      await processSaveNew(conflictModal.pendingData, true);
-    }
-  };
-
-  // Salvar aula existente (update) ou nova
-  const processSave = (dataToSave: Partial<Aula>) => {
-    if (dataToSave.materia && dataToSave.instrutor && dataToSave.curso) {
-      if (initialData) {
-        // Edição: usa onSave (não verifica conflito por enquanto)
-        onSave(dataToSave as Aula);
-        onClose();
-      } else {
-        // Nova aula: usa addAula com verificação de conflito
-        processSaveNew(dataToSave);
-      }
+      setConflictModal({ isOpen: false, type: null, conflicts: [], pendingData: null });
+      await processSaveAttempt(conflictModal.pendingData, true);
     }
   };
 
@@ -162,7 +160,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
         isOpen: true,
         title: 'Confirmar conclusão',
         description: 'Tem certeza que deseja marcar esta aula como concluída? Esta ação consolida os registros.',
-        action: () => processSave(formData)
+        action: () => processSaveAttempt(formData)
       });
       return;
     }
@@ -175,12 +173,12 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
         isOpen: true,
         title: 'Confirmar cancelamento de aula',
         description: 'Tem certeza que deseja cancelar esta aula? Esta ação não poderá ser desfeita.',
-        action: () => processSave(formData)
+        action: () => processSaveAttempt(formData)
       });
       return;
     }
 
-    processSave(formData);
+    processSaveAttempt(formData);
   };
 
   // Specifically for "Cancelar Aula" button (Sets status to cancelled)
@@ -194,7 +192,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
         title: 'Confirmar cancelamento de aula',
         description: 'Tem certeza que deseja cancelar esta aula? Esta ação não poderá ser desfeita.',
         action: () => {
-          onSave({ ...initialData, status: 'cancelada' });
+          processSaveAttempt({ ...initialData, status: 'cancelada' });
           onClose();
         }
       });
@@ -295,7 +293,10 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Instrutor *</label>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Instrutor *</label>
+                  {formData.instrutor && <Avatar name={formData.instrutor} size="xs" />}
+                </div>
                 <select
                   required
                   disabled={isReadOnly || isActionLoading}
@@ -472,11 +473,16 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
               <div className="p-2 bg-amber-100 rounded-full">
                 <AlertTriangle className="w-6 h-6 text-amber-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white">Conflito de Horário</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                {conflictModal.type === 'ROOM_CONFLICT' ? 'Conflito de Sala' : 'Conflito de Horário'}
+              </h3>
             </div>
 
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              O instrutor <strong>{conflictModal.pendingData?.instrutor}</strong> já possui aulas no mesmo horário:
+              {conflictModal.type === 'ROOM_CONFLICT'
+                ? <>A sala <strong>{conflictModal.pendingData?.sala}</strong> já está ocupada neste horário:</>
+                : <>O instrutor <strong>{conflictModal.pendingData?.instrutor}</strong> já possui aulas no mesmo horário:</>
+              }
             </p>
 
             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-4 space-y-2 max-h-40 overflow-y-auto">
@@ -496,13 +502,13 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
 
             <div className="flex gap-3 justify-end">
               <button
-                onClick={() => setConflictModal({ isOpen: false, conflicts: [], pendingData: null })}
+                onClick={() => setConflictModal({ isOpen: false, type: null, conflicts: [], pendingData: null })}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600"
               >
                 Cancelar
               </button>
               <button
-                onClick={handleForceCreate}
+                onClick={handleForceProceed}
                 className="px-4 py-2 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition shadow-sm"
               >
                 Prosseguir Mesmo Assim

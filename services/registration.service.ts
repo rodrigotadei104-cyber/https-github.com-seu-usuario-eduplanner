@@ -157,17 +157,23 @@ export interface CursoInput {
     nome: string;
     carga_horaria?: number;
     cor?: string;
+    minutos_por_hora?: number;
 }
 
 export const cursoService = {
     async list(): Promise<unknown[]> {
         const { data, error } = await supabase
             .from('cursos')
-            .select('*')
+            .select('*, raw_mins:minutos_por_hora')
             .order('nome');
 
         if (error) throw error;
-        return data || [];
+
+        // Map database column to frontend property
+        return (data || []).map((c: any) => ({
+            ...c,
+            minutosPorHora: c.raw_mins || c.minutos_por_hora
+        }));
     },
 
     async create(input: CursoInput): Promise<ServiceResult> {
@@ -180,7 +186,12 @@ export const cursoService = {
 
         const { data, error } = await supabase
             .from('cursos')
-            .insert({ ...input, tenant_id: tenantId, cor: input.cor || '#3B82F6' })
+            .insert({
+                ...input,
+                tenant_id: tenantId,
+                cor: input.cor || '#3B82F6',
+                minutos_por_hora: input.minutos_por_hora || 60
+            })
             .select()
             .single();
 
@@ -192,11 +203,57 @@ export const cursoService = {
             action: 'CREATE',
             entity: 'curso',
             entityId: data.id,
-            details: { nome: input.nome },
+            details: { nome: input.nome, minutos: input.minutos_por_hora },
             result: 'success'
         });
 
         return { success: true, data };
+    },
+
+    async update(id: string, input: Partial<CursoInput>): Promise<ServiceResult> {
+        const canManage = await permissionService.checkPermission('MANAGE_REGISTRATIONS', `Curso:${id}`);
+        if (!canManage) {
+            return { success: false, error: 'Permissão negada.' };
+        }
+
+        const { data: existing } = await supabase
+            .from('cursos')
+            .select('tenant_id')
+            .eq('id', id)
+            .single();
+
+        if (!existing) {
+            return { success: false, error: 'Curso não encontrado.' };
+        }
+
+        const tenantValid = await tenantService.validateTenantAccess(existing.tenant_id, 'curso', id);
+        if (!tenantValid) {
+            return { success: false, error: 'Acesso negado.' };
+        }
+
+        const { error } = await supabase
+            .from('cursos')
+            .update({
+                nome: input.nome,
+                carga_horaria: input.carga_horaria,
+                cor: input.cor,
+                minutos_por_hora: input.minutos_por_hora
+            })
+            .eq('id', id);
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        await auditService.log({
+            action: 'UPDATE',
+            entity: 'curso',
+            entityId: id,
+            details: { changes: Object.keys(input) },
+            result: 'success'
+        });
+
+        return { success: true };
     },
 
     async delete(id: string): Promise<ServiceResult> {

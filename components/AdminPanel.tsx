@@ -4,6 +4,7 @@ import { Shield, Users, FileText, Search, UserPlus, AlertCircle, Building2, Mail
 import { format, isSameDay } from 'date-fns';
 import { UserRole } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
+import { Avatar } from './Avatar';
 
 export const AdminPanel: React.FC = () => {
     const {
@@ -225,12 +226,12 @@ export const AdminPanel: React.FC = () => {
                                         return (
                                             <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
                                                 <td className="px-6 py-4 flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isPending
-                                                        ? 'bg-amber-100 text-amber-600'
-                                                        : isInactive ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'
-                                                        }`}>
-                                                        {u.avatarInitials}
-                                                    </div>
+                                                    <Avatar
+                                                        name={u.name}
+                                                        url={u.avatarUrl}
+                                                        size="sm"
+                                                        className={`border-2 ${isPending ? 'border-amber-200' : isInactive ? 'border-gray-200 grayscale' : 'border-blue-100'}`}
+                                                    />
                                                     <div>
                                                         <div className={`font-medium ${isInactive ? 'text-gray-400' : 'text-gray-900 dark:text-white'}`}>
                                                             {u.name}

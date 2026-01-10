@@ -27,11 +27,16 @@ export const userService = {
     async list(): Promise<unknown[]> {
         const { data, error } = await supabase
             .from('users')
-            .select('id, tenant_id, email, name, role, status, created_at, last_login')
+            .select('*')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data || [];
+
+        // Map photo_url to avatarUrl for frontend consistency
+        return (data || []).map((u: any) => ({
+            ...u,
+            avatarUrl: u.photo_url
+        }));
     },
 
     /**
@@ -130,6 +135,38 @@ export const userService = {
         });
 
         return { success: true, data: newUser };
+    },
+
+    /**
+     * Atualizar perfil do PRÓPRIO usuário (Nome)
+     */
+    async updateProfile(userId: string, data: { name: string }): Promise<ServiceResult> {
+        // 1. Validar que o usuário só pode editar a si mesmo
+        const currentUserId = permissionService.getCurrentUserId();
+        if (userId !== currentUserId) {
+            return { success: false, error: 'Você só pode editar seu próprio perfil.' };
+        }
+
+        // 2. Atualizar tabela pública
+        const { error } = await supabase
+            .from('users')
+            .update({ name: data.name })
+            .eq('id', userId);
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        // 3. Audit
+        await auditService.log({
+            action: 'UPDATE',
+            entity: 'user',
+            entityId: userId,
+            details: { type: 'PROFILE_UPDATE', fields: ['name'] },
+            result: 'success'
+        });
+
+        return { success: true };
     },
 
     /**
@@ -527,5 +564,68 @@ export const userService = {
             console.error('Delete Exception:', err);
             return { success: false, error: `Erro de conexão: ${err.message}` };
         }
+    },
+
+    /**
+     * Upload de Avatar do Usuário
+     */
+    async uploadAvatar(userId: string, file: File): Promise<ServiceResult> {
+        // 1. Validação de permissão
+        const currentUserId = permissionService.getCurrentUserId();
+        const isAdmin = await permissionService.isAdmin();
+
+        if (userId !== currentUserId && !isAdmin) {
+            return { success: false, error: 'Permissão negada.' };
+        }
+
+        // 2. Validação simples do arquivo
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            return { success: false, error: 'A imagem deve ter no máximo 5MB.' };
+        }
+        if (!file.type.startsWith('image/')) {
+            return { success: false, error: 'O arquivo deve ser uma imagem.' };
+        }
+
+        // 3. Upload para Storage (Substitui existente)
+        const fileName = 'profile.jpg'; // Força extensao/nome padrao conforme requisito
+        const filePath = `${userId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, file, { upsert: true });
+
+        if (uploadError) {
+            console.error('Upload Error:', uploadError);
+            return { success: false, error: `Erro no upload: ${uploadError.message}` };
+        }
+
+        // 4. Obter URL pública
+        const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+
+        // Adiciona timestamp para forçar atualização de cache no frontend
+        const finalUrl = `${publicUrl}?v=${Date.now()}`;
+
+        // 5. Atualizar perfil no banco
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ photo_url: finalUrl })
+            .eq('id', userId);
+
+        if (updateError) {
+            return { success: false, error: `Erro ao salvar URL: ${updateError.message}` };
+        }
+
+        // 6. Audit Log
+        await auditService.log({
+            action: 'UPDATE',
+            entity: 'user',
+            entityId: userId,
+            details: { change: 'avatar_upload', url: finalUrl },
+            result: 'success'
+        });
+
+        return { success: true, data: finalUrl };
     }
 };

@@ -28,6 +28,12 @@ import {
 } from 'lucide-react';
 import { format, addDays, subDays, addMonths, subMonths, addYears, subYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { exportAulasToCSV } from './utils/export';
+import { startOfMonth, endOfMonth } from 'date-fns';
+import { aulaService } from './services/aula.service';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfUse } from './components/TermsOfUse';
+import { AboutPage } from './components/AboutPage';
 
 const App: React.FC = () => {
     const {
@@ -54,6 +60,8 @@ const App: React.FC = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; type: 'invite' | 'recovery' }>({ isOpen: false, type: 'invite' });
     const [editingAula, setEditingAula] = useState<Aula | null>(null);
+
+
 
     // 0. Listener para Invite/Recovery Links (Supabase Auth)
     React.useEffect(() => {
@@ -115,6 +123,21 @@ const App: React.FC = () => {
             window.removeEventListener('hashchange', checkUrlForRecovery);
         };
     }, [passwordModal.isOpen]);
+
+    // Rota Estática para Política de Privacidade
+    if (window.location.pathname === '/privacy') {
+        return <PrivacyPolicy />;
+    }
+
+    // Rota Estática para Termos de Uso
+    if (window.location.pathname === '/terms') {
+        return <TermsOfUse />;
+    }
+
+    // Rota Estática para Sobre o App
+    if (window.location.pathname === '/about') {
+        return <AboutPage />;
+    }
 
     // 1. Telas Públicas: Se não autenticado, força Login
     if (!isAuthenticated) {
@@ -193,6 +216,29 @@ const App: React.FC = () => {
     };
 
     const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin';
+
+    const handleExportMonth = async () => {
+        if (!currentDate) return;
+
+        try {
+            // Calcular range do mês atual
+            const startStr = startOfMonth(currentDate).toISOString();
+            const endStr = endOfMonth(currentDate).toISOString();
+
+            // Buscar dados completos (com relações)
+            const exportData = await aulaService.list({
+                dateFrom: startStr,
+                dateTo: endStr,
+                includeRelations: true
+            });
+
+            const fileName = `EduPlanner_Aulas_${format(currentDate, 'MM_yyyy')}`;
+            exportAulasToCSV(exportData as any[], fileName);
+
+        } catch (error) {
+            console.error('Erro ao exportar:', error);
+        }
+    };
 
     // --- ROUTER LOGIC (Screen Map Implementation) ---
     const renderContent = () => {
@@ -358,6 +404,16 @@ const App: React.FC = () => {
                                 title="Imprimir Diário"
                             >
                                 <Printer size={20} />
+                            </button>
+                        )}
+
+                        {viewMode === 'monthly' && (isAdmin || userProfile.role === 'editor') && (
+                            <button
+                                onClick={handleExportMonth}
+                                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg hidden sm:block dark:text-gray-300 dark:hover:bg-slate-700"
+                                title="Exportar CSV do Mês"
+                            >
+                                <Download size={20} />
                             </button>
                         )}
 

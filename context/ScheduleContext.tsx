@@ -33,6 +33,7 @@ interface UserProfileState {
   email: string;
   avatarInitials: string;
   role: UserRole;
+  avatarUrl?: string;
 }
 
 interface ScheduleContextType {
@@ -65,17 +66,23 @@ interface ScheduleContextType {
   // Actions - Aulas (backward compatible signatures)
   addAula: (aula: Omit<Aula, 'id' | 'tenantId'>, forceCreate?: boolean) => Promise<{
     success: boolean;
-    warning?: 'INSTRUCTOR_CONFLICT';
+    warning?: 'INSTRUCTOR_CONFLICT' | 'ROOM_CONFLICT';
     conflicts?: Array<{ aulaId: string; materia: string; horarioInicio: string; horarioFim: string }>;
     error?: string;
   }>;
-  updateAula: (aula: Aula) => Promise<void>;
+  updateAula: (aula: Aula, forceUpdate?: boolean) => Promise<{
+    success: boolean;
+    warning?: 'INSTRUCTOR_CONFLICT' | 'ROOM_CONFLICT';
+    conflicts?: Array<{ aulaId: string; materia: string; horarioInicio: string; horarioFim: string }>;
+    error?: string;
+  }>;
   deleteAula: (id: string) => Promise<boolean>;
 
   // Actions - Registrations
   addInstrutor: (data: Omit<Instrutor, 'id' | 'tenantId'>) => void;
   deleteInstrutor: (id: string) => void;
   addCurso: (data: Omit<Curso, 'id' | 'tenantId'>) => void;
+  updateCurso: (id: string, data: Partial<Curso>) => void;
   deleteCurso: (id: string) => void;
   addMateria: (data: Omit<Materia, 'id' | 'tenantId'>) => void;
   deleteMateria: (id: string) => void;
@@ -125,7 +132,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     name: '',
     email: '',
     avatarInitials: '',
-    role: 'viewer'
+    role: 'viewer',
+    avatarUrl: undefined
   });
 
   // --- Data State ---
@@ -182,6 +190,11 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!isAuthenticated && !isDemo) return;
 
     try {
+      // Auto-sync statuses logic before fetching to ensure data is fresh
+      if (!isDemo) {
+        await aulaService.syncClassStatuses().catch(err => console.error('Sync error:', err));
+      }
+
       // Load data from services (RLS filters by tenant automatically)
       const [aulasData, instrutoresData, cursosData, materiasData] = await Promise.all([
         aulaService.list({ includeRelations: true }).catch(() => []),
@@ -203,7 +216,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         sala: a.sala || '',
         status: a.status === 'em_andamento' ? 'em-andamento' : a.status,
         observacoes: a.observacoes || '',
-        cor: a.curso?.cor || '#3B82F6'
+        cor: a.curso?.cor || '#3B82F6',
+        minutosPorHora: a.curso?.minutos_por_hora || 60
       })));
 
       setInstrutores(instrutoresData.map((i: any) => ({
@@ -219,7 +233,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         tenantId: c.tenant_id,
         nome: c.nome,
         cargaHoraria: c.carga_horaria,
-        cor: c.cor
+        cor: c.cor,
+        minutosPorHora: c.minutosPorHora || c.minutos_por_hora
       })));
 
       setMaterias(materiasData.map((m: any) => ({
@@ -287,7 +302,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               name: profile.name,
               email: profile.email,
               avatarInitials: profile.name.substring(0, 2).toUpperCase(),
-              role: profile.role as UserRole
+              role: profile.role as UserRole,
+              avatarUrl: profile.photo_url
             });
             setIsAuthenticated(true);
           }
@@ -323,7 +339,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             name: profile.name,
             email: profile.email,
             avatarInitials: profile.name.substring(0, 2).toUpperCase(),
-            role: profile.role as UserRole
+            role: profile.role as UserRole,
+            avatarUrl: profile.photo_url
           });
           setIsAuthenticated(true);
           showNotification(`Bem-vindo, ${profile.name.split(' ')[0]}!`, 'success');
@@ -419,7 +436,9 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setIsAuthenticated(false);
     setIsDemo(false);
-    setUserProfile({ id: '', tenantId: '', name: '', email: '', avatarInitials: '', role: 'viewer' });
+    setIsAuthenticated(false);
+    setIsDemo(false);
+    setUserProfile({ id: '', tenantId: '', name: '', email: '', avatarInitials: '', role: 'viewer', avatarUrl: undefined });
     setAulas([]);
     setInstrutores([]);
     setCursos([]);
@@ -461,11 +480,11 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const result = await aulaService.create(serviceInput, forceCreate);
 
-    // Se há warning de conflito, retornar para o componente tratar
-    if (result.warning === 'INSTRUCTOR_CONFLICT') {
+    // Se há warning de conflito (Instrutor ou Sala), retornar para o componente tratar
+    if (result.warning) {
       return {
         success: false,
-        warning: 'INSTRUCTOR_CONFLICT' as const,
+        warning: result.warning,
         conflicts: result.conflicts || []
       };
     }
@@ -480,7 +499,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [instrutores, cursos, materias, loadAllData, showNotification]);
 
-  const updateAula = useCallback(async (data: Aula) => {
+  const updateAula = useCallback(async (data: Aula, forceUpdate: boolean = false) => {
     // FIX: Usar formato local para evitar problema de fuso horário
     let dateStr: string;
     if (typeof data.data === 'string') {
@@ -495,6 +514,9 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       data: dateStr,
       horario_inicio: data.horarioInicio,
       horario_fim: data.horarioFim,
+      instrutor_id: instrutores.find(i => i.nome === data.instrutor)?.id,
+      curso_id: cursos.find(c => c.nome === data.curso)?.id,
+      materia_id: materias.find(m => m.nome === data.materia)?.id,
       sala: data.sala,
       status: data.status === 'em-andamento' ? 'em_andamento' as const : data.status as any,
       observacoes: data.observacoes
@@ -502,17 +524,31 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       setIsActionLoading(true);
-      const result = await aulaService.update(data.id, serviceInput);
+      const result = await aulaService.update(data.id, serviceInput, forceUpdate);
+
+      if (result.warning) {
+        return {
+          success: false,
+          warning: result.warning,
+          conflicts: result.conflicts || []
+        };
+      }
+
       if (result.success) {
         await loadAllData();
         showNotification('Aula atualizada com sucesso!', 'success');
+        return { success: true };
       } else {
         showNotification(result.error || 'Erro ao atualizar aula.', 'error');
+        return { success: false, error: result.error };
       }
+    } catch (e: any) {
+      showNotification(e.message || 'Erro inesperado.', 'error');
+      return { success: false, error: e.message };
     } finally {
       setIsActionLoading(false);
     }
-  }, [loadAllData, showNotification]);
+  }, [loadAllData, showNotification, instrutores, cursos, materias]);
 
   const deleteAula = useCallback(async (id: string): Promise<boolean> => {
     try {
@@ -564,12 +600,36 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [loadAllData, showNotification]);
 
   const addCurso = useCallback(async (data: Omit<Curso, 'id' | 'tenantId'>) => {
-    const result = await cursoService.create({ nome: data.nome, carga_horaria: Number(data.cargaHoraria) || undefined, cor: data.cor });
+    const result = await cursoService.create({
+      nome: data.nome,
+      carga_horaria: Number(data.cargaHoraria) || undefined,
+      cor: data.cor,
+      minutos_por_hora: data.minutosPorHora
+    });
     if (result.success) {
       await loadAllData();
       showNotification('Curso cadastrado.', 'success');
     } else {
       showNotification(result.error || 'Erro.', 'error');
+    }
+  }, [loadAllData, showNotification]);
+
+  const updateCurso = useCallback(async (id: string, data: Partial<Curso>) => {
+    try {
+      setIsActionLoading(true);
+      const result = await cursoService.update(id, {
+        ...data,
+        carga_horaria: Number(data.cargaHoraria) || undefined,
+        minutos_por_hora: data.minutosPorHora
+      });
+      if (result.success) {
+        await loadAllData();
+        showNotification('Curso atualizado com sucesso!', 'success');
+      } else {
+        showNotification(result.error || 'Erro ao atualizar curso.', 'error');
+      }
+    } finally {
+      setIsActionLoading(false);
     }
   }, [loadAllData, showNotification]);
 
@@ -773,6 +833,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       name: profile.name,
       avatarInitials: profile.avatarInitials,
+      avatarUrl: profile.avatarUrl
     }));
   }, []);
 
@@ -830,6 +891,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addInstrutor,
         deleteInstrutor,
         addCurso,
+        updateCurso,
         deleteCurso,
         addMateria,
         deleteMateria,

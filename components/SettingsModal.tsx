@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings as SettingsIcon, Moon, Sun, Clock, Shield } from 'lucide-react';
+import { X, Settings as SettingsIcon, Moon, Sun, Clock, Shield, Camera, Loader2 } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
+import { userService } from '../services/user.service';
+import { Avatar } from './Avatar';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -18,6 +20,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     const [defaultDuration, setDefaultDuration] = useState(appSettings.defaultClassDuration);
     const [theme, setTheme] = useState(appSettings.theme);
 
+    // Upload State
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
     const isAdmin = userProfile.role === 'admin';
 
     // Sync state when modal opens
@@ -32,27 +38,87 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
     if (!isOpen) return null;
 
-    const handleSave = () => {
-        // Generate initials fallback
-        const initials = name
-            .split(' ')
-            .map((n) => n[0])
-            .slice(0, 2)
-            .join('')
-            .toUpperCase();
+    const handleSave = async () => {
+        try {
+            // Persist Name change to Backend
+            if (userProfile.id && name !== userProfile.name) {
+                const result = await userService.updateProfile(userProfile.id, { name });
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+            }
 
+            // Generate initials fallback
+            const initials = name
+                .split(' ')
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase();
+
+            updateUserProfile({
+                ...userProfile,
+                name,
+                email, // Email update not supported in this simplified flow yet
+                avatarInitials: initials,
+            });
+
+            // Only save settings if admin
+            if (isAdmin) {
+                updateAppSettings({ theme, defaultClassDuration: Number(defaultDuration) });
+            }
+            onClose();
+        } catch (error: any) {
+            console.error('Error saving profile:', error);
+            // Optional: show error notification here if you had one in this component
+            alert('Erro ao salvar perfil: ' + error.message);
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !userProfile.id) return;
+
+        // 1. Optimistic UI: Mostrar imagem imediatamente
+        const objectUrl = URL.createObjectURL(file);
+        const previousAvatar = userProfile.avatarUrl; // Backup em caso de erro
+
+        // Atualiza estado local visualmente na hora
         updateUserProfile({
             ...userProfile,
-            name,
-            email,
-            avatarInitials: initials,
+            avatarUrl: objectUrl
         });
 
-        // Only save settings if admin
-        if (isAdmin) {
-            updateAppSettings({ theme, defaultClassDuration: Number(defaultDuration) });
+        setIsUploading(true);
+        setUploadError(null);
+
+        try {
+            // 2. Realizar upload em background
+            const result = await userService.uploadAvatar(userProfile.id, file);
+
+            if (result.success && result.data) {
+                // 3. Sucesso: Atualizar com a URL oficial do servidor
+                updateUserProfile({
+                    ...userProfile,
+                    avatarUrl: result.data as string
+                });
+            } else {
+                // Erro: Reverter para imagem anterior
+                throw new Error(result.error || 'Erro no upload');
+            }
+        } catch (err: any) {
+            console.error(err);
+            setUploadError(err.message || 'Erro inesperado');
+            // Reverter mudança otimista
+            updateUserProfile({
+                ...userProfile,
+                avatarUrl: previousAvatar
+            });
+        } finally {
+            setIsUploading(false);
+            // Limpar memória do objectUrl
+            URL.revokeObjectURL(objectUrl);
         }
-        onClose();
     };
 
     return (
@@ -95,11 +161,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 <div className="p-6">
                     {activeTab === 'profile' && (
                         <div className="space-y-4">
+                            {/* Avatar Section */}
                             <div className="flex items-center gap-4 mb-6">
-                                <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white shadow-md dark:bg-blue-900 dark:border-slate-700 overflow-hidden">
-                                    <span className="font-bold text-2xl text-blue-600 dark:text-blue-300">
-                                        {name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'JD'}
-                                    </span>
+                                <div className="relative group">
+                                    <Avatar
+                                        name={name}
+                                        url={userProfile.avatarUrl}
+                                        size="xl"
+                                        className="border-4 border-white shadow-md dark:border-slate-700"
+                                    />
+
+                                    <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-colors group-hover:scale-110">
+                                        {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                            disabled={isUploading}
+                                        />
+                                    </label>
                                 </div>
 
                                 <div className="flex-1">
@@ -108,6 +189,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                                         <Shield size={12} />
                                         {userProfile.role === 'admin' ? 'Administrador' : userProfile.role === 'editor' ? 'Editor' : 'Visualizador'}
                                     </span>
+                                    {uploadError && (
+                                        <p className="text-xs text-red-500 mt-2">{uploadError}</p>
+                                    )}
                                 </div>
                             </div>
                             <div>

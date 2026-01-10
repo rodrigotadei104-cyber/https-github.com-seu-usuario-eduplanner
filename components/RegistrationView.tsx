@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
-import { Trash2, Plus, User, BookOpen, GraduationCap, Lock } from 'lucide-react';
+import { Trash2, Plus, User, BookOpen, GraduationCap, Lock, Pencil, X } from 'lucide-react';
 import { Instrutor, Curso, Materia } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 
@@ -9,19 +9,16 @@ type Tab = 'instrutores' | 'cursos' | 'materias';
 export const RegistrationView: React.FC = () => {
     const {
         instrutores, addInstrutor, deleteInstrutor,
-        cursos, addCurso, deleteCurso,
+        cursos, addCurso, updateCurso, deleteCurso,
         materias, addMateria, deleteMateria,
         userProfile, canManageRegistrations, isActionLoading
     } = useSchedule();
 
     const [activeTab, setActiveTab] = useState<Tab>('instrutores');
 
-    // Rule 3 & 4: Only Admin can create/edit/delete Instructors, Courses, Subjects.
-    // Permissions: Admin and Editor can manage registrations
     const canManage = canManageRegistrations();
     const isReadOnly = !canManage;
 
-    // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
         title: '',
@@ -29,15 +26,18 @@ export const RegistrationView: React.FC = () => {
         action: () => { }
     });
 
-    // States for form inputs
     const [formData, setFormData] = useState({
         nome: '',
         email: '',
         telefone: '',
         cargaHoraria: '',
         cor: '#3b82f6',
-        cursoId: ''
+        cursoId: '',
+        minutosPorHora: '60' // Default
     });
+
+    // Edit State
+    const [editingItem, setEditingItem] = useState<{ id: string, type: Tab } | null>(null);
 
     const resetForm = () => {
         setFormData({
@@ -46,34 +46,70 @@ export const RegistrationView: React.FC = () => {
             telefone: '',
             cargaHoraria: '',
             cor: '#3b82f6',
-            cursoId: ''
+            cursoId: '',
+            minutosPorHora: '60'
         });
     };
 
-    const handleAdd = (e: React.FormEvent) => {
+    const handleEdit = (item: any, type: Tab) => {
+        setEditingItem({ id: item.id, type });
+        setFormData({
+            nome: item.nome,
+            email: item.email || '',
+            telefone: item.telefone || '',
+            cargaHoraria: item.cargaHoraria || '',
+            cor: item.cor || '#3b82f6',
+            cursoId: item.cursoId || '',
+            minutosPorHora: String(item.minutosPorHora || (item as any).minutos_por_hora || 60)
+        });
+        // Scroll to top to see form
+        const formElement = document.querySelector('form');
+        if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const cancelEdit = () => {
+        setEditingItem(null);
+        resetForm();
+    };
+
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!canManage) return; // double check
+        if (!canManage) return;
         if (!formData.nome.trim()) return;
 
-        if (activeTab === 'instrutores') {
-            addInstrutor({
-                nome: formData.nome,
-                email: formData.email,
-                telefone: formData.telefone
-            });
-        } else if (activeTab === 'cursos') {
-            addCurso({
-                nome: formData.nome,
-                cor: formData.cor,
-                cargaHoraria: formData.cargaHoraria
-            });
+        if (editingItem) {
+            if (activeTab === 'cursos') {
+                await updateCurso(editingItem.id, {
+                    nome: formData.nome,
+                    cargaHoraria: formData.cargaHoraria ? Number(formData.cargaHoraria) : undefined,
+                    cor: formData.cor,
+                    minutosPorHora: Number(formData.minutosPorHora)
+                });
+            }
+            // Add others if needed
+            setEditingItem(null);
         } else {
-            if (!formData.cursoId) return; // Validation for materia
-            addMateria({
-                nome: formData.nome,
-                cursoId: formData.cursoId,
-                cargaHoraria: formData.cargaHoraria
-            });
+            if (activeTab === 'instrutores') {
+                addInstrutor({
+                    nome: formData.nome,
+                    email: formData.email,
+                    telefone: formData.telefone
+                });
+            } else if (activeTab === 'cursos') {
+                addCurso({
+                    nome: formData.nome,
+                    cor: formData.cor,
+                    cargaHoraria: formData.cargaHoraria,
+                    minutosPorHora: Number(formData.minutosPorHora)
+                });
+            } else {
+                if (!formData.cursoId) return;
+                addMateria({
+                    nome: formData.nome,
+                    cursoId: formData.cursoId,
+                    cargaHoraria: formData.cargaHoraria
+                });
+            }
         }
         resetForm();
     };
@@ -138,9 +174,19 @@ export const RegistrationView: React.FC = () => {
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 dark:bg-slate-800 dark:border-slate-700">
-                    {/* Add Form (HIDDEN for Readers) */}
+                    {/* Add/Edit Form (HIDDEN for Readers) */}
                     {canManage && (
-                        <form onSubmit={handleAdd} className="mb-8 bg-gray-50 p-6 rounded-lg border border-gray-100 dark:bg-slate-900/50 dark:border-slate-700">
+                        <form onSubmit={handleSave} className={`mb-8 p-6 rounded-lg border ${editingItem ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20' : 'bg-gray-50 border-gray-100 dark:bg-slate-900/50 dark:border-slate-700'}`}>
+                            {editingItem && (
+                                <div className="mb-4 flex justify-between items-center text-blue-700 dark:text-blue-300">
+                                    <span className="text-sm font-semibold flex items-center gap-2">
+                                        <Pencil size={16} /> Editando {activeTab === 'cursos' ? 'Curso' : 'Item'}
+                                    </span>
+                                    <button type="button" onClick={cancelEdit} className="text-xs hover:underline flex items-center gap-1">
+                                        <X size={14} /> Cancelar
+                                    </button>
+                                </div>
+                            )}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                                 <div className="md:col-span-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
@@ -196,6 +242,18 @@ export const RegistrationView: React.FC = () => {
                                                 onChange={(e) => setFormData({ ...formData, cargaHoraria: e.target.value })}
                                                 disabled={isActionLoading}
                                             />
+                                        </div>
+                                        <div className="md:col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Tipo de Hora</label>
+                                            <select
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                value={formData.minutosPorHora}
+                                                onChange={(e) => setFormData({ ...formData, minutosPorHora: e.target.value })}
+                                                disabled={isActionLoading}
+                                            >
+                                                <option value="60">60 minutos (Padrão)</option>
+                                                <option value="50">50 minutos</option>
+                                            </select>
                                         </div>
                                         <div className="w-full">
                                             <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Cor</label>
@@ -255,8 +313,8 @@ export const RegistrationView: React.FC = () => {
                                         </>
                                     ) : (
                                         <>
-                                            <Plus size={20} />
-                                            Adicionar
+                                            {editingItem ? <Pencil size={20} /> : <Plus size={20} />}
+                                            {editingItem ? 'Atualizar' : 'Adicionar'}
                                         </>
                                     )}
                                 </button>
@@ -281,6 +339,7 @@ export const RegistrationView: React.FC = () => {
                                     {activeTab === 'cursos' && (
                                         <>
                                             <th className="px-6 py-4">Carga Horária</th>
+                                            <th className="px-6 py-4">Hora Legal</th>
                                             <th className="px-6 py-4">Cor</th>
                                         </>
                                     )}
@@ -320,6 +379,7 @@ export const RegistrationView: React.FC = () => {
                                     <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-200">{item.nome}</td>
                                         <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{item.cargaHoraria || '-'}</td>
+                                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{item.minutosPorHora || 60} min</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.cor }}></div>
@@ -329,9 +389,18 @@ export const RegistrationView: React.FC = () => {
 
                                         {canManage && (
                                             <td className="px-6 py-4 text-right">
-                                                <button onClick={() => handleDelete(item.id, 'curso')} className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
-                                                    <Trash2 size={18} />
-                                                </button>
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleEdit(item, 'cursos')}
+                                                        disabled={isActionLoading}
+                                                        className="text-blue-500 hover:text-blue-700 p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors disabled:opacity-30"
+                                                    >
+                                                        <Pencil size={18} />
+                                                    </button>
+                                                    <button onClick={() => handleDelete(item.id, 'curso')} className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>

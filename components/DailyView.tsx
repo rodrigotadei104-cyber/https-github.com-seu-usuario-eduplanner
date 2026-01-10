@@ -52,7 +52,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                 ...a,
                 startMinutes: getMinutes(a.horarioInicio),
                 endMinutes: getMinutes(a.horarioFim),
-                duration: differenceInMinutes(parse(a.horarioFim, 'HH:mm', new Date()), parse(a.horarioInicio, 'HH:mm', new Date()))
+                duration: getMinutes(a.horarioFim) - getMinutes(a.horarioInicio)
             }))
             .sort((a, b) => {
                 if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
@@ -230,7 +230,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                         // Espaçamento horizontal entre cards side-by-side
                                         left: `calc(${leftPercent}% + 4px)`,
                                         width: `calc(${widthPercent}% - 8px)`,
-                                        backgroundColor: 'white',
+                                        backgroundColor: aula.status === 'concluida' ? '#f0fdf4' : 'white',
                                         boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
                                     }}
                                 >
@@ -281,6 +281,12 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                                     <div className="flex items-center gap-1.5 text-xs text-gray-600" title="Horário">
                                                         <Clock size={12} className="text-gray-400" />
                                                         <span>{formatTime(aula.horarioInicio)} - {formatTime(aula.horarioFim)}</span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1.5 text-xs text-gray-600" title="Carga horária efetiva">
+                                                        <span className="font-medium text-blue-600 dark:text-blue-400">
+                                                            Carga contabilizada: {(aula.duration / (Number(aula.minutosPorHora) || 60)).toFixed(1).replace('.0', '')}h
+                                                        </span>
                                                     </div>
 
                                                     <div className="flex items-center gap-4 text-xs text-gray-600">
