@@ -262,7 +262,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <p className="mt-8 text-gray-400 text-sm">
-                © 2024 EduPlanner. Todos os direitos reservados.
+                © 2026 EduPlanner. Todos os direitos reservados.
             </p>
         </div>
     );
