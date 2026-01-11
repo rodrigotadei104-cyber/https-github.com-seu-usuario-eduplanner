@@ -23,3 +23,6 @@ export type { AulaStatus, AulaInput, AulaUpdateInput, Metrics } from './aula.ser
 export { instrutorService, cursoService, materiaService } from './registration.service';
 export type { InstrutorInput, CursoInput, MateriaInput, ServiceResult } from './registration.service';
 
+export { eventService } from './event.service';
+export type { EventInput } from './event.service';
+

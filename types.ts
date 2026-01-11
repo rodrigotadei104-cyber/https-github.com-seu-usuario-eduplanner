@@ -37,8 +37,24 @@ export interface Materia {
   id: string;
   tenantId: string;
   nome: string;
-  cursoId: string; // Link to Curso
+  cursoId: string; // Link to Course
   cargaHoraria?: string; // Ex: "60h"
+}
+
+export type EventType = 'reuniao' | 'treinamento' | 'feedback' | 'outro';
+export type EventStatus = 'agendado' | 'concluido' | 'cancelado';
+
+export interface Evento {
+  id: string;
+  tenantId: string;
+  nome: string;
+  tipo: EventType;
+  data: Date;
+  horarioInicio: string;
+  horarioFim: string;
+  instrutorId?: string; // Optional
+  sala?: string;
+  status: EventStatus;
 }
 
 export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin';

@@ -30,7 +30,7 @@ interface MonthlyViewProps {
 }
 
 export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, onSelectDate, onEditAula }) => {
-  const { isLoading, filters } = useSchedule();
+  const { isLoading, filters, eventos, instrutores } = useSchedule();
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
@@ -81,6 +81,9 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
           // Sort by time
           dayAulas.sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
 
+          const dayEventos = eventos ? eventos.filter(e => isSameDay(parseLocalDate(e.data), day) && e.status !== 'cancelado') : [];
+          dayEventos.sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
+
           const isCurrentMonth = isSameMonth(day, monthStart);
           const isDayToday = isToday(day);
 
@@ -107,7 +110,23 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
               </div>
 
               <div className="space-y-1 overflow-y-auto max-h-[100px] custom-scrollbar">
-                {dayAulas.slice(0, 4).map((aula) => (
+                {/* Events first */}
+                {dayEventos.map((evento) => (
+                  <div
+                    key={evento.id}
+                    className={`text-[10px] px-1.5 py-0.5 rounded truncate border-l-2 mb-0.5
+                            ${evento.tipo === 'reuniao' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' :
+                        evento.tipo === 'treinamento' ? 'bg-teal-50 border-teal-500 text-teal-700' :
+                          'bg-gray-100 border-gray-500 text-gray-700'}
+                        `}
+                    title={`${evento.horarioInicio} - ${evento.nome} (${evento.tipo})${evento.instrutorId ? ` - Instrutor: ${instrutores.find(i => i.id === evento.instrutorId)?.nome}` : ''}`}
+                  >
+                    <span className="font-bold mr-1">{evento.horarioInicio}</span>
+                    {evento.nome}
+                  </div>
+                ))}
+
+                {dayAulas.slice(0, 4 - Math.min(dayEventos.length, 2)).map((aula) => (
                   <div
                     key={aula.id}
                     onClick={(e) => { e.stopPropagation(); onEditAula(aula); }}

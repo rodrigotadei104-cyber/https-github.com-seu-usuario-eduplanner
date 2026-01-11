@@ -7,7 +7,7 @@
 // O contexto apenas consume e exibe dados do backend.
 
 import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
-import { FilterState, ViewMode, AppSettings, AppNotification, UserRole, Aula, Instrutor, Curso, Materia, Stats, UserAccount, SystemLog } from '../types';
+import { FilterState, ViewMode, AppSettings, AppNotification, UserRole, Aula, Instrutor, Curso, Materia, Stats, UserAccount, SystemLog, Evento } from '../types';
 
 // Services
 import {
@@ -18,7 +18,9 @@ import {
   cursoService,
   materiaService,
   auditService,
-  permissionService
+  permissionService,
+  eventService,
+  EventInput
 } from '../services';
 import { supabase } from '../lib/supabase';
 
@@ -54,6 +56,7 @@ interface ScheduleContextType {
   materias: Materia[];
   users: UserAccount[];
   systemLogs: SystemLog[];
+  eventos: Evento[];
 
   filteredAulas: Aula[];
   currentDate: Date;
@@ -86,6 +89,11 @@ interface ScheduleContextType {
   deleteCurso: (id: string) => void;
   addMateria: (data: Omit<Materia, 'id' | 'tenantId'>) => void;
   deleteMateria: (id: string) => void;
+
+  // Actions - Events
+  addEvento: (data: Omit<EventInput, 'tenantId'>) => Promise<void>;
+  updateEvento: (id: string, data: Partial<EventInput>) => Promise<void>;
+  deleteEvento: (id: string) => Promise<void>;
 
   // Actions - Users
   createUser: (data: Omit<UserAccount, 'id' | 'createdAt' | 'avatarInitials' | 'tenantId' | 'active' | 'invitationStatus'>) => void;
@@ -143,6 +151,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
+  const [eventos, setEventos] = useState<Evento[]>([]);
 
   // --- UI State ---
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -196,11 +205,12 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       // Load data from services (RLS filters by tenant automatically)
-      const [aulasData, instrutoresData, cursosData, materiasData] = await Promise.all([
+      const [aulasData, instrutoresData, cursosData, materiasData, eventsData] = await Promise.all([
         aulaService.list({ includeRelations: true }).catch(() => []),
         instrutorService.list().catch(() => []),
         cursoService.list().catch(() => []),
-        materiaService.list().catch(() => [])
+        materiaService.list().catch(() => []),
+        eventService.list().catch(() => [])
       ]);
 
       // Transform to legacy format if needed
@@ -245,6 +255,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         cargaHoraria: m.carga_horaria
       })));
 
+      setEventos((eventsData as unknown as Evento[]) || []);
       // Load admin data only if admin
       const isAdminFlag = permissionService.isAdmin();
 
@@ -669,6 +680,55 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [loadAllData, showNotification]);
 
   // ============================================
+  // EVENT ACTIONS
+  // ============================================
+
+  const addEvento = useCallback(async (data: Omit<EventInput, 'tenantId'>) => {
+    try {
+      setIsActionLoading(true);
+      const result = await eventService.create(data as any);
+      if (result.success) {
+        await loadAllData();
+        showNotification('Evento criado com sucesso!', 'success');
+      } else {
+        showNotification(result.error || 'Erro ao criar evento.', 'error');
+      }
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [loadAllData, showNotification]);
+
+  const updateEvento = useCallback(async (id: string, data: Partial<EventInput>) => {
+    try {
+      setIsActionLoading(true);
+      const result = await eventService.update(id, data);
+      if (result.success) {
+        await loadAllData();
+        showNotification('Evento atualizado com sucesso!', 'success');
+      } else {
+        showNotification(result.error || 'Erro ao atualizar evento.', 'error');
+      }
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [loadAllData, showNotification]);
+
+  const deleteEvento = useCallback(async (id: string) => {
+    try {
+      setIsActionLoading(true);
+      const result = await eventService.delete(id);
+      if (result.success) {
+        await loadAllData();
+        showNotification('Evento removido.', 'success');
+      } else {
+        showNotification(result.error || 'Erro ao remover evento.', 'error');
+      }
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [loadAllData, showNotification]);
+
+  // ============================================
   // USER MANAGEMENT ACTIONS
   // ============================================
 
@@ -875,6 +935,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         materias,
         users,
         systemLogs,
+        eventos,
 
         filteredAulas,
         currentDate,
@@ -895,6 +956,10 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         deleteCurso,
         addMateria,
         deleteMateria,
+
+        addEvento,
+        updateEvento,
+        deleteEvento,
 
         createUser,
         updateUserStatus,
