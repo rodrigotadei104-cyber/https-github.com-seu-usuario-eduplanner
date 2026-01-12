@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { Aula, ClassStatus } from '../types';
-import { format, isSameDay, parse, differenceInMinutes, parseISO } from 'date-fns';
+import { Aula, ClassStatus, Evento } from '../types';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MapPin, User, Clock, CheckCircle, PlayCircle, Calendar, XCircle, Loader2, Trash2 } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
@@ -27,7 +27,11 @@ interface DailyViewProps {
 const START_HOUR = 5; // Start timeline at 05:00
 const HOURS = Array.from({ length: 24 - START_HOUR }, (_, i) => i + START_HOUR);
 
-interface ProcessedClass extends Aula {
+// Unified item type for layout
+interface ProcessedItem {
+    id: string;
+    type: 'aula' | 'evento';
+    origem: Aula | Evento;
     startMinutes: number;
     endMinutes: number;
     duration: number;
@@ -38,85 +42,119 @@ interface ProcessedClass extends Aula {
 
 export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit }) => {
     const { isLoading, eventos, instrutores, canManageClasses, deleteEvento } = useSchedule();
-    // 1. Calculate layout for overlapping events
-    const processedClasses = useMemo(() => {
+    // 1. Calculate layout for BOTH classes and events together
+    const processedItems = useMemo(() => {
         const getMinutes = (time: string) => {
             const [h, m] = time.split(':').map(Number);
             return h * 60 + m;
         };
 
-        // Filter for today and sort by start time, then duration (desc)
-        const dayClasses: ProcessedClass[] = aulas
-            .filter((a) => isSameDay(parseLocalDate(a.data), currentDate))
-            .map(a => ({
-                ...a,
-                startMinutes: getMinutes(a.horarioInicio),
-                endMinutes: getMinutes(a.horarioFim),
-                duration: getMinutes(a.horarioFim) - getMinutes(a.horarioInicio)
-            }))
-            .sort((a, b) => {
-                if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
-                return b.duration - a.duration;
-            });
+        const items: ProcessedItem[] = [];
 
-        // Cluster detection for overlaps
-        const clusters: ProcessedClass[][] = [];
-        let currentCluster: ProcessedClass[] = [];
+        // 1. Add Classes (Aulas)
+        aulas.forEach(aula => {
+            if (isSameDay(parseLocalDate(aula.data), currentDate)) {
+                const start = getMinutes(aula.horarioInicio);
+                const end = getMinutes(aula.horarioFim);
+                items.push({
+                    id: aula.id,
+                    type: 'aula',
+                    origem: aula,
+                    startMinutes: start,
+                    endMinutes: end,
+                    duration: end - start
+                });
+            }
+        });
+
+        // 2. Add Events (Eventos) - Using Local Date Fix
+        if (eventos) {
+            eventos.forEach(evento => {
+                const eDate = evento.data instanceof Date ? evento.data : new Date(evento.data);
+                if (
+                    eDate.getDate() === currentDate.getDate() &&
+                    eDate.getMonth() === currentDate.getMonth() &&
+                    eDate.getFullYear() === currentDate.getFullYear() &&
+                    evento.status !== 'cancelado'
+                ) {
+                    const start = getMinutes(evento.horarioInicio);
+                    const end = getMinutes(evento.horarioFim);
+                    items.push({
+                        id: evento.id,
+                        type: 'evento',
+                        origem: evento,
+                        startMinutes: start,
+                        endMinutes: end,
+                        duration: end - start
+                    });
+                }
+            });
+        }
+
+        // 3. Sort by start time, then duration (desc)
+        items.sort((a, b) => {
+            if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
+            return b.duration - a.duration;
+        });
+
+        // 4. Cluster detection for overlaps
+        const clusters: ProcessedItem[][] = [];
+        let currentCluster: ProcessedItem[] = [];
         let clusterEnd = -1;
 
-        dayClasses.forEach(event => {
+        items.forEach(item => {
             if (currentCluster.length === 0) {
-                currentCluster.push(event);
-                clusterEnd = event.endMinutes;
+                currentCluster.push(item);
+                clusterEnd = item.endMinutes;
             } else {
-                // Overlap check: if event starts before cluster ends
-                if (event.startMinutes < clusterEnd) {
-                    currentCluster.push(event);
-                    clusterEnd = Math.max(clusterEnd, event.endMinutes);
+                // Overlap check: if item starts before cluster ends
+                if (item.startMinutes < clusterEnd) {
+                    currentCluster.push(item);
+                    clusterEnd = Math.max(clusterEnd, item.endMinutes);
                 } else {
                     clusters.push(currentCluster);
-                    currentCluster = [event];
-                    clusterEnd = event.endMinutes;
+                    currentCluster = [item];
+                    clusterEnd = item.endMinutes;
                 }
             }
         });
         if (currentCluster.length > 0) clusters.push(currentCluster);
 
-        // Assign columns within clusters
-        const finalEvents: ProcessedClass[] = [];
+        // 5. Assign columns within clusters
+        const finalItems: ProcessedItem[] = [];
 
         clusters.forEach(cluster => {
-            const columns: ProcessedClass[][] = [];
-            cluster.forEach(event => {
+            const columns: ProcessedItem[][] = [];
+            cluster.forEach(item => {
                 let placed = false;
                 for (let i = 0; i < columns.length; i++) {
                     const lastInCol = columns[i][columns[i].length - 1];
-                    if (event.startMinutes >= lastInCol.endMinutes) {
-                        columns[i].push(event);
-                        event.colIndex = i;
+                    if (item.startMinutes >= lastInCol.endMinutes) {
+                        columns[i].push(item);
+                        item.colIndex = i;
                         placed = true;
                         break;
                     }
                 }
                 if (!placed) {
-                    columns.push([event]);
-                    event.colIndex = columns.length - 1;
+                    columns.push([item]);
+                    item.colIndex = columns.length - 1;
                 }
             });
 
             const totalCols = columns.length;
-            cluster.forEach(event => {
-                const colIndex = event.colIndex || 0;
-                finalEvents.push({
-                    ...event,
+            cluster.forEach(item => {
+                const colIndex = item.colIndex || 0;
+                finalItems.push({
+                    ...item,
                     leftPercent: (colIndex / totalCols) * 100,
                     widthPercent: 100 / totalCols
                 });
             });
         });
 
-        return finalEvents;
-    }, [aulas, currentDate]);
+        return finalItems;
+    }, [aulas, eventos, currentDate]);
 
     // Helper to calculate current time indicator position
     const getCurrentTimePosition = () => {
@@ -150,7 +188,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                     {format(currentDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
                 </h2>
                 <div className="text-sm text-gray-500">
-                    {processedClasses.length} aulas agendadas
+                    {processedItems.length} itens agendados
                 </div>
             </div>
 
@@ -196,91 +234,87 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                             </div>
                         )}
 
-                        {/* Events Overlay */}
-                        {eventos && eventos.filter(evento => {
-                            const eDate = evento.data instanceof Date ? evento.data : new Date(evento.data);
-                            return (
-                                eDate.getDate() === currentDate.getDate() &&
-                                eDate.getMonth() === currentDate.getMonth() &&
-                                eDate.getFullYear() === currentDate.getFullYear() &&
-                                evento.status !== 'cancelado'
-                            );
-                        }).map(evento => {
-                            const [startH, startM] = evento.horarioInicio.split(':').map(Number);
-                            const [endH, endM] = evento.horarioFim.split(':').map(Number);
-
-                            const startTotalHours = startH + startM / 60;
-                            const endTotalHours = endH + endM / 60;
-
-                            if (endTotalHours < START_HOUR) return null;
-
-                            const top = (startTotalHours - START_HOUR) * 5; // 5rem per hour
-                            const height = (endTotalHours - startTotalHours) * 5;
-
-                            return (
-                                <div
-                                    key={evento.id}
-                                    className={`absolute left-0 right-0 z-20 mx-12 rounded border-l-4 p-2 shadow-sm text-xs
-                                        ${evento.tipo === 'reuniao' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' :
-                                            evento.tipo === 'treinamento' ? 'bg-teal-50 border-teal-500 text-teal-700' :
-                                                evento.tipo === 'feedback' ? 'bg-amber-50 border-amber-500 text-amber-700' :
-                                                    'bg-gray-100 border-gray-500 text-gray-700'}
-                                    `}
-                                    style={{
-                                        top: `${top}rem`,
-                                        height: `${height}rem`,
-                                        opacity: 0.95
-                                    }}
-                                    title={`${evento.nome} (${evento.horarioInicio} - ${evento.horarioFim})`}
-                                >
-                                    <div className="flex justify-between items-start font-bold">
-                                        <span>{evento.nome}</span>
-                                        {canManageClasses() && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (confirm('Excluir evento?')) deleteEvento(evento.id);
-                                                }}
-                                                className="p-0.5 hover:bg-black/10 rounded"
-                                            >
-                                                <Trash2 size={12} />
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="capitalize opacity-90">{evento.tipo}</div>
-                                    <div className="flex gap-1 items-center opacity-75 mt-1">
-                                        <Clock size={10} /> {formatTime(evento.horarioInicio)} - {formatTime(evento.horarioFim)}
-                                    </div>
-                                    {/* Consolidated Info Row */}
-                                    <div className="flex gap-2 items-center opacity-75 mt-0.5">
-                                        {evento.sala && (
-                                            <div className="flex gap-1 items-center">
-                                                <MapPin size={10} /> <span>{evento.sala}</span>
-                                            </div>
-                                        )}
-                                        {/* Always show instructor info, default to 'Todos' */}
-                                        <div className="flex gap-1 items-center">
-                                            <User size={10} /> <span>{evento.instrutorId ? (instrutores.find(i => i.id === evento.instrutorId)?.nome || 'Todos') : 'Todos'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {/* Classes */}
-                        {processedClasses.map((aula) => {
-                            const startHours = aula.startMinutes / 60;
-                            const durationHours = aula.duration / 60;
-
+                        {/* Mixed Items (Classes and Events) */}
+                        {processedItems.map((item) => {
+                            const startHours = item.startMinutes / 60;
+                            const durationHours = item.duration / 60;
                             const top = `${(startHours - START_HOUR) * 5}rem`;
                             const height = `${durationHours * 5}rem`;
 
                             if (startHours + durationHours < START_HOUR) return null;
 
-                            const isShort = aula.duration <= 45;
-                            const isVeryShort = aula.duration <= 30;
-                            const leftPercent = aula.leftPercent || 0;
-                            const widthPercent = aula.widthPercent || 100;
+                            const leftPercent = item.leftPercent || 0;
+                            const widthPercent = item.widthPercent || 100;
+
+                            // ============================================
+                            // RENDER: EVENT CARD
+                            // ============================================
+                            if (item.type === 'evento') {
+                                const evento = item.origem as Evento;
+                                return (
+                                    <div
+                                        key={evento.id}
+                                        className={`absolute z-20 rounded border-l-4 p-2 shadow-sm text-xs transition-all
+                                            ${evento.tipo === 'reuniao' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' :
+                                                evento.tipo === 'treinamento' ? 'bg-teal-50 border-teal-500 text-teal-700' :
+                                                    evento.tipo === 'feedback' ? 'bg-amber-50 border-amber-500 text-amber-700' :
+                                                        'bg-gray-100 border-gray-500 text-gray-700'}
+                                        `}
+                                        style={{
+                                            top: `calc(${top} + 2px)`,
+                                            height: `calc(${height} - 4px)`,
+                                            // Dynamic positioning
+                                            left: `calc(${leftPercent}% + 4px)`,
+                                            width: `calc(${widthPercent}% - 8px)`,
+                                            opacity: 0.95
+                                        }}
+                                        title={`${evento.nome} (${evento.horarioInicio} - ${evento.horarioFim})`}
+                                    >
+                                        <div className="flex justify-between items-start font-bold">
+                                            <span className="line-clamp-1">{evento.nome}</span>
+                                            {canManageClasses() && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (confirm('Excluir evento?')) deleteEvento(evento.id);
+                                                    }}
+                                                    className="p-0.5 hover:bg-black/10 rounded flex-shrink-0 ml-1"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="capitalize opacity-90 line-clamp-1">{evento.tipo}</div>
+                                        {/* Hide extra info if too short */}
+                                        {durationHours >= 0.7 && (
+                                            <>
+                                                <div className="flex gap-1 items-center opacity-75 mt-1 truncate">
+                                                    <Clock size={10} className="flex-shrink-0" /> {formatTime(evento.horarioInicio)} - {formatTime(evento.horarioFim)}
+                                                </div>
+                                                {/* Consolidated Info Row */}
+                                                <div className="flex gap-2 items-center opacity-75 mt-0.5 truncate flex-wrap">
+                                                    {evento.sala && (
+                                                        <div className="flex gap-1 items-center">
+                                                            <MapPin size={10} className="flex-shrink-0" /> <span className="truncate">{evento.sala}</span>
+                                                        </div>
+                                                    )}
+                                                    {/* Always show instructor info, default to 'Todos' */}
+                                                    <div className="flex gap-1 items-center">
+                                                        <User size={10} className="flex-shrink-0" /> <span className="truncate">{evento.instrutorId ? (instrutores.find(i => i.id === evento.instrutorId)?.nome || 'Todos') : 'Todos'}</span>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            }
+
+                            // ============================================
+                            // RENDER: CLASS CARD (AULA)
+                            // ============================================
+                            const aula = item.origem as Aula;
+                            const isShort = item.duration <= 45;
+                            const isVeryShort = item.duration <= 30;
 
                             const statusConfig = getStatusConfig(aula.status);
                             const StatusIcon = statusConfig.icon;
@@ -313,7 +347,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                     {/* --- Layout for VERY SHORT events (<= 30 min) --- */}
                                     {isVeryShort ? (
                                         <div className="h-full px-2 flex items-center gap-2 text-xs">
-                                            <span className="font-mono font-bold text-gray-600">{formatTime(aula.horarioInicio)}</span>
+                                            <span className="font-mono font-bold text-gray-600 flex-shrink-0">{formatTime(aula.horarioInicio)}</span>
                                             <div className="w-px h-4 bg-gray-300 mx-1"></div>
                                             <span className="font-semibold text-gray-800 truncate flex-1">{aula.materia}</span>
                                             {/* Mini Status Icon for very short events */}
@@ -356,7 +390,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
 
                                                     <div className="flex items-center gap-1.5 text-xs text-gray-600" title="Carga horária efetiva">
                                                         <span className="font-medium text-blue-600 dark:text-blue-400">
-                                                            Carga contabilizada: {(aula.duration / (Number(aula.minutosPorHora) || 60)).toFixed(1).replace('.0', '')}h
+                                                            Carga contabilizada: {(item.duration / (Number(aula.minutosPorHora) || 60)).toFixed(1).replace('.0', '')}h
                                                         </span>
                                                     </div>
 
@@ -398,14 +432,14 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                     <p className="text-sm font-medium text-gray-500">Carregando agenda...</p>
                                 </div>
                             </div>
-                        ) : processedClasses.length === 0 && (
+                        ) : processedItems.length === 0 && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                 <div className="text-center animate-in fade-in zoom-in duration-300">
                                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
                                         <Calendar className="w-8 h-8 text-gray-300" />
                                     </div>
                                     <p className="text-gray-500 text-lg font-medium">Dia livre!</p>
-                                    <p className="text-gray-400 text-sm">Não há aulas agendadas para esta data.</p>
+                                    <p className="text-gray-400 text-sm">Não há itens agendados para esta data.</p>
                                 </div>
                             </div>
                         )}
