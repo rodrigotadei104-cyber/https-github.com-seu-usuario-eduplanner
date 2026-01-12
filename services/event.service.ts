@@ -35,7 +35,10 @@ export const eventService = {
             tenantId: e.tenant_id,
             nome: e.name,
             tipo: e.type as EventType,
-            data: new Date(e.date + 'T00:00:00'), // Ensure local date interpretation
+            data: (() => {
+                const [year, month, day] = e.date.split('-').map(Number);
+                return new Date(year, month - 1, day);
+            })(),
             horarioInicio: e.start_time.substring(0, 5),
             horarioFim: e.end_time.substring(0, 5),
             instrutorId: e.instructor_id,
