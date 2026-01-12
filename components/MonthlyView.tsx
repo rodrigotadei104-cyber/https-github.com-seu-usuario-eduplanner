@@ -81,7 +81,15 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
           // Sort by time
           dayAulas.sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
 
-          const dayEventos = eventos ? eventos.filter(e => isSameDay(parseLocalDate(e.data), day) && e.status !== 'cancelado') : [];
+          const dayEventos = eventos ? eventos.filter(e => {
+            const eDate = e.data instanceof Date ? e.data : new Date(e.data);
+            return (
+              eDate.getDate() === day.getDate() &&
+              eDate.getMonth() === day.getMonth() &&
+              eDate.getFullYear() === day.getFullYear() &&
+              e.status !== 'cancelado'
+            );
+          }) : [];
           dayEventos.sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
 
           const isCurrentMonth = isSameMonth(day, monthStart);

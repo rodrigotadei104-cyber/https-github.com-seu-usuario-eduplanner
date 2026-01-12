@@ -198,9 +198,13 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
 
                         {/* Events Overlay */}
                         {eventos && eventos.filter(evento => {
-                            const eDateStr = evento.data instanceof Date ? evento.data.toISOString().split('T')[0] : String(evento.data).split('T')[0];
-                            const cDateStr = currentDate.toISOString().split('T')[0];
-                            return eDateStr === cDateStr && evento.status !== 'cancelado';
+                            const eDate = evento.data instanceof Date ? evento.data : new Date(evento.data);
+                            return (
+                                eDate.getDate() === currentDate.getDate() &&
+                                eDate.getMonth() === currentDate.getMonth() &&
+                                eDate.getFullYear() === currentDate.getFullYear() &&
+                                evento.status !== 'cancelado'
+                            );
                         }).map(evento => {
                             const [startH, startM] = evento.horarioInicio.split(':').map(Number);
                             const [endH, endM] = evento.horarioFim.split(':').map(Number);
