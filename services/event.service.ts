@@ -23,10 +23,7 @@ export const eventService = {
     async list(): Promise<Evento[]> {
         const { data, error } = await supabase
             .from('events')
-            .select(`
-                *,
-                instrutor:instrutores(nome)
-            `)
+            .select('*')
             .order('date', { ascending: true })
             .order('start_time', { ascending: true });
 
