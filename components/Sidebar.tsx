@@ -19,7 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     // Find Tenant Name either from user profile or from the active user list if stored there
-    const tenantName = users.find(u => u.id === userProfile.id)?.tenantName || 'Minha Unidade';
+    const tenantName = users.find(u => u.id === userProfile.id)?.tenantName || 'Araraquara - SP';
 
     const isViewer = userProfile.role === 'viewer';
     const isAdmin = userProfile.role === 'admin';
