@@ -75,90 +75,92 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
         ))}
       </div>
 
-      <div className="grid grid-cols-7 flex-1 auto-rows-fr">
-        {days.map((day, dayIdx) => {
-          const dayAulas = aulas.filter(a => isSameDay(parseLocalDate(a.data), day));
-          // Sort by time
-          dayAulas.sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="grid grid-cols-7 auto-rows-min min-h-0">
+          {days.map((day, dayIdx) => {
+            const dayAulas = aulas.filter(a => isSameDay(parseLocalDate(a.data), day));
+            // Sort by time
+            dayAulas.sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
 
-          const dayEventos = eventos ? eventos.filter(e => {
-            const eDate = e.data instanceof Date ? e.data : new Date(e.data);
+            const dayEventos = eventos ? eventos.filter(e => {
+              const eDate = e.data instanceof Date ? e.data : new Date(e.data);
+              return (
+                eDate.getDate() === day.getDate() &&
+                eDate.getMonth() === day.getMonth() &&
+                eDate.getFullYear() === day.getFullYear() &&
+                e.status !== 'cancelado'
+              );
+            }) : [];
+            dayEventos.sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
+
+            const isCurrentMonth = isSameMonth(day, monthStart);
+            const isDayToday = isToday(day);
+
             return (
-              eDate.getDate() === day.getDate() &&
-              eDate.getMonth() === day.getMonth() &&
-              eDate.getFullYear() === day.getFullYear() &&
-              e.status !== 'cancelado'
-            );
-          }) : [];
-          dayEventos.sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
-
-          const isCurrentMonth = isSameMonth(day, monthStart);
-          const isDayToday = isToday(day);
-
-          return (
-            <div
-              key={day.toString()}
-              onClick={() => onSelectDate(day)}
-              className={`
+              <div
+                key={day.toString()}
+                onClick={() => onSelectDate(day)}
+                className={`
                 min-h-[120px] p-2 border-b border-r border-gray-100 relative group cursor-pointer transition-colors
                 ${!isCurrentMonth ? 'bg-gray-50/50 text-gray-400' : 'bg-white'}
                 ${isDayToday ? 'bg-blue-50/30' : 'hover:bg-gray-50'}
               `}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <span className={`
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <span className={`
                   text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full
                   ${isDayToday ? 'bg-blue-600 text-white' : 'text-gray-700'}
                 `}>
-                  {format(day, 'd')}
-                </span>
-                {dayAulas.length > 0 && (
-                  <span className="text-xs text-gray-400 font-medium">{dayAulas.length}</span>
-                )}
-              </div>
+                    {format(day, 'd')}
+                  </span>
+                  {dayAulas.length > 0 && (
+                    <span className="text-xs text-gray-400 font-medium">{dayAulas.length}</span>
+                  )}
+                </div>
 
-              <div className="space-y-1 overflow-y-auto max-h-[100px] custom-scrollbar">
-                {/* Events first */}
-                {dayEventos.map((evento) => (
-                  <div
-                    key={evento.id}
-                    className={`text-[10px] px-1.5 py-0.5 rounded truncate border-l-2 mb-0.5
+                <div className="space-y-1 overflow-y-auto max-h-[100px] custom-scrollbar">
+                  {/* Events first */}
+                  {dayEventos.map((evento) => (
+                    <div
+                      key={evento.id}
+                      className={`text-[10px] px-1.5 py-0.5 rounded truncate border-l-2 mb-0.5
                             ${evento.tipo === 'reuniao' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' :
-                        evento.tipo === 'treinamento' ? 'bg-teal-50 border-teal-500 text-teal-700' :
-                          'bg-gray-100 border-gray-500 text-gray-700'}
+                          evento.tipo === 'treinamento' ? 'bg-teal-50 border-teal-500 text-teal-700' :
+                            'bg-gray-100 border-gray-500 text-gray-700'}
                         `}
-                    title={`${evento.horarioInicio} - ${evento.nome} (${evento.tipo})${evento.instrutorId ? ` - Instrutor: ${instrutores.find(i => i.id === evento.instrutorId)?.nome}` : ''}`}
-                  >
-                    <span className="font-bold mr-1">{evento.horarioInicio}</span>
-                    {evento.nome}
-                  </div>
-                ))}
+                      title={`${evento.horarioInicio} - ${evento.nome} (${evento.tipo})${evento.instrutorId ? ` - Instrutor: ${instrutores.find(i => i.id === evento.instrutorId)?.nome}` : ''}`}
+                    >
+                      <span className="font-bold mr-1">{evento.horarioInicio}</span>
+                      {evento.nome}
+                    </div>
+                  ))}
 
-                {dayAulas.slice(0, 4 - Math.min(dayEventos.length, 2)).map((aula) => (
-                  <div
-                    key={aula.id}
-                    onClick={(e) => { e.stopPropagation(); onEditAula(aula); }}
-                    className="text-[10px] px-1.5 py-0.5 rounded truncate border-l-2 hover:opacity-80 transition"
-                    style={{
-                      backgroundColor: `${aula.cor}15`,
-                      color: '#334155', // slate-700
-                      borderLeftColor: aula.cor
-                    }}
-                    title={`${aula.horarioInicio} - ${aula.materia}`}
-                  >
-                    <span className="font-semibold mr-1">{aula.horarioInicio}</span>
-                    {aula.materia}
-                  </div>
-                ))}
-                {dayAulas.length > 4 && (
-                  <div className="text-[10px] text-gray-400 text-center pt-1">
-                    + {dayAulas.length - 4} mais
-                  </div>
-                )}
+                  {dayAulas.slice(0, 4 - Math.min(dayEventos.length, 2)).map((aula) => (
+                    <div
+                      key={aula.id}
+                      onClick={(e) => { e.stopPropagation(); onEditAula(aula); }}
+                      className="text-[10px] px-1.5 py-0.5 rounded truncate border-l-2 hover:opacity-80 transition"
+                      style={{
+                        backgroundColor: `${aula.cor}15`,
+                        color: '#334155', // slate-700
+                        borderLeftColor: aula.cor
+                      }}
+                      title={`${aula.horarioInicio} - ${aula.materia}`}
+                    >
+                      <span className="font-semibold mr-1">{aula.horarioInicio}</span>
+                      <span title={`Curso: ${aula.numeroCurso ? aula.numeroCurso + ' - ' : ''}${aula.curso}`}>{aula.materia}</span>
+                    </div>
+                  ))}
+                  {dayAulas.length > 4 && (
+                    <div className="text-[10px] text-gray-400 text-center pt-1">
+                      + {dayAulas.length - 4} mais
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

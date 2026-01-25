@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
-import { Trash2, Plus, User, BookOpen, GraduationCap, Lock, Pencil, X, Calendar } from 'lucide-react';
+import { Trash2, Plus, User, BookOpen, GraduationCap, Lock, Pencil, X, Calendar, Upload } from 'lucide-react';
 import { Instrutor, Curso, Materia, EventType, EventStatus } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
+import { ImportModal } from './ImportModal';
 
 type Tab = 'instrutores' | 'cursos' | 'materias' | 'eventos';
 
@@ -27,6 +28,8 @@ export const RegistrationView: React.FC = () => {
         action: () => { }
     });
 
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
     const [formData, setFormData] = useState({
         nome: '',
         email: '',
@@ -34,15 +37,16 @@ export const RegistrationView: React.FC = () => {
         cargaHoraria: '',
         cor: '#3b82f6',
         cursoId: '',
-        minutosPorHora: '60', // Default
+        minutosPorHora: '60',
+        numeroCurso: '',
+        status: 'agendado' as EventStatus | 'ativo',
         // Event Fields
         tipo: 'outro' as EventType,
         data: new Date().toISOString().split('T')[0],
         horarioInicio: '',
         horarioFim: '',
         instrutorId: '',
-        sala: '',
-        status: 'agendado' as EventStatus
+        sala: ''
     });
 
     // Edit State
@@ -57,13 +61,14 @@ export const RegistrationView: React.FC = () => {
             cor: '#3b82f6',
             cursoId: '',
             minutosPorHora: '60',
+            numeroCurso: '',
+            status: 'agendado',
             tipo: 'outro',
             data: new Date().toISOString().split('T')[0],
             horarioInicio: '',
             horarioFim: '',
             instrutorId: '',
-            sala: '',
-            status: 'agendado'
+            sala: ''
         });
     };
 
@@ -77,13 +82,14 @@ export const RegistrationView: React.FC = () => {
             cor: item.cor || '#3b82f6',
             cursoId: item.cursoId || '',
             minutosPorHora: String(item.minutosPorHora || (item as any).minutos_por_hora || 60),
+            numeroCurso: item.numeroCurso || '',
+            status: item.status || 'agendado',
             tipo: item.tipo || 'outro',
             data: item.data ? (item.data instanceof Date ? item.data.toISOString().split('T')[0] : item.data) : '',
             horarioInicio: item.horarioInicio || '',
             horarioFim: item.horarioFim || '',
             instrutorId: item.instrutorId || '',
-            sala: item.sala || '',
-            status: item.status || 'agendado'
+            sala: item.sala || ''
         });
         // Scroll to top to see form
         const formElement = document.querySelector('form');
@@ -104,9 +110,11 @@ export const RegistrationView: React.FC = () => {
             if (activeTab === 'cursos') {
                 await updateCurso(editingItem.id, {
                     nome: formData.nome,
-                    cargaHoraria: formData.cargaHoraria ? Number(formData.cargaHoraria) : undefined,
+                    cargaHoraria: formData.cargaHoraria,
                     cor: formData.cor,
-                    minutosPorHora: Number(formData.minutosPorHora)
+                    minutosPorHora: Number(formData.minutosPorHora),
+                    numeroCurso: formData.numeroCurso,
+                    status: formData.status as 'ativo' | 'concluido'
                 });
             } else if (activeTab === 'eventos') {
                 await updateEvento(editingItem.id, {
@@ -117,7 +125,7 @@ export const RegistrationView: React.FC = () => {
                     horario_fim: formData.horarioFim,
                     instrutor_id: formData.instrutorId || undefined,
                     sala: formData.sala,
-                    status: formData.status
+                    status: formData.status as EventStatus
                 });
             }
             // Add others if needed
@@ -134,7 +142,9 @@ export const RegistrationView: React.FC = () => {
                     nome: formData.nome,
                     cor: formData.cor,
                     cargaHoraria: formData.cargaHoraria,
-                    minutosPorHora: Number(formData.minutosPorHora)
+                    minutosPorHora: Number(formData.minutosPorHora),
+                    numeroCurso: formData.numeroCurso,
+                    status: 'ativo'
                 });
             } else if (activeTab === 'materias') {
                 if (!formData.cursoId) return;
@@ -223,248 +233,277 @@ export const RegistrationView: React.FC = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 dark:bg-slate-800 dark:border-slate-700">
                     {/* Add/Edit Form (HIDDEN for Readers) */}
                     {canManage && (
-                        <form onSubmit={handleSave} className={`mb-8 p-6 rounded-lg border ${editingItem ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20' : 'bg-gray-50 border-gray-100 dark:bg-slate-900/50 dark:border-slate-700'}`}>
-                            {editingItem && (
-                                <div className="mb-4 flex justify-between items-center text-blue-700 dark:text-blue-300">
-                                    <span className="text-sm font-semibold flex items-center gap-2">
-                                        <Pencil size={16} /> Editando {activeTab === 'cursos' ? 'Curso' : 'Item'}
-                                    </span>
-                                    <button type="button" onClick={cancelEdit} className="text-xs hover:underline flex items-center gap-1">
-                                        <X size={14} /> Cancelar
+                        <div className="mb-8">
+                            {activeTab === 'cursos' && !editingItem && (
+                                <div className="flex justify-end mb-4">
+                                    <button
+                                        onClick={() => setIsImportModalOpen(true)}
+                                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
+                                    >
+                                        <Upload size={16} />
+                                        Importar Excel / CSV
                                     </button>
                                 </div>
                             )}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                                <div className="md:col-span-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                                        Nome {activeTab === 'instrutores' ? 'do Instrutor' : activeTab === 'cursos' ? 'do Curso' : activeTab === 'eventos' ? 'do Evento' : 'da Matéria'}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                        placeholder="Digite o nome..."
-                                        value={formData.nome}
-                                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                                        required
-                                        disabled={isActionLoading}
-                                    />
-                                </div>
 
-                                {activeTab === 'instrutores' && (
-                                    <>
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Email</label>
-                                            <input
-                                                type="email"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                placeholder="email@exemplo.com"
-                                                value={formData.email}
-                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                disabled={isActionLoading}
-                                            />
-                                        </div>
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Telefone</label>
-                                            <input
-                                                type="tel"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                placeholder="(00) 00000-0000"
-                                                value={formData.telefone}
-                                                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                                                disabled={isActionLoading}
-                                            />
-                                        </div>
-                                    </>
+                            <form onSubmit={handleSave} className={`p-6 rounded-lg border ${editingItem ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20' : 'bg-gray-50 border-gray-100 dark:bg-slate-900/50 dark:border-slate-700'}`}>
+                                {editingItem && (
+                                    <div className="mb-4 flex justify-between items-center text-blue-700 dark:text-blue-300">
+                                        <span className="text-sm font-semibold flex items-center gap-2">
+                                            <Pencil size={16} /> Editando {activeTab === 'cursos' ? 'Curso' : 'Item'}
+                                        </span>
+                                        <button type="button" onClick={cancelEdit} className="text-xs hover:underline flex items-center gap-1">
+                                            <X size={14} /> Cancelar
+                                        </button>
+                                    </div>
                                 )}
-
-                                {activeTab === 'cursos' && (
-                                    <>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                    <div className="md:col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                                            Nome {activeTab === 'instrutores' ? 'do Instrutor' : activeTab === 'cursos' ? 'do Curso' : activeTab === 'eventos' ? 'do Evento' : 'da Matéria'}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                            placeholder="Digite o nome..."
+                                            value={formData.nome}
+                                            onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                                            required
+                                            disabled={isActionLoading}
+                                        />
+                                    </div>
+                                    {activeTab === 'cursos' && (
                                         <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Carga Horária</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                                                Número do Curso
+                                            </label>
                                             <input
                                                 type="text"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                placeholder="Ex: 3600h"
-                                                value={formData.cargaHoraria}
-                                                onChange={(e) => setFormData({ ...formData, cargaHoraria: e.target.value })}
+                                                placeholder="Ex: 1001"
+                                                value={formData.numeroCurso}
+                                                onChange={(e) => setFormData({ ...formData, numeroCurso: e.target.value })}
                                                 disabled={isActionLoading}
                                             />
                                         </div>
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Tipo de Hora</label>
-                                            <select
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                value={formData.minutosPorHora}
-                                                onChange={(e) => setFormData({ ...formData, minutosPorHora: e.target.value })}
-                                                disabled={isActionLoading}
-                                            >
-                                                <option value="60">60 minutos (Padrão)</option>
-                                                <option value="50">50 minutos</option>
-                                            </select>
-                                        </div>
-                                        <div className="w-full">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Cor</label>
-                                            <div className="flex gap-2 items-center h-[42px]">
+                                    )}
+
+                                    {activeTab === 'instrutores' && (
+                                        <>
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Email</label>
                                                 <input
-                                                    type="color"
-                                                    className="h-full w-full rounded cursor-pointer border border-gray-300 dark:border-slate-600 disabled:opacity-50"
-                                                    value={formData.cor}
-                                                    onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
+                                                    type="email"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    placeholder="email@exemplo.com"
+                                                    value={formData.email}
+                                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                     disabled={isActionLoading}
                                                 />
                                             </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {activeTab === 'materias' && (
-                                    <>
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Curso Vinculado</label>
-                                            <select
-                                                required
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                value={formData.cursoId}
-                                                onChange={(e) => setFormData({ ...formData, cursoId: e.target.value })}
-                                                disabled={isActionLoading}
-                                            >
-                                                <option value="">Selecione um curso...</option>
-                                                {cursos.map(c => (
-                                                    <option key={c.id} value={c.id}>{c.nome}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Carga Horária</label>
-                                            <input
-                                                type="text"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                placeholder="Ex: 60h"
-                                                value={formData.cargaHoraria}
-                                                onChange={(e) => setFormData({ ...formData, cargaHoraria: e.target.value })}
-                                                disabled={isActionLoading}
-                                            />
-                                        </div>
-                                    </>
-                                )}
-
-                                {activeTab === 'eventos' && (
-                                    <>
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Tipo</label>
-                                            <select
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                value={formData.tipo}
-                                                onChange={(e) => setFormData({ ...formData, tipo: e.target.value as EventType })}
-                                                disabled={isActionLoading}
-                                            >
-                                                <option value="reuniao">Reunião</option>
-                                                <option value="treinamento">Treinamento</option>
-                                                <option value="feedback">Feedback</option>
-                                                <option value="outro">Outro</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Data</label>
-                                            <input
-                                                type="date"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                value={formData.data}
-                                                onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                                                required
-                                                disabled={isActionLoading}
-                                            />
-                                        </div>
-
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Início</label>
-                                            <input
-                                                type="time"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                value={formData.horarioInicio}
-                                                onChange={(e) => setFormData({ ...formData, horarioInicio: e.target.value })}
-                                                required
-                                                disabled={isActionLoading}
-                                            />
-                                        </div>
-
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Fim</label>
-                                            <input
-                                                type="time"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                value={formData.horarioFim}
-                                                onChange={(e) => setFormData({ ...formData, horarioFim: e.target.value })}
-                                                required
-                                                disabled={isActionLoading}
-                                            />
-                                        </div>
-
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Instrutor (Opc)</label>
-                                            <select
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                value={formData.instrutorId}
-                                                onChange={(e) => setFormData({ ...formData, instrutorId: e.target.value })}
-                                                disabled={isActionLoading}
-                                            >
-                                                <option value="">Todos</option>
-                                                {instrutores.map(i => (
-                                                    <option key={i.id} value={i.id}>{i.nome}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Sala (Opc)</label>
-                                            <input
-                                                type="text"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                placeholder="S-01"
-                                                value={formData.sala}
-                                                onChange={(e) => setFormData({ ...formData, sala: e.target.value })}
-                                                disabled={isActionLoading}
-                                            />
-                                        </div>
-
-                                        {editingItem && (
                                             <div className="md:col-span-1">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Status</label>
-                                                <select
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                    value={formData.status}
-                                                    onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Telefone</label>
+                                                <input
+                                                    type="tel"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    placeholder="(00) 00000-0000"
+                                                    value={formData.telefone}
+                                                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                                                     disabled={isActionLoading}
-                                                >
-                                                    <option value="agendado">Agendado</option>
-                                                    <option value="concluido">Concluído</option>
-                                                    <option value="cancelado">Cancelado</option>
-                                                </select>
+                                                />
                                             </div>
-                                        )}
-                                    </>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={isActionLoading}
-                                    className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 transition-colors shadow-sm md:col-span-1 h-[42px] disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isActionLoading ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            Salvando...
-                                        </>
-                                    ) : (
-                                        <>
-                                            {editingItem ? <Pencil size={20} /> : <Plus size={20} />}
-                                            {editingItem ? 'Atualizar' : 'Adicionar'}
                                         </>
                                     )}
-                                </button>
-                            </div>
-                        </form>
+
+                                    {activeTab === 'cursos' && (
+                                        <>
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Carga Horária</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    placeholder="Ex: 3600h"
+                                                    value={formData.cargaHoraria}
+                                                    onChange={(e) => setFormData({ ...formData, cargaHoraria: e.target.value })}
+                                                    disabled={isActionLoading}
+                                                />
+                                            </div>
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Tipo de Hora</label>
+                                                <select
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    value={formData.minutosPorHora}
+                                                    onChange={(e) => setFormData({ ...formData, minutosPorHora: e.target.value })}
+                                                    disabled={isActionLoading}
+                                                >
+                                                    <option value="60">60 minutos (Padrão)</option>
+                                                    <option value="50">50 minutos</option>
+                                                </select>
+                                            </div>
+                                            <div className="w-full">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Cor</label>
+                                                <div className="flex gap-2 items-center h-[42px]">
+                                                    <input
+                                                        type="color"
+                                                        className="h-full w-full rounded cursor-pointer border border-gray-300 dark:border-slate-600 disabled:opacity-50"
+                                                        value={formData.cor}
+                                                        onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
+                                                        disabled={isActionLoading}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {activeTab === 'materias' && (
+                                        <>
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Curso Vinculado</label>
+                                                <select
+                                                    required
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    value={formData.cursoId}
+                                                    onChange={(e) => setFormData({ ...formData, cursoId: e.target.value })}
+                                                    disabled={isActionLoading}
+                                                >
+                                                    <option value="">Selecione um curso...</option>
+                                                    {cursos.map(c => (
+                                                        <option key={c.id} value={c.id}>{c.nome}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Carga Horária</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    placeholder="Ex: 60h"
+                                                    value={formData.cargaHoraria}
+                                                    onChange={(e) => setFormData({ ...formData, cargaHoraria: e.target.value })}
+                                                    disabled={isActionLoading}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {activeTab === 'eventos' && (
+                                        <>
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Tipo</label>
+                                                <select
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    value={formData.tipo}
+                                                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value as EventType })}
+                                                    disabled={isActionLoading}
+                                                >
+                                                    <option value="reuniao">Reunião</option>
+                                                    <option value="treinamento">Treinamento</option>
+                                                    <option value="feedback">Feedback</option>
+                                                    <option value="outro">Outro</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Data</label>
+                                                <input
+                                                    type="date"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    value={formData.data}
+                                                    onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                                                    required
+                                                    disabled={isActionLoading}
+                                                />
+                                            </div>
+
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Início</label>
+                                                <input
+                                                    type="time"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    value={formData.horarioInicio}
+                                                    onChange={(e) => setFormData({ ...formData, horarioInicio: e.target.value })}
+                                                    required
+                                                    disabled={isActionLoading}
+                                                />
+                                            </div>
+
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Fim</label>
+                                                <input
+                                                    type="time"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    value={formData.horarioFim}
+                                                    onChange={(e) => setFormData({ ...formData, horarioFim: e.target.value })}
+                                                    required
+                                                    disabled={isActionLoading}
+                                                />
+                                            </div>
+
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Instrutor (Opc)</label>
+                                                <select
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    value={formData.instrutorId}
+                                                    onChange={(e) => setFormData({ ...formData, instrutorId: e.target.value })}
+                                                    disabled={isActionLoading}
+                                                >
+                                                    <option value="">Todos</option>
+                                                    {instrutores.map(i => (
+                                                        <option key={i.id} value={i.id}>{i.nome}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div className="md:col-span-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Sala (Opc)</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                    placeholder="S-01"
+                                                    value={formData.sala}
+                                                    onChange={(e) => setFormData({ ...formData, sala: e.target.value })}
+                                                    disabled={isActionLoading}
+                                                />
+                                            </div>
+
+                                            {editingItem && (
+                                                <div className="md:col-span-1">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Status</label>
+                                                    <select
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                        value={formData.status}
+                                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
+                                                        disabled={isActionLoading}
+                                                    >
+                                                        <option value="agendado">Agendado</option>
+                                                        <option value="concluido">Concluído</option>
+                                                        <option value="cancelado">Cancelado</option>
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={isActionLoading}
+                                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 transition-colors shadow-sm md:col-span-1 h-[42px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isActionLoading ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Salvando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                {editingItem ? <Pencil size={20} /> : <Plus size={20} />}
+                                                {editingItem ? 'Atualizar' : 'Adicionar'}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     )}
 
                     {/* List */}
@@ -483,9 +522,11 @@ export const RegistrationView: React.FC = () => {
 
                                     {activeTab === 'cursos' && (
                                         <>
+                                            <th className="px-6 py-4">Cód.</th>
                                             <th className="px-6 py-4">Carga Horária</th>
                                             <th className="px-6 py-4">Hora Legal</th>
                                             <th className="px-6 py-4">Cor</th>
+                                            <th className="px-6 py-4">Status</th>
                                         </>
                                     )}
 
@@ -523,6 +564,7 @@ export const RegistrationView: React.FC = () => {
                                 {activeTab === 'cursos' && cursos.map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-200">{item.nome}</td>
+                                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono text-xs">{item.numeroCurso || '-'}</td>
                                         <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{item.cargaHoraria || '-'}</td>
                                         <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{item.minutosPorHora || 60} min</td>
                                         <td className="px-6 py-4">
@@ -530,6 +572,17 @@ export const RegistrationView: React.FC = () => {
                                                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.cor }}></div>
                                                 <span className="text-xs uppercase">{item.cor}</span>
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {item.status === 'concluido' ? (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                                                    Concluído
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                                    Ativo
+                                                </span>
+                                            )}
                                         </td>
 
                                         {canManage && (
@@ -558,7 +611,7 @@ export const RegistrationView: React.FC = () => {
                                             <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                                                 {curso ? (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                                                        {curso.nome}
+                                                        {curso.numeroCurso ? `${curso.numeroCurso} - ` : ''}{curso.nome}
                                                     </span>
                                                 ) : (
                                                     <span className="text-red-400 text-xs">Curso não encontrado</span>
@@ -645,16 +698,22 @@ export const RegistrationView: React.FC = () => {
                         </table>
                     </div>
                 </div>
-            </div >
+            </div>
 
             {/* Confirmation Modal Layer */}
-            < ConfirmationModal
+            <ConfirmationModal
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
                 description={confirmModal.description}
                 onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
                 onConfirm={confirmModal.action}
                 variant="danger"
+            />
+
+            {/* Import Modal */}
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
             />
         </>
     );

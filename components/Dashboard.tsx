@@ -46,7 +46,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
     );
 
     let totalMinutes = 0;
+    let totalHorasAula = 0; // NEW: Sum of cargaHorariaMateria
     const instructors = new Set<string>();
+    const uniqueCourses = new Set<string>(); // NEW: Track unique course numbers
     const statusCounts = {
       agendada: 0,
       'em-andamento': 0,
@@ -57,15 +59,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
     let activeClassesCount = 0;
 
     periodAulas.forEach(aula => {
-      // Count status safely for breakdown chart
+      // NEW: Sum hours/class by status instead of counting events
+      const horasAula = aula.cargaHorariaMateria && !isNaN(Number(aula.cargaHorariaMateria))
+        ? Number(aula.cargaHorariaMateria)
+        : 0;
+
       if (statusCounts[aula.status as keyof typeof statusCounts] !== undefined) {
-        statusCounts[aula.status as keyof typeof statusCounts]++;
+        statusCounts[aula.status as keyof typeof statusCounts] += horasAula;
       }
 
       // STRICT METRICS: Cancelled classes do NOT contribute to Headline Stats
       if (aula.status !== 'cancelada') {
         activeClassesCount++;
         instructors.add(aula.instrutor);
+
+        // NEW: Track unique course numbers (each represents an active class/turma)
+        if (aula.numeroCurso) {
+          uniqueCourses.add(String(aula.numeroCurso));
+        }
+
+        // NEW: Sum class hours from subject workload
+        if (aula.cargaHorariaMateria && !isNaN(Number(aula.cargaHorariaMateria))) {
+          totalHorasAula += Number(aula.cargaHorariaMateria);
+        }
 
         // Calculate duration - horários vêm como HH:mm ou HH:mm:ss
         const startTime = aula.horarioInicio?.substring(0, 5) || '00:00';
@@ -77,11 +93,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       }
     });
 
+
     return {
-      totalAulas: activeClassesCount,
+      totalAulas: totalHorasAula, // Always use workload sum (will be 0 if no data)
       totalHoras: Math.round(totalMinutes / 60),
       instrutoresAtivos: instructors.size,
-      aulasPorStatus: statusCounts
+      aulasPorStatus: statusCounts,
+      activeClassesCount,
+      uniqueCoursesCount: uniqueCourses.size // NEW: Return unique course count
     };
   }, [filteredAulas, currentDate]); // Re-run when currentDate changes (month navigation)
 
@@ -93,13 +112,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
   // --- 2. Chart Data (Annual) ---
   // Uses 'filteredAulas' to ensure chart updates when user searches/filters in sidebar
   const chartData = months.map(month => {
-    const count = filteredAulas.filter(a =>
+    // NEW: Sum hours/class instead of counting events
+    const monthAulas = filteredAulas.filter(a =>
       isSameMonth(parseLocalDate(a.data), month) && a.status !== 'cancelada'
-    ).length;
+    );
+
+    const totalHorasAula = monthAulas.reduce((sum, aula) => {
+      const horas = aula.cargaHorariaMateria && !isNaN(Number(aula.cargaHorariaMateria))
+        ? Number(aula.cargaHorariaMateria)
+        : 0;
+      return sum + horas;
+    }, 0);
+
     return {
       name: format(month, 'MMM', { locale: ptBR }),
       fullName: format(month, 'MMMM', { locale: ptBR }),
-      aulas: count,
+      aulas: totalHorasAula, // Now represents hours/class, not event count
       date: month
     };
   });
@@ -125,10 +153,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       return false;
     });
 
-    // Group by Instructor
+    // Group by Instructor - Sum hours/class instead of counting events
     const counts: Record<string, number> = {};
     filtered.forEach(a => {
-      counts[a.instrutor] = (counts[a.instrutor] || 0) + 1;
+      const horas = a.cargaHorariaMateria && !isNaN(Number(a.cargaHorariaMateria))
+        ? Number(a.cargaHorariaMateria)
+        : 0;
+      counts[a.instrutor] = (counts[a.instrutor] || 0) + horas;
     });
 
     // Convert to Array and Sort
@@ -231,7 +262,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
-          title="Total de Aulas"
+          title="Total de Horas/Aula"
           value={periodStats.totalAulas}
           icon={BookOpen}
           color="bg-blue-500"
@@ -280,7 +311,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
             </span>
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Comparativo: {trend.previousMonth} aulas (mês anterior) vs {trend.currentMonth} (atual).
+            Comparativo: {trend.previousMonth} horas/aula (mês anterior) vs {trend.currentMonth} (atual).
           </p>
         </div>
 
@@ -291,27 +322,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
             <span className="text-3xl font-bold text-gray-900 dark:text-white">
               ~{projection.projectedYearTotal}
             </span>
-            <span className="text-sm mb-1 text-gray-500 dark:text-gray-400">aulas</span>
+            <span className="text-sm mb-1 text-gray-500 dark:text-gray-400">horas/aula</span>
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Baseado na média de {projection.averagePerMonth} aulas/mês dos últimos 12 meses.
+            Baseado na média de {Math.round(projection.averagePerMonth)} horas/aula por mês dos últimos 12 meses.
           </p>
         </div>
 
-        {/* 3. Monthly History Chart (Mini) */}
-        <div className="lg:col-span-1 bg-white p-4 rounded-xl shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
-          <h3 className="text-sm font-medium text-gray-500 mb-2 dark:text-gray-400">Histórico (12 meses)</h3>
-          <div className="flex-1 min-h-[100px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyHistory}>
-                <Tooltip
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
-                  cursor={{ fill: '#f1f5f9' }}
-                />
-                <Bar dataKey="totalClasses" fill="#cbd5e1" radius={[2, 2, 0, 0]} activeBar={{ fill: '#3b82f6' }} />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* 3. Active Classes Card (Unique Course Numbers) */}
+        <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="text-sm font-medium text-gray-500 mb-4 dark:text-gray-400">Turmas Abertas no Mês Atual</h3>
+          <div className="flex items-end gap-2 mb-2">
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
+              {periodStats.uniqueCoursesCount || 0}
+            </span>
+            <span className="text-sm mb-1 text-gray-500 dark:text-gray-400">turmas</span>
           </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Baseado nos números de curso únicos com aulas em {formattedPeriodLabel}.
+          </p>
         </div>
       </div>
 
@@ -408,8 +437,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Aulas por Instrutor</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Total de aulas ativas (Agendadas, Em andamento e Concluídas)</p>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Hora/aula por Instrutor</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Total de horas/aula ativas (Agendadas, Em andamento e Concluídas)</p>
           </div>
 
           <div className="flex bg-gray-100 p-1 rounded-lg dark:bg-slate-700 self-start sm:self-auto">
@@ -492,7 +521,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h3 className="text-lg font-bold text-gray-800 dark:text-white">Comparativo Mensal de Instrutores</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Evolução de aulas ativas por mês em {comparisonYear}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Evolução de horas/aula ativas por mês em {comparisonYear}</p>
           </div>
           <div className="flex items-center gap-3">
             <select

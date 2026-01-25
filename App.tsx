@@ -34,6 +34,7 @@ import { aulaService } from './services/aula.service';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { TermsOfUse } from './components/TermsOfUse';
 import { AboutPage } from './components/AboutPage';
+import { DataInspector } from './components/DataInspector';
 
 const App: React.FC = () => {
     const {
@@ -60,6 +61,19 @@ const App: React.FC = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; type: 'invite' | 'recovery' }>({ isOpen: false, type: 'invite' });
     const [editingAula, setEditingAula] = useState<Aula | null>(null);
+    const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+
+    // DEBUG: Log State
+    React.useEffect(() => {
+        console.log('[DEBUG] App State:', {
+            currentDate: format(currentDate, 'yyyy-MM-dd'),
+            viewMode,
+            totalAulas: aulas.length,
+            filteredAulas: filteredAulas.length,
+            firstFiltered: filteredAulas[0],
+            filters
+        });
+    }, [currentDate, viewMode, aulas, filteredAulas, filters]);
 
 
 
@@ -374,6 +388,13 @@ const App: React.FC = () => {
                                 Hoje
                             </button>
                         )}
+
+                        {/* Hidden Debug Trigger (Triple Click Title to open?) Or just a small dot */}
+                        <button
+                            className="w-2 h-2 bg-transparent hover:bg-red-500 rounded-full"
+                            onClick={() => setIsInspectorOpen(true)}
+                            title="Debug Inspector"
+                        />
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -432,6 +453,7 @@ const App: React.FC = () => {
                 {/* View Content (Router Output) */}
                 <main className="flex-1 overflow-hidden p-4 sm:p-6 relative dark:bg-slate-900">
                     {renderContent()}
+
                 </main>
             </div>
 
@@ -444,6 +466,8 @@ const App: React.FC = () => {
                 onSave={handleSaveAula}
                 initialData={editingAula}
             />
+
+            <DataInspector isOpen={isInspectorOpen} onClose={() => setIsInspectorOpen(false)} />
 
             <SettingsModal
                 isOpen={isSettingsOpen}

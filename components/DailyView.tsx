@@ -97,63 +97,43 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
             return b.duration - a.duration;
         });
 
-        // 4. Cluster detection for overlaps
-        const clusters: ProcessedItem[][] = [];
-        let currentCluster: ProcessedItem[] = [];
-        let clusterEnd = -1;
+        // 4. Swimlane Layout Strategy (Group by Course)
+        // Identify unique columns (Lanes)
+        const getLaneKey = (item: ProcessedItem) => {
+            if (item.type === 'evento') return ' _Eventos'; // Underscore to sort first or last? Let's sort last or distinct.
+            const aula = item.origem as Aula;
+            // Key by Course Number (if exists) + Name to ensure uniqueness and fixed order
+            // Adding a prefix to ensure Aulas come before/after Events if needed.
+            return `${aula.numeroCurso || 'ZZ'} - ${aula.curso}`;
+        };
 
-        items.forEach(item => {
-            if (currentCluster.length === 0) {
-                currentCluster.push(item);
-                clusterEnd = item.endMinutes;
-            } else {
-                // Overlap check: if item starts before cluster ends
-                if (item.startMinutes < clusterEnd) {
-                    currentCluster.push(item);
-                    clusterEnd = Math.max(clusterEnd, item.endMinutes);
-                } else {
-                    clusters.push(currentCluster);
-                    currentCluster = [item];
-                    clusterEnd = item.endMinutes;
-                }
-            }
+        const uniqueLanes = Array.from(new Set(items.map(getLaneKey))).sort();
+
+        // If we have too many lanes, maybe we should warn or scroll? 
+        // For now, simple division. 
+        // If we have Events, let's put them in the last column or separate.
+        // Let's stick to simple alphanumeric sort of keys. 
+        // 'ZZ' fallback ensures courses without numbers go to end, but before Events?
+        // Wait, ' _Eventos' starts with space, so it sorts FIRST.
+        // Let's decide: Events first or last? User asked for Course Grouping.
+        // Let's put Events LAST: 'z_Eventos'
+        // But the sort above: `_Eventos` (space) -> First.
+        // Let's try putting Events First (Left) or Last (Right).
+        // Usually Schedule has "General" on left.
+
+        const totalLanes = uniqueLanes.length > 0 ? uniqueLanes.length : 1;
+
+        return items.map(item => {
+            const laneKey = getLaneKey(item);
+            const colIndex = uniqueLanes.indexOf(laneKey);
+
+            return {
+                ...item,
+                colIndex, // Store for reference
+                leftPercent: (colIndex / totalLanes) * 100,
+                widthPercent: 100 / totalLanes
+            };
         });
-        if (currentCluster.length > 0) clusters.push(currentCluster);
-
-        // 5. Assign columns within clusters
-        const finalItems: ProcessedItem[] = [];
-
-        clusters.forEach(cluster => {
-            const columns: ProcessedItem[][] = [];
-            cluster.forEach(item => {
-                let placed = false;
-                for (let i = 0; i < columns.length; i++) {
-                    const lastInCol = columns[i][columns[i].length - 1];
-                    if (item.startMinutes >= lastInCol.endMinutes) {
-                        columns[i].push(item);
-                        item.colIndex = i;
-                        placed = true;
-                        break;
-                    }
-                }
-                if (!placed) {
-                    columns.push([item]);
-                    item.colIndex = columns.length - 1;
-                }
-            });
-
-            const totalCols = columns.length;
-            cluster.forEach(item => {
-                const colIndex = item.colIndex || 0;
-                finalItems.push({
-                    ...item,
-                    leftPercent: (colIndex / totalCols) * 100,
-                    widthPercent: 100 / totalCols
-                });
-            });
-        });
-
-        return finalItems;
     }, [aulas, eventos, currentDate]);
 
     // Helper to calculate current time indicator position
@@ -335,7 +315,8 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                         // Espaçamento horizontal entre cards side-by-side
                                         left: `calc(${leftPercent}% + 4px)`,
                                         width: `calc(${widthPercent}% - 8px)`,
-                                        backgroundColor: aula.status === 'concluida' ? '#f0fdf4' : 'white',
+                                        backgroundColor: aula.status === 'concluida' ? '#f0fdf4' : (aula.cor ? `${aula.cor}15` : '#f8f9fa'), // 15 = ~8% opacity
+                                        borderLeftColor: aula.cor,
                                         boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
                                     }}
                                 >
@@ -349,7 +330,9 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                         <div className="h-full px-2 flex items-center gap-2 text-xs">
                                             <span className="font-mono font-bold text-gray-600 flex-shrink-0">{formatTime(aula.horarioInicio)}</span>
                                             <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                                            <span className="font-semibold text-gray-800 truncate flex-1">{aula.materia}</span>
+                                            <span className="font-semibold text-gray-800 truncate flex-1">
+                                                {aula.numeroCurso ? `${aula.numeroCurso} - ` : ''}{aula.materia}
+                                            </span>
                                             {/* Mini Status Icon for very short events */}
                                             <div className={`p-0.5 rounded-full ${statusConfig.bg} ${statusConfig.text}`} title={statusConfig.label}>
                                                 <StatusIcon size={12} />
@@ -362,7 +345,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                             {/* Header: Course Name & Status Badge */}
                                             <div className="flex justify-between items-start mb-1 gap-2">
                                                 <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate dark:text-gray-400" style={{ color: aula.cor }}>
-                                                    {aula.curso}
+                                                    {aula.numeroCurso ? `${aula.numeroCurso} - ` : ''}{aula.curso}
                                                 </span>
 
                                                 {/* Status Badge */}

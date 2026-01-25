@@ -5,7 +5,9 @@ export const exportAulasToCSV = (aulas: any[], fileName: string) => {
     // 1. Cabeçalho
     const headers = [
         'ID',
+        'Número', // New
         'Curso',
+        'Matéria', // New/Fixed
         'Instrutor',
         'Sala',
         'Data',
@@ -19,8 +21,9 @@ export const exportAulasToCSV = (aulas: any[], fileName: string) => {
     const rows = aulas.map(aula => {
         // Safe access to nested relations if they exist, or flat props
         const cursoNome = aula.curso?.nome || aula.curso || '';
+        const numeroCurso = aula.curso?.numero_curso || aula.numeroCurso || ''; // Get number
         const instrutorNome = aula.instrutor?.nome || aula.instrutor || '';
-        const materiaNome = aula.materia?.nome || aula.materia || ''; // Usando matéria no lugar de ID se precisar, mas o pedido pede Curso/Instrutor
+        const materiaNome = aula.materia?.nome || aula.materia || '';
 
         // Formatar datas
         const dataFormatada = aula.data ? format(new Date(aula.data + 'T00:00:00'), 'dd/MM/yyyy') : '';
@@ -28,7 +31,9 @@ export const exportAulasToCSV = (aulas: any[], fileName: string) => {
 
         return [
             aula.id,
-            `"${cursoNome}"`, // Aspas para evitar quebra com vírgulas
+            `"${numeroCurso}"`,
+            `"${cursoNome}"`,
+            `"${materiaNome}"`,
             `"${instrutorNome}"`,
             aula.sala || '',
             dataFormatada,

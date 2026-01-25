@@ -158,6 +158,8 @@ export interface CursoInput {
     carga_horaria?: number;
     cor?: string;
     minutos_por_hora?: number;
+    numero_curso?: string;
+    status?: 'ativo' | 'concluido';
 }
 
 export const cursoService = {
@@ -172,7 +174,8 @@ export const cursoService = {
         // Map database column to frontend property
         return (data || []).map((c: any) => ({
             ...c,
-            minutosPorHora: c.raw_mins || c.minutos_por_hora
+            minutosPorHora: c.raw_mins || c.minutos_por_hora,
+            numeroCurso: c.numero_curso
         }));
     },
 
@@ -190,7 +193,8 @@ export const cursoService = {
                 ...input,
                 tenant_id: tenantId,
                 cor: input.cor || '#3B82F6',
-                minutos_por_hora: input.minutos_por_hora || 60
+                minutos_por_hora: input.minutos_por_hora || 60,
+                numero_curso: input.numero_curso
             })
             .select()
             .single();
@@ -237,7 +241,8 @@ export const cursoService = {
                 nome: input.nome,
                 carga_horaria: input.carga_horaria,
                 cor: input.cor,
-                minutos_por_hora: input.minutos_por_hora
+                minutos_por_hora: input.minutos_por_hora,
+                numero_curso: input.numero_curso
             })
             .eq('id', id);
 
@@ -328,6 +333,32 @@ export const materiaService = {
         }
 
         const tenantId = tenantService.getCurrentTenantId();
+
+        // Validar Carga Horária do Curso
+        if (input.carga_horaria && input.carga_horaria > 0) {
+            const { data: curso } = await supabase
+                .from('cursos')
+                .select('carga_horaria')
+                .eq('id', input.curso_id)
+                .single();
+
+            if (curso && curso.carga_horaria) {
+                const { data: materias } = await supabase
+                    .from('materias')
+                    .select('carga_horaria')
+                    .eq('curso_id', input.curso_id);
+
+                const totalAtual = (materias || []).reduce((acc, m) => acc + (m.carga_horaria || 0), 0);
+                const novaCarga = input.carga_horaria || 0;
+
+                if (totalAtual + novaCarga > curso.carga_horaria) {
+                    return {
+                        success: false,
+                        error: `A carga horária total das matérias (${totalAtual + novaCarga}h) excede o limite do curso (${curso.carga_horaria}h).`
+                    };
+                }
+            }
+        }
 
         const { data, error } = await supabase
             .from('materias')

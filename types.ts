@@ -14,6 +14,8 @@ export interface Aula {
   cor?: string; // Hex para identificação visual
   observacoes?: string;
   minutosPorHora?: number; // Para cálculo de carga horária (50 ou 60)
+  numeroCurso?: string; // Para exibição no calendário
+  cargaHorariaMateria?: number; // Carga horária da matéria (em horas/aula)
 }
 
 export interface Instrutor {
@@ -31,6 +33,8 @@ export interface Curso {
   cargaHoraria?: string; // Ex: "40h"
   cor: string;
   minutosPorHora?: number; // 50 ou 60
+  numeroCurso?: string; // Identificador Externo
+  status: 'ativo' | 'concluido';
 }
 
 export interface Materia {
@@ -96,7 +100,7 @@ export interface SystemLog {
   userId: string;
   userName: string;
   userRole: UserRole; // Snapshot of role at time of action
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'STATUS_CHANGE' | 'LOGIN_FAIL' | 'USER_MGMT' | 'INVITE' | 'UNAUTHORIZED';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'STATUS_CHANGE' | 'LOGIN_FAIL' | 'USER_MGMT' | 'INVITE' | 'UNAUTHORIZED' | 'IMPORT';
   target: string; // "Aula: Matemática", "Usuário: João"
   details: string;
   status: 'success' | 'failure';

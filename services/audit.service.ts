@@ -11,7 +11,7 @@ export type AuditAction =
     | 'LOGIN_SUCCESS' | 'LOGIN_FAIL'
     | 'CREATE' | 'UPDATE' | 'DELETE' | 'STATUS_CHANGE' | 'CANCEL'
     | 'INVITE_SENT' | 'INVITE_ACCEPTED' | 'INVITE_RESENT'
-    | 'UNAUTHORIZED_ACCESS' | 'CROSS_TENANT_ATTEMPT';
+    | 'UNAUTHORIZED_ACCESS' | 'CROSS_TENANT_ATTEMPT' | 'IMPORT' | 'COURSE_SELECTED_BY_NUMBER';
 
 export interface AuditEntry {
     action: AuditAction;

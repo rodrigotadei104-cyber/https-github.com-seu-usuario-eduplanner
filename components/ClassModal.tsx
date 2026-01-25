@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Aula } from '../types';
-import { X, Trash2, Loader2, AlertTriangle, Check, XCircle, Lock, Info, Ban } from 'lucide-react';
+import { X, Trash2, Loader2, AlertTriangle, Check, XCircle, Lock, Info, Ban, Search } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
 import { addMinutes, format, parseISO } from 'date-fns';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -269,9 +269,78 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                 >
                   <option value="" disabled>Selecione um curso...</option>
                   {cursos.map(c => (
-                    <option key={c.id} value={c.nome}>{c.nome}</option>
+                    <option key={c.id} value={c.nome}>
+                      {c.numeroCurso ? `${c.numeroCurso} - ` : ''}{c.nome}
+                    </option>
                   ))}
                 </select>
+              </div>
+
+              {/* SEARCH BY NUMBER FIELD */}
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 dark:bg-slate-700/50 dark:border-slate-600">
+                <label className="block text-sm font-semibold text-blue-800 mb-1 dark:text-blue-300">
+                  Buscar por Número
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Digite o número do curso..."
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                    disabled={isReadOnly || isActionLoading}
+                    list="course-numbers-list"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // Try to find exact match
+                      const found = cursos.find(c => c.numeroCurso === val || (c.numeroCurso && val && c.numeroCurso.startsWith(val)));
+
+                      // If exact match on number, auto-select
+                      const exact = cursos.find(c => c.numeroCurso === val);
+                      if (exact) {
+                        handleCursoChange(exact.nome);
+                        // Log selection
+                        import('../services').then(({ auditService }) => {
+                          auditService.log({
+                            action: 'COURSE_SELECTED_BY_NUMBER',
+                            entity: 'ui_interaction',
+                            details: {
+                              type: 'COURSE_SEARCH',
+                              numero_curso: val,
+                              course_id: exact.id,
+                              target_course: exact.nome // Adding nome to details since 'target' property is not available
+                            },
+                            result: 'success'
+                          });
+                        });
+                      }
+                    }}
+                  />
+                  <datalist id="course-numbers-list">
+                    {cursos.filter(c => c.numeroCurso).map(c => (
+                      <option key={c.id} value={c.numeroCurso}>
+                        {c.nome} ({c.status})
+                      </option>
+                    ))}
+                  </datalist>
+                  <Search className="absolute right-3 top-3 text-blue-400" size={16} />
+                </div>
+                <p className="text-xs text-blue-600 mt-1 dark:text-blue-400">
+                  Digite o número para selecionar automaticamente.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Número do Curso (Confirmado)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    disabled
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 font-mono text-sm cursor-not-allowed dark:bg-slate-800 dark:border-slate-600 dark:text-gray-400"
+                    value={cursos.find(c => c.nome === formData.curso)?.numeroCurso || '—'}
+                    title="Identificador acadêmico do curso (Automático)"
+                  />
+                  <Lock size={14} className="absolute right-3 top-3 text-gray-400" />
+                </div>
               </div>
 
               <div>
@@ -452,11 +521,11 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
               </div>
             </div>
           </form>
-        </div>
-      </div>
+        </div >
+      </div >
 
       {/* Confirmation Modal Layer */}
-      <ConfirmationModal
+      < ConfirmationModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
         description={confirmModal.description}
@@ -466,57 +535,59 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
       />
 
       {/* Conflict Modal */}
-      {conflictModal.isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 dark:bg-slate-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-amber-100 rounded-full">
-                <AlertTriangle className="w-6 h-6 text-amber-600" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                {conflictModal.type === 'ROOM_CONFLICT' ? 'Conflito de Sala' : 'Conflito de Horário'}
-              </h3>
-            </div>
-
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {conflictModal.type === 'ROOM_CONFLICT'
-                ? <>A sala <strong>{conflictModal.pendingData?.sala}</strong> já está ocupada neste horário:</>
-                : <>O instrutor <strong>{conflictModal.pendingData?.instrutor}</strong> já possui aulas no mesmo horário:</>
-              }
-            </p>
-
-            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-4 space-y-2 max-h-40 overflow-y-auto">
-              {conflictModal.conflicts.map((conflict, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
-                  <span className="font-medium text-gray-800 dark:text-white">{conflict.materia}</span>
-                  <span className="text-gray-500 dark:text-gray-400">
-                    {conflict.horarioInicio} - {conflict.horarioFim}
-                  </span>
+      {
+        conflictModal.isOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 dark:bg-slate-800">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-amber-100 rounded-full">
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
                 </div>
-              ))}
-            </div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                  {conflictModal.type === 'ROOM_CONFLICT' ? 'Conflito de Sala' : 'Conflito de Horário'}
+                </h3>
+              </div>
 
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Deseja prosseguir mesmo assim?
-            </p>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {conflictModal.type === 'ROOM_CONFLICT'
+                  ? <>A sala <strong>{conflictModal.pendingData?.sala}</strong> já está ocupada neste horário:</>
+                  : <>O instrutor <strong>{conflictModal.pendingData?.instrutor}</strong> já possui aulas no mesmo horário:</>
+                }
+              </p>
 
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConflictModal({ isOpen: false, type: null, conflicts: [], pendingData: null })}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleForceProceed}
-                className="px-4 py-2 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition shadow-sm"
-              >
-                Prosseguir Mesmo Assim
-              </button>
+              <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-4 space-y-2 max-h-40 overflow-y-auto">
+                {conflictModal.conflicts.map((conflict, idx) => (
+                  <div key={idx} className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-800 dark:text-white">{conflict.materia}</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {conflict.horarioInicio} - {conflict.horarioFim}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Deseja prosseguir mesmo assim?
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConflictModal({ isOpen: false, type: null, conflicts: [], pendingData: null })}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleForceProceed}
+                  className="px-4 py-2 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition shadow-sm"
+                >
+                  Prosseguir Mesmo Assim
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   );
 };

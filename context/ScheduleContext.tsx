@@ -213,6 +213,12 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         eventService.list().catch(() => [])
       ]);
 
+      // Log for Debugging
+      if (aulasData.length > 0) {
+        console.log('[DEBUG] Raw Aulas Data 0:', aulasData[0]);
+        console.log('[DEBUG] First Aula Course:', (aulasData[0] as any).curso);
+      }
+
       // Transform to legacy format if needed
       setAulas(aulasData.map((a: any) => ({
         id: a.id,
@@ -227,7 +233,9 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         status: a.status === 'em_andamento' ? 'em-andamento' : a.status,
         observacoes: a.observacoes || '',
         cor: a.curso?.cor || '#3B82F6',
-        minutosPorHora: a.curso?.minutos_por_hora || 60
+        minutosPorHora: a.curso?.minutos_por_hora || 60,
+        numeroCurso: a.curso?.numero_curso,
+        cargaHorariaMateria: a.carga_horaria_materia
       })));
 
       setInstrutores(instrutoresData.map((i: any) => ({
@@ -244,7 +252,9 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         nome: c.nome,
         cargaHoraria: c.carga_horaria,
         cor: c.cor,
-        minutosPorHora: c.minutosPorHora || c.minutos_por_hora
+        minutosPorHora: c.minutosPorHora || c.minutos_por_hora,
+        numeroCurso: c.numeroCurso || c.numero_curso,
+        status: c.status || 'ativo'
       })));
 
       setMaterias(materiasData.map((m: any) => ({
@@ -615,7 +625,9 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       nome: data.nome,
       carga_horaria: Number(data.cargaHoraria) || undefined,
       cor: data.cor,
-      minutos_por_hora: data.minutosPorHora
+      minutos_por_hora: data.minutosPorHora,
+      numero_curso: data.numeroCurso,
+      status: data.status
     });
     if (result.success) {
       await loadAllData();
@@ -631,7 +643,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const result = await cursoService.update(id, {
         ...data,
         carga_horaria: Number(data.cargaHoraria) || undefined,
-        minutos_por_hora: data.minutosPorHora
+        minutos_por_hora: data.minutosPorHora,
+        numero_curso: data.numeroCurso
       });
       if (result.success) {
         await loadAllData();

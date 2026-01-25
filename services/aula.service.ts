@@ -60,7 +60,7 @@ export const aulaService = {
     }): Promise<unknown[]> {
         let query = supabase.from('aulas').select(
             filters?.includeRelations
-                ? `*, instrutor:instrutores(id, nome), curso:cursos(id, nome, cor, minutos_por_hora), materia:materias(id, nome)`
+                ? `*, carga_horaria_materia, instrutor:instrutores(id, nome), curso:cursos(id, nome, cor, minutos_por_hora, numero_curso), materia:materias(id, nome, carga_horaria)`
                 : '*'
         );
 
@@ -87,7 +87,7 @@ export const aulaService = {
     async getById(id: string): Promise<unknown | null> {
         const { data, error } = await supabase
             .from('aulas')
-            .select(`*, instrutor:instrutores(id, nome), curso:cursos(id, nome, cor), materia:materias(id, nome)`)
+            .select(`*, instrutor:instrutores(id, nome), curso:cursos(id, nome, cor, numero_curso), materia:materias(id, nome)`)
             .eq('id', id)
             .single();
 
@@ -237,6 +237,39 @@ export const aulaService = {
         // 2. Obter tenant do contexto
         const tenantId = tenantService.getCurrentTenantId();
 
+        // 2.1. VALIDAÇÃO DE INTEGRIDADE ACADÊMICA (Curso x Matéria)
+        // Buscar informações do Curso e Matéria para garantir consistência
+        const { data: curso } = await supabase
+            .from('cursos')
+            .select('id, numero_curso, minutos_por_hora')
+            .eq('id', input.curso_id)
+            .single();
+
+        if (!curso) return { success: false, error: 'Curso inválido.' };
+
+        const { data: materia } = await supabase
+            .from('materias')
+            .select('id, curso_id')
+            .eq('id', input.materia_id)
+            .single();
+
+        if (!materia) return { success: false, error: 'Matéria inválida.' };
+
+        // REGRA DE OURO: Matéria deve pertencer ao Curso
+        if (materia.curso_id !== input.curso_id) {
+            await auditService.log({
+                action: 'UNAUTHORIZED_ACCESS', // Using specific action or UPDATE/CREATE failure
+                entity: 'aula',
+                details: {
+                    reason: 'ACADEMIC_INCONSISTENCY',
+                    curso_id: input.curso_id,
+                    materia_curso_id: materia.curso_id
+                },
+                result: 'failure'
+            });
+            return { success: false, error: 'Inconsistência Acadêmica: A matéria selecionada não pertence ao curso informado.' };
+        }
+
         // 3. Verificar conflito de instrutor (se não forçado)
         if (!forceCreate) {
             const conflictCheck = await this.checkInstructorConflict({
@@ -329,14 +362,22 @@ export const aulaService = {
             return { success: false, error: error.message };
         }
 
-        // 5. Audit log
+        // 5. Audit log (ENHANCED with numero_curso)
         await auditService.log({
             action: 'CREATE',
             entity: 'aula',
             entityId: data.id,
-            details: { materia_id: input.materia_id, data: input.data },
+            details: {
+                materia_id: input.materia_id,
+                data: input.data,
+                curso_id: input.curso_id,
+                numero_curso: curso.numero_curso || 'N/A' // LOGGING REQUIREMENT
+            },
             result: 'success'
         });
+
+        // 6. Check Course Completion
+        await this.checkCourseCompletion(input.curso_id);
 
         return { success: true, data };
     },
@@ -499,7 +540,70 @@ export const aulaService = {
             result: 'success'
         });
 
+        // 7. Check Course Completion
+        if (existing.curso_id) {
+            await this.checkCourseCompletion(existing.curso_id);
+        }
+
         return { success: true, data: updated };
+    },
+
+    /**
+     * Verificar e atualizar conclusão de curso
+     */
+    async checkCourseCompletion(courseId: string): Promise<void> {
+        try {
+            // 1. Get Course Info
+            const { data: curso } = await supabase
+                .from('cursos')
+                .select('carga_horaria, minutos_por_hora, status')
+                .eq('id', courseId)
+                .single();
+
+            if (!curso || !curso.carga_horaria) return;
+
+            // 2. Get all valid classes
+            const { data: aulas } = await supabase
+                .from('aulas')
+                .select('horario_inicio, horario_fim')
+                .eq('curso_id', courseId)
+                .neq('status', 'cancelada');
+
+            // 3. Calc Total Hours
+            let totalMinutes = 0;
+            const minutesPerHour = curso.minutos_por_hora || 60;
+
+            aulas?.forEach(a => {
+                const [h1, m1] = a.horario_inicio.split(':').map(Number);
+                const [h2, m2] = a.horario_fim.split(':').map(Number);
+                totalMinutes += (h2 * 60 + m2) - (h1 * 60 + m1);
+            });
+
+            const totalHours = totalMinutes / minutesPerHour;
+
+            // 4. Update Status if needed
+            // Only update active -> concluido. (Requirement: "Um curso deve ser automaticamente marcado como Concluído")
+            if (totalHours >= curso.carga_horaria && curso.status !== 'concluido') {
+                await supabase
+                    .from('cursos')
+                    .update({ status: 'concluido' })
+                    .eq('id', courseId);
+
+                await auditService.log({
+                    action: 'UPDATE',
+                    entity: 'curso',
+                    entityId: courseId,
+                    details: {
+                        type: 'AUTO_COMPLETION',
+                        totalHours: Math.round(totalHours * 100) / 100,
+                        target: curso.carga_horaria
+                    },
+                    result: 'success'
+                });
+            }
+        } catch (error) {
+            console.error('Error checking course completion:', error);
+        }
     },
 
     /**
@@ -698,7 +802,7 @@ export const aulaService = {
 
     /**
      * Relatório Mensal Comparativo de Instrutores
-     * Agrupa aulas por mês e instrutor para o ano selecionado.
+     * Agrupa horas/aula por mês e instrutor para o ano selecionado.
      * Exclui canceladas.
      */
     async getInstructorMonthlyReport(year: number): Promise<{
@@ -710,7 +814,7 @@ export const aulaService = {
 
         const { data: aulas, error } = await supabase
             .from('aulas')
-            .select('data, instrutor:instrutores(nome), status')
+            .select('data, instrutor:instrutores(nome), status, carga_horaria_materia')
             .gte('data', startOfYear)
             .lte('data', endOfYear)
             .neq('status', 'cancelada');
@@ -738,7 +842,11 @@ export const aulaService = {
 
             if (monthIndex >= 0 && monthIndex <= 11) {
                 const currentCounts = instructorMap.get(nome)!;
-                currentCounts[monthIndex]++;
+                // NEW: Sum hours/class instead of counting events
+                const horas = aula.carga_horaria_materia && !isNaN(Number(aula.carga_horaria_materia))
+                    ? Number(aula.carga_horaria_materia)
+                    : 0;
+                currentCounts[monthIndex] += horas;
             }
         });
 
@@ -760,7 +868,7 @@ export const aulaService = {
     },
 
     /**
-     * Histórico Mensal de Aulas e Horas
+     * Histórico Mensal de Horas/Aula
      */
     async getMonthlyHistory(date: Date): Promise<{ totalClasses: number; totalHours: number; completed: number }[]> {
         const year = date.getFullYear();
@@ -769,7 +877,7 @@ export const aulaService = {
 
         const { data: aulas, error } = await supabase
             .from('aulas')
-            .select('data, status, horario_inicio, horario_fim, curso:cursos(minutos_por_hora)')
+            .select('data, status, carga_horaria_materia')
             .gte('data', startOfYear)
             .lte('data', endOfYear)
             .neq('status', 'cancelada');
@@ -788,19 +896,17 @@ export const aulaService = {
             const monthKey = aula.data.slice(0, 7);
             if (historyMap.has(monthKey)) {
                 const entry = historyMap.get(monthKey)!;
-                entry.totalClasses++;
+
+                // NEW: Sum hours/class from carga_horaria_materia
+                const horas = aula.carga_horaria_materia && !isNaN(Number(aula.carga_horaria_materia))
+                    ? Number(aula.carga_horaria_materia)
+                    : 0;
+
+                entry.totalClasses += horas; // Now represents hours/class, not event count
+                entry.totalHours += horas; // Keep both for compatibility
 
                 if (aula.status === 'concluida') {
-                    entry.completed++;
-                }
-
-                const [startH, startM] = aula.horario_inicio.split(':').map(Number);
-                const [endH, endM] = aula.horario_fim.split(':').map(Number);
-                const rawMinutes = (endH * 60 + endM) - (startH * 60 + startM);
-
-                if (rawMinutes > 0) {
-                    const minutesPerHour = (aula.curso as any)?.minutos_por_hora || 60;
-                    entry.totalHours += (rawMinutes / minutesPerHour);
+                    entry.completed += horas;
                 }
             }
         });
@@ -823,14 +929,15 @@ export const aulaService = {
         };
     },
 
-    async getGrowthTrend(history: { totalClasses: number }[]): Promise<{ growthRate: number; isPositive: boolean }> {
+    async getGrowthTrend(history: { totalClasses: number; totalHours: number }[]): Promise<{ growthRate: number; isPositive: boolean; currentMonth: number; previousMonth: number }> {
         const currentMonthIndex = new Date().getMonth();
-        if (currentMonthIndex === 0) return { growthRate: 0, isPositive: true };
+        if (currentMonthIndex === 0) return { growthRate: 0, isPositive: true, currentMonth: 0, previousMonth: 0 };
 
-        const current = history[currentMonthIndex].totalClasses;
-        const previous = history[currentMonthIndex - 1].totalClasses;
+        // NEW: Use totalHours (which now represents hours/class) instead of totalClasses
+        const current = history[currentMonthIndex].totalHours;
+        const previous = history[currentMonthIndex - 1].totalHours;
 
-        if (previous === 0) return { growthRate: current > 0 ? 100 : 0, isPositive: true };
+        if (previous === 0) return { growthRate: current > 0 ? 100 : 0, isPositive: true, currentMonth: Math.round(current), previousMonth: 0 };
 
         const change = current - previous;
         const rate = (change / previous) * 100;
@@ -838,8 +945,8 @@ export const aulaService = {
         return {
             growthRate: Math.abs(Math.round(rate)),
             isPositive: rate >= 0,
-            currentMonth: current,
-            previousMonth: previous
+            currentMonth: Math.round(current),
+            previousMonth: Math.round(previous)
         };
     }
 };
