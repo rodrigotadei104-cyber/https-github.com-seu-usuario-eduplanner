@@ -6,8 +6,9 @@ export const config = {
     maxDuration: 10, // Max for hobby plan
 };
 
-// Models - SIMPLE & STABLE
-const MODEL_NAME = 'gemini-1.5-flash';
+// Models - RESTORED TO USER'S PREFERRED (2.0) + STABLE FALLBACK
+const PRIMARY_MODEL = 'gemini-2.0-flash-exp';
+const FALLBACK_MODEL = 'gemini-1.5-flash-latest';
 
 // Simple mock validation
 async function validateUser(req: any) {
@@ -95,26 +96,47 @@ FORMATO JSON:
 }
 `.trim();
 
-        const model = genAI.getGenerativeModel({
-            model: MODEL_NAME,
-            generationConfig: { responseMimeType: "application/json" }
-        });
-
+        // GENERATION WITH DUAL-MODEL FALLBACK
+        const timeoutMs = 50000;
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error(`AI Timeout after 50s`)), 50000)
+            setTimeout(() => reject(new Error(`AI Timeout after ${timeoutMs}ms`)), timeoutMs)
         );
 
-        const result: any = await Promise.race([
-            model.generateContent(prompt),
-            timeoutPromise
-        ]);
+        let result: any;
+        let usedModel = PRIMARY_MODEL;
+
+        try {
+            console.log(`[Generate] Trying Primary: ${PRIMARY_MODEL}`);
+            const model = genAI.getGenerativeModel({
+                model: PRIMARY_MODEL,
+                generationConfig: { responseMimeType: "application/json" }
+            });
+            result = await Promise.race([model.generateContent(prompt), timeoutPromise]);
+        } catch (error: any) {
+            console.warn(`[Generate] Primary Failed: ${error.message}. Trying Fallback.`);
+            try {
+                usedModel = FALLBACK_MODEL;
+                const model = genAI.getGenerativeModel({
+                    model: FALLBACK_MODEL,
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+                result = await Promise.race([model.generateContent(prompt), timeoutPromise]);
+            } catch (fallbackError: any) {
+                console.error(`[Generate] All models failed.`);
+                return res.status(500).json({
+                    error: 'AI Generation Failed',
+                    details: fallbackError.message,
+                    models_tried: [PRIMARY_MODEL, FALLBACK_MODEL]
+                });
+            }
+        }
 
         const responseText = result.response.text();
         const scheduleData = JSON.parse(responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
 
         return res.status(200).json({
             schedule: scheduleData.schedule || scheduleData,
-            model_used: MODEL_NAME
+            model_used: usedModel
         });
 
     } catch (err: any) {
