@@ -235,7 +235,9 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         cor: a.curso?.cor || '#3B82F6',
         minutosPorHora: a.curso?.minutos_por_hora || 60,
         numeroCurso: a.curso?.numero_curso,
-        cargaHorariaMateria: a.carga_horaria_materia
+        cargaHorariaMateria: a.carga_horaria_materia,
+        cursoId: a.curso_id,
+        materiaId: a.materia_id
       })));
 
       setInstrutores(instrutoresData.map((i: any) => ({

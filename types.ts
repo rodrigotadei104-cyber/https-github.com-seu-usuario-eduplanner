@@ -8,7 +8,9 @@ export interface Aula {
   horarioFim: string;    // "10:00"
   instrutor: string;
   curso: string;
+  cursoId?: string; // ID do curso para buscar progresso
   materia: string;
+  materiaId?: string; // ID da matéria para buscar progresso
   sala?: string;
   status: ClassStatus;
   cor?: string; // Hex para identificação visual
@@ -42,7 +44,7 @@ export interface Materia {
   tenantId: string;
   nome: string;
   cursoId: string; // Link to Course
-  cargaHoraria?: string; // Ex: "60h"
+  cargaHoraria?: number; // Carga horária total (meta) em horas
 }
 
 export type EventType = 'reuniao' | 'treinamento' | 'feedback' | 'outro';

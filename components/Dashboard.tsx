@@ -263,17 +263,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total de Horas/Aula"
-          value={periodStats.totalAulas}
+          value={periodStats.totalAulas} // Reverted to workload sum (Horas Aula)
           icon={BookOpen}
-          color="bg-blue-500"
-          subtext={`Ativas em ${formattedPeriodLabel}`}
+          color="bg-purple-500" // Changed color distinctive
+          subtext={`Carga horária em ${formattedPeriodLabel}`}
         />
         <StatCard
-          title="Horas Lecionadas"
-          value={`${periodStats.totalHoras}h`}
-          icon={Clock}
-          color="bg-purple-500"
-          subtext={`Em ${formattedPeriodLabel}`}
+          title="Agendamentos"
+          value={periodStats.activeClassesCount} // Event count moved to second card or kept distinct
+          icon={Calendar}
+          color="bg-blue-500"
+          subtext={`Eventos em ${formattedPeriodLabel}`}
         />
         <StatCard
           title="Instrutores Ativos"
@@ -284,7 +284,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
         />
         <StatCard
           title="Conclusão"
-          value={`${periodStats.totalAulas > 0 ? Math.round((periodStats.aulasPorStatus.concluida / periodStats.totalAulas) * 100) : 0}%`}
+          value={`${periodStats.activeClassesCount > 0 ? Math.round((periodStats.aulasPorStatus.concluida / periodStats.activeClassesCount) * 100) : 0}%`}
           icon={CheckCircle}
           color="bg-teal-500"
           subtext={`${periodStats.aulasPorStatus.concluida} concluídas em ${formattedPeriodLabel}`}

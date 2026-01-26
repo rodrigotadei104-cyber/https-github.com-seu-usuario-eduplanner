@@ -23,8 +23,10 @@ import {
     Printer,
     CheckCircle,
     AlertTriangle,
+
     Info,
-    X
+    X,
+    Sparkles
 } from 'lucide-react';
 import { format, addDays, subDays, addMonths, subMonths, addYears, subYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -35,6 +37,7 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { TermsOfUse } from './components/TermsOfUse';
 import { AboutPage } from './components/AboutPage';
 import { DataInspector } from './components/DataInspector';
+import { ScheduleGenerator } from './components/ScheduleGenerator';
 
 const App: React.FC = () => {
     const {
@@ -60,8 +63,10 @@ const App: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; type: 'invite' | 'recovery' }>({ isOpen: false, type: 'invite' });
+
     const [editingAula, setEditingAula] = useState<Aula | null>(null);
     const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+    const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
 
     // DEBUG: Log State
     React.useEffect(() => {
@@ -230,6 +235,7 @@ const App: React.FC = () => {
     };
 
     const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin';
+    const showSearchBar = showNavControls && viewMode !== 'dashboard'; // Hide search in dashboard
 
     const handleExportMonth = async () => {
         if (!currentDate) return;
@@ -398,8 +404,18 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {/* AI Agent Button */}
+                        <button
+                            onClick={() => setIsGeneratorOpen(true)}
+                            className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow hover:shadow-indigo-500/30 hover:opacity-90 transition-all active:scale-95 border border-indigo-400"
+                            title="Gerar Cronograma com IA"
+                        >
+                            <Sparkles size={16} />
+                            <span className="hidden lg:inline">Agente Criador</span>
+                        </button>
+
                         {/* Search Bar */}
-                        {showNavControls && (
+                        {showSearchBar && (
                             <div className="hidden md:flex items-center bg-gray-100 rounded-lg px-3 py-2 w-64 border border-transparent focus-within:border-blue-300 focus-within:bg-white transition-all dark:bg-slate-700 dark:focus-within:bg-slate-600 dark:focus-within:border-blue-500">
                                 <Search size={18} className="text-gray-400 dark:text-gray-300" />
                                 <input
@@ -412,7 +428,7 @@ const App: React.FC = () => {
                             </div>
                         )}
 
-                        {showNavControls && (
+                        {showSearchBar && (
                             <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden dark:text-gray-300 dark:hover:bg-slate-700">
                                 <Search size={20} />
                             </button>
@@ -438,7 +454,7 @@ const App: React.FC = () => {
                             </button>
                         )}
 
-                        {showNavControls && (
+                        {showSearchBar && (
                             <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg hidden sm:block dark:text-gray-300 dark:hover:bg-slate-700">
                                 <Filter size={20} />
                             </button>
@@ -478,6 +494,11 @@ const App: React.FC = () => {
                 isOpen={passwordModal.isOpen}
                 onClose={() => setPasswordModal({ ...passwordModal, isOpen: false })}
                 type={passwordModal.type}
+            />
+
+            <ScheduleGenerator
+                isOpen={isGeneratorOpen}
+                onClose={() => setIsGeneratorOpen(false)}
             />
         </div>
     );

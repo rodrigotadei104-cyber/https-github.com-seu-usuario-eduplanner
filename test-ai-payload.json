@@ -1,0 +1,33 @@
+{
+    "courseName": "Curso de Teste",
+    "subjects": [
+        {
+            "id": "test-subject-1",
+            "nome": "Algoritmos",
+            "cargaHoraria": 20
+        },
+        {
+            "id": "test-subject-2",
+            "nome": "Banco de Dados",
+            "cargaHoraria": 30
+        },
+        {
+            "id": "test-subject-3",
+            "nome": "Cálculo",
+            "cargaHoraria": 40
+        }
+    ],
+    "startDate": "2026-02-03",
+    "timeSlot": {
+        "start": "08:00",
+        "end": "12:00"
+    },
+    "daysOfWeek": [
+        1,
+        2,
+        3,
+        4,
+        5
+    ],
+    "excludedDates": []
+}

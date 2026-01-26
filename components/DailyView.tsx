@@ -4,6 +4,7 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MapPin, User, Clock, CheckCircle, PlayCircle, Calendar, XCircle, Loader2, Trash2 } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
+import { courseService } from '../services/course.service';
 
 // Helper para parsear data sem problema de fuso horário
 const parseLocalDate = (dateStr: string | Date): Date => {
@@ -41,7 +42,7 @@ interface ProcessedItem {
 }
 
 export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit }) => {
-    const { isLoading, eventos, instrutores, canManageClasses, deleteEvento } = useSchedule();
+    const { isLoading, eventos, instrutores, canManageClasses, deleteEvento, userProfile, cursos } = useSchedule();
     // 1. Calculate layout for BOTH classes and events together
     const processedItems = useMemo(() => {
         const getMinutes = (time: string) => {
@@ -135,6 +136,58 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
             };
         });
     }, [aulas, eventos, currentDate]);
+
+    const [progressMap, setProgressMap] = React.useState<{ [key: string]: any }>({});
+
+    React.useEffect(() => {
+        const fetchProgress = async () => {
+            if (!aulas.length) return;
+
+            // Robust Tenant ID: Try userProfile first, then first aula, finally default
+            const tenantId = userProfile?.tenantId || aulas[0]?.tenantId;
+            if (!tenantId) {
+                // Should technically not happen if authorized, but safe guard
+                return;
+            }
+
+            const uniqueCourseIds = new Set<string>();
+
+            aulas.forEach(a => {
+                // Try direct ID
+                if (a.cursoId) {
+                    uniqueCourseIds.add(a.cursoId);
+                }
+                // Fallback: Try matching by Name from Context
+                else if (a.curso) {
+                    const matched = cursos.find(c => c.nome === a.curso);
+                    if (matched) uniqueCourseIds.add(matched.id);
+                }
+            });
+
+            if (uniqueCourseIds.size === 0) return;
+
+            const map: { [key: string]: any } = {};
+
+            await Promise.all(
+                Array.from(uniqueCourseIds).map(async (courseId) => {
+                    try {
+                        const progress = await courseService.getCourseProgress(courseId, tenantId);
+                        if (progress) {
+                            map[courseId] = progress;
+                        }
+                    } catch (err) {
+                        console.error(`Failed loading progress: ${courseId}`, err);
+                    }
+                })
+            );
+
+            setProgressMap(map);
+        };
+
+        fetchProgress();
+    }, [aulas, userProfile, cursos]);
+
+
 
     // Helper to calculate current time indicator position
     const getCurrentTimePosition = () => {
@@ -344,9 +397,33 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
 
                                             {/* Header: Course Name & Status Badge */}
                                             <div className="flex justify-between items-start mb-1 gap-2">
-                                                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate dark:text-gray-400" style={{ color: aula.cor }}>
-                                                    {aula.numeroCurso ? `${aula.numeroCurso} - ` : ''}{aula.curso}
-                                                </span>
+                                                <div className="flex flex-col truncate">
+                                                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate dark:text-gray-400" style={{ color: aula.cor }}>
+                                                        {aula.numeroCurso ? `${aula.numeroCurso} - ` : ''}{aula.curso}
+                                                    </span>
+
+                                                    {/* Course Progress & Completion */}
+                                                    {(() => {
+                                                        const cId = aula.cursoId || cursos.find(c => c.nome === aula.curso)?.id;
+                                                        const p = cId ? progressMap[cId] : null;
+
+                                                        if (!p) return null;
+
+                                                        return (
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                <span className="text-[10px] text-gray-500 font-medium" title="Progresso Planejado (Agendado / Total)">
+                                                                    {p.displayPlanned}
+                                                                </span>
+
+                                                                {p.isCompleted && (
+                                                                    <span className="text-[9px] font-bold text-green-600 flex items-center gap-0.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 shadow-sm animate-pulse">
+                                                                        <CheckCircle size={9} /> Carga Horária Concluída
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
 
                                                 {/* Status Badge */}
                                                 <div className={`
@@ -373,8 +450,30 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
 
                                                     <div className="flex items-center gap-1.5 text-xs text-gray-600" title="Carga horária efetiva">
                                                         <span className="font-medium text-blue-600 dark:text-blue-400">
-                                                            Carga contabilizada: {(item.duration / (Number(aula.minutosPorHora) || 60)).toFixed(1).replace('.0', '')}h
+                                                            Carga: {(item.duration / (Number(aula.minutosPorHora) || 60)).toFixed(1).replace('.0', '')}h
                                                         </span>
+
+                                                        {/* PROGRESS TRACKING */}
+                                                        {aula.cursoId && progressMap[aula.cursoId] && (
+                                                            (() => {
+                                                                const courseP = progressMap[aula.cursoId];
+                                                                const subjectP = courseP.subjects.find((s: any) => s.id === aula.materiaId);
+
+                                                                if (subjectP && subjectP.targetHours > 0) {
+                                                                    const isCompleted = subjectP.completedHours >= subjectP.targetHours;
+                                                                    return (
+                                                                        <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold border ${isCompleted
+                                                                            ? 'bg-green-100 text-green-700 border-green-200'
+                                                                            : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                                                                            }`}>
+                                                                            {subjectP.display}
+                                                                            {isCompleted ? ' ✅' : ''}
+                                                                        </span>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })()
+                                                        )}
                                                     </div>
 
                                                     <div className="flex items-center gap-4 text-xs text-gray-600">

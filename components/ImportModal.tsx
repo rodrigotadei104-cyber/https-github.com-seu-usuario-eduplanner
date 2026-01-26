@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
-import { Upload, X, AlertTriangle, CheckCircle, FileText, Loader2, XCircle, Calendar, HelpCircle } from 'lucide-react';
+import { Upload, X, AlertTriangle, CheckCircle, FileText, Loader2, XCircle, Calendar, HelpCircle, Sparkles } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
 import { processImportData, ProcessedRow, RawImportRow, normalizeDate, normalizeTime } from '../utils/importRules';
+
+// Extend ProcessedRow locally if needed or just use loose typing for AI
+interface AIInsight {
+    rowId: number;
+    severity: 'high' | 'medium' | 'low';
+    message: string;
+}
 import * as XLSX from 'xlsx';
 import { auditService } from '../services';
 
@@ -23,7 +30,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
     const [isImporting, setIsImporting] = useState(false);
     const [step, setStep] = useState<'upload' | 'preview'>('upload');
     const [stats, setStats] = useState({ success: 0, errors: 0 });
+
     const [importMode, setImportMode] = useState<'course' | 'schedule'>('course');
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiInsights, setAiInsights] = useState<Map<number, AIInsight[]>>(new Map());
 
     if (!isOpen) return null;
 
@@ -144,6 +154,46 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
             setError('Nenhum registro válido identificado. Verifique se os cabeçalhos do arquivo correspondem ao modelo (Ex: "Número do Curso", "Nome do Curso", "Disciplina").');
         } else {
             setStep('preview');
+        }
+    };
+
+    const handleAIAudit = async () => {
+        if (!preview.length) return;
+        setAiLoading(true);
+        setAiInsights(new Map());
+
+        try {
+            const response = await fetch('/api/audit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rows: preview })
+            });
+
+            if (!response.ok) {
+                if (response.status === 404) throw new Error('Serviço de IA indisponível localmente (use Vercel Dev ou Produção).');
+                throw new Error('Falha na auditoria de IA.');
+            }
+
+            const data = await response.json();
+
+            if (data.insights) {
+                const map = new Map<number, AIInsight[]>();
+                data.insights.forEach((insight: any) => {
+                    const existing = map.get(insight.rowId) || [];
+                    existing.push(insight);
+                    map.set(insight.rowId, existing);
+                });
+                setAiInsights(map);
+
+                if (data.insights.length === 0) {
+                    alert('✨ Auditoria concluída: Nenhum problema encontrado pela IA!');
+                }
+            }
+        } catch (err: any) {
+            console.error(err);
+            alert(`Erro na auditoria: ${err.message}`);
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -413,13 +463,16 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                                                     </>
                                                 )}
                                                 <td className="p-3 text-xs text-gray-500">
-                                                    {row.validationErrors.length > 0 ? (
-                                                        <span className="text-red-600">{row.validationErrors[0]}</span>
-                                                    ) : row.courseAction === 'create' ? (
-                                                        <span className="text-blue-600">Novo Curso</span>
-                                                    ) : (
-                                                        <span className="text-gray-400">Reutilizar</span>
-                                                    )}
+                                                    {row.courseAction === 'create' ? <span className="text-blue-600">Novo Curso</span> : <span className="text-gray-400">Reutilizar</span>}
+                                                    {row.validationErrors.map((e, idx) => (
+                                                        <div key={idx} className="text-red-600 mt-1 block">• {e}</div>
+                                                    ))}
+                                                    {(aiInsights.get(row.originalLine) || []).map((insight, idx) => (
+                                                        <div key={`ai-${idx}`} className={`mt-1 block text-xs flex items-start gap-1 font-medium ${insight.severity === 'high' ? 'text-red-600' : 'text-amber-600'
+                                                            }`}>
+                                                            <Sparkles size={10} className="mt-0.5 flex-shrink-0" /> {insight.message}
+                                                        </div>
+                                                    ))}
                                                 </td>
                                             </tr>
                                         ))}
@@ -438,14 +491,24 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                         Cancelar
                     </button>
                     {step === 'preview' && (
-                        <button
-                            onClick={handleImport}
-                            disabled={isImporting || preview.filter(r => r.isValid).length === 0}
-                            className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm flex items-center gap-2 disabled:opacity-50"
-                        >
-                            {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                            {isImporting ? 'Processando...' : 'Confirmar Importação'}
-                        </button>
+                        <>
+                            <button
+                                onClick={handleAIAudit}
+                                disabled={aiLoading || isImporting}
+                                className="px-4 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-2"
+                            >
+                                {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                                {aiLoading ? 'Analisando...' : 'Auditar com IA'}
+                            </button>
+                            <button
+                                onClick={handleImport}
+                                disabled={isImporting || preview.filter(r => r.isValid).length === 0}
+                                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                {isImporting ? 'Processando...' : 'Confirmar Importação'}
+                            </button>
+                        </>
                     )}
                 </div>
             </div>
