@@ -9,9 +9,9 @@ export const config = {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Models
-const PRIMARY_MODEL = 'gemini-2.0-flash'; // Faster, stable
-const FALLBACK_MODEL = 'gemini-1.5-flash';
+// Models - STABLE CONFIGURATION
+const PRIMARY_MODEL = 'gemini-1.5-flash'; // Faster, stable
+const FALLBACK_MODEL = 'gemini-1.5-pro'; // Higher reliability
 
 // Auth Helper
 async function validateUser(req: any) {

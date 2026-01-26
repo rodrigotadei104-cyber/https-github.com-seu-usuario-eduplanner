@@ -10,11 +10,10 @@ export const config = {
 // Initialize client ONCE (outside handler for reuse across invocations)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Models for Fallback Strategy
-const PRIMARY_MODEL = 'gemini-2.0-flash';
-const FALLBACK_MODEL = 'gemini-1.5-flash-8b';
-
-// Helper to validate session
+// Models - STABLE CONFIGURATION
+// Using 1.5-flash as primary (Best balance of Speed/Cost/Stability)
+const PRIMARY_MODEL = 'gemini-1.5-flash';
+const FALLBACK_MODEL = 'gemini-1.5-pro'; // Higher reliability fallbackte session
 async function validateUser(req: any) {
     const authHeader = req.headers.authorization;
     if (!authHeader) return null;
