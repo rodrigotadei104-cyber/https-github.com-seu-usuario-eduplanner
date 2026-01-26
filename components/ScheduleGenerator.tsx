@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Calendar, Clock, Sparkles, CheckCircle, ChevronRight, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
 import { aulaService } from '../services'; // Import service directly
+import { supabase } from '../lib/supabase'; // FIX: Import supabase for auth token
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -93,9 +94,21 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 90000);
 
+            // FIX: Get Session Token
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const headers: HeadersInit = {
+                'Content-Type': 'application/json'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch('/api/generate-schedule', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify(payload),
                 signal: controller.signal
             });
@@ -103,6 +116,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
             clearTimeout(timeoutId);
 
             if (!response.ok) {
+                if (response.status === 401 || response.status === 403) throw new Error('Sessão expirada. Faça login novamente.');
                 const errText = await response.text();
                 throw new Error(`Falha: ${errText}`);
             }
@@ -166,6 +180,8 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                     horario_inicio: cls.startTime,
                     horario_fim: cls.endTime,
                     status: 'agendada',
+                    // Adicionando campo faltante opcional se necessário ou cast any
+                    observacoes: cls.summary
                 } as any);
 
                 if (result.success) {
