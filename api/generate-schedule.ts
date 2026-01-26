@@ -10,10 +10,8 @@ export const config = {
 // Initialize client ONCE (outside handler for reuse across invocations)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Models - STABLE CONFIGURATION
-// Using 1.5-flash as primary (Best balance of Speed/Cost/Stability)
-const PRIMARY_MODEL = 'gemini-1.5-flash';
-const FALLBACK_MODEL = 'gemini-1.5-pro'; // Higher reliability fallbackte session
+// Models - SIMPLE & STABLE
+const MODEL_NAME = 'gemini-1.5-flash';
 async function validateUser(req: any) {
     const authHeader = req.headers.authorization;
     if (!authHeader) return null;
@@ -36,30 +34,6 @@ async function validateUser(req: any) {
 
     if (error || !user) return null;
     return user;
-}
-
-async function tryGenerateWithModel(modelName: string, prompt: string, timeoutMs: number) {
-    console.log(`Attempting generation with model: ${modelName}`);
-
-    const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-            responseMimeType: "application/json"
-        }
-    });
-
-    // Create timeout promise
-    const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`${modelName} timeout after ${timeoutMs}ms`)), timeoutMs)
-    );
-
-    // Race between generation and timeout
-    const result = await Promise.race([
-        model.generateContent(prompt),
-        timeoutPromise
-    ]);
-
-    return result;
 }
 
 export default async function handler(req: any, res: any) {
@@ -163,31 +137,34 @@ FORMATO JSON ESPERADO:
 
         console.log(`Starting generation for user ${user.id} (Tenant: ${tenantId})`);
 
-        let result: any = null;
-        let usedModel = PRIMARY_MODEL;
+        // GENERATION - SINGLE TRY (No complex fallbacks)
+        console.log(`[Generate] Starting with model: ${MODEL_NAME}`);
 
-        // --- FALLBACK STRATEGY (HOTFIX) ---
+        // Timeout handling manually since the lib doesn't support it directly in all versions
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`Timeout after 50s`)), 50000)
+        );
+
+        let result: any;
         try {
-            // Attempt 1: Primary Model (2.0 Flash)
-            result = await tryGenerateWithModel(PRIMARY_MODEL, prompt, 9000);
-            console.log(`Success with PRIMARY model: ${PRIMARY_MODEL}`);
-        } catch (primaryError: any) {
-            console.warn(`Primary model ${PRIMARY_MODEL} failed: ${primaryError.message}. Switching to fallback...`);
+            // Direct generation call
+            const model = genAI.getGenerativeModel({
+                model: MODEL_NAME,
+                generationConfig: { responseMimeType: "application/json" }
+            });
 
-            try {
-                // Attempt 2: Fallback Model (1.5 Flash 8b)
-                usedModel = FALLBACK_MODEL;
-                result = await tryGenerateWithModel(FALLBACK_MODEL, prompt, 9000);
-                console.log(`Success with FALLBACK model: ${FALLBACK_MODEL}`);
-            } catch (fallbackError: any) {
-                // Both failed
-                console.error(`All models failed. Primary: ${primaryError.message}, Fallback: ${fallbackError.message}`);
-                return res.status(503).json({
-                    error: 'AI generation failed on all models',
-                    details: fallbackError.message || 'Timeout/Unavailable',
-                    models_tried: [PRIMARY_MODEL, FALLBACK_MODEL]
-                });
-            }
+            const apiCall = model.generateContent(prompt);
+
+            result = await Promise.race([apiCall, timeoutPromise]);
+
+        } catch (error: any) {
+            console.error(`[Generate] Error:`, error);
+            // Return the RAW error so we know exactly what happened, no swapping models
+            return res.status(500).json({
+                error: 'AI Generation Failed',
+                details: error.message,
+                model_used: MODEL_NAME
+            });
         }
         // ----------------------------------
 
@@ -210,7 +187,11 @@ FORMATO JSON ESPERADO:
         }
 
         // Return immediately
-        return res.status(200).json(scheduleData);
+        return res.status(200).json({
+            schedule: scheduleData,
+            model_used: MODEL_NAME,
+            tenant_id: tenantId
+        });
 
     } catch (error: any) {
         console.error('Handler Error:', error);
@@ -220,3 +201,4 @@ FORMATO JSON ESPERADO:
         });
     }
 }
+```
