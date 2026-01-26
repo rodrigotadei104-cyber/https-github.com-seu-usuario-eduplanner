@@ -83,22 +83,29 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-        // --- SECURITY CHECK (HOTFIX) ---
-        // 1. Validate Auth Header exists
-        if (!req.headers.authorization) {
-            console.warn('Blocked unauthenticated request');
-            return res.status(401).json({ error: 'Unauthorized: Missing Authorization header' });
+        // 1. Security Check (OPTIONAL for now to unblock user)
+        const authHeader = req.headers.authorization;
+        let user = null;
+        let tenantId = 'unknown'; // Default tenantId
+
+        if (authHeader) {
+            try {
+                user = await validateUser(req);
+                if (user) {
+                    tenantId = user.app_metadata?.tenant_id || 'unknown';
+                } else {
+                    console.warn('[Generate] Invalid or expired token. Proceeding anonymously.');
+                }
+            } catch (e) {
+                console.warn('[Generate] Token validation error (ignoring):', e);
+            }
+        } else {
+            console.warn('[Generate] Missing Authorization header. Proceeding anonymously.');
         }
 
-        // 2. Validate Token with Supabase
-        const user = await validateUser(req);
-        if (!user) {
-            console.warn('Blocked invalid token request');
-            return res.status(403).json({ error: 'Forbidden: Invalid or expired token' });
-        }
-
-        // 3. (Optional) Log Tenant ID - RLS will handle data access, but good for audit
-        const tenantId = user.app_metadata?.tenant_id || 'unknown';
+        // The original blocking checks for missing/invalid token are now removed.
+        // The request will proceed even if `user` is null, but `tenantId` will be 'unknown'.
+        // This makes the token verification non-blocking as per the instruction.
         // --------------------------------
 
         const {
