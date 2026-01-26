@@ -1,49 +1,12 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-
-// Node.js runtime with IAD1 region (consistent with generate-schedule)
+// Node.js runtime with IAD1 region
 export const config = {
     maxDuration: 10,
 };
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
-// Models - STABLE CONFIGURATION
-const PRIMARY_MODEL = 'gemini-1.5-flash'; // Faster, stable
-const FALLBACK_MODEL = 'gemini-1.5-pro'; // Higher reliability
-
-// Auth Helper
-// Simple mock validation to avoid external dependencies in Serverless Function
-async function validateUser(req: any) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return null;
-
-    // Just decode the JWT locally if possible or accept blindly to restore uptime
-    // For now, we return a mock user to bypass the crash. 
-    // Security will be handled by RLS on the frontend/database layer, not here.
-    return { id: 'restored_user', app_metadata: { tenant_id: 'default' } };
-}
-
-async function tryGenerateWithModel(modelName: string, prompt: string, timeoutMs: number) {
-    console.log(`[Audit] Attempting with model: ${modelName}`);
-
-    const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: { responseMimeType: "application/json" }
-    });
-
-    const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`${modelName} timeout after ${timeoutMs}ms`)), timeoutMs)
-    );
-
-    const result = await Promise.race([
-        model.generateContent(prompt),
-        timeoutPromise
-    ]);
-
-    return result;
-}
+const MODEL_NAME = 'gemini-1.5-flash';
 
 export default async function handler(req: any, res: any) {
     // CORS
@@ -57,38 +20,23 @@ export default async function handler(req: any, res: any) {
         return;
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
     try {
-        // 1. Security Check (Optional/Warning Mode due to local dev issues)
-        const authHeader = req.headers.authorization;
-        let user = null;
-
-        if (authHeader) {
-            try {
-                user = await validateUser(req);
-            } catch (e) {
-                console.warn('[Audit] Token validation failed, proceeding as anonymous:', e);
-            }
-        } else {
-            console.warn('[Audit] No auth header present. Proceeding anonymously to prevent blocking.');
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        /* 
-        // BLOCKING CHECK REMOVED TEMPORARILY
-        if (!user) {
-            // Checking for demo flag or other bypass if needed in future
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ error: 'GEMINI_API_KEY missing' });
         }
-        */
 
+        const genAI = new GoogleGenerativeAI(apiKey);
         const { rows } = req.body;
+
         if (!rows || !Array.isArray(rows)) {
             return res.status(400).json({ error: 'Invalid payload: rows array required' });
         }
 
-        // Optimization: Limit rows to analyze to avoid huge prompts (Process first 50 rows max for audit)
         const rowsToAnalyze = rows.slice(0, 50).map((r: any) => ({
             id: r.originalLine,
             curso: r.numeroCurso || r.nomeCurso,
@@ -101,60 +49,36 @@ export default async function handler(req: any, res: any) {
 
         const prompt = `
             Você é um Auditor Especialista em Cronogramas Educacionais.
-            Analise a lista de aulas abaixo (importadas de um Excel) e identifique erros de lógica, conflitos ou inconsistências.
+            Analise a lista de aulas abaixo:
+            ${JSON.stringify(rowsToAnalyze)}
             
-            Regras de Auditoria:
-            1. Horários: O fim deve ser após o início. A carga horária deve fazer sentido (não mais que 10h/dia).
-            2. Conflitos: O mesmo instrutor não pode estar em dois lugares ao mesmo tempo.
-            3. Datas: Verifique datas passadas muito antigas ou datas futuras improváveis.
-            4. Duplicatas: Aulas idênticas no mesmo dia/horário.
-            
-            Retorne APENAS JSON válido, sem markdown:
+            Retorne APENAS JSON:
             {
                 "insights": [
-                    { "rowId": number, "severity": "high" | "medium" | "low", "message": "Texto curto do erro" }
+                    { "rowId": number, "severity": "high" | "medium" | "low", "message": "Texto" }
                 ]
             }
-            Se não houver erros, retorne { "insights": [] }.
+        `.trim();
 
-            Dados:
-            ${JSON.stringify(rowsToAnalyze)}
-        `;
+        const model = genAI.getGenerativeModel({
+            model: MODEL_NAME,
+            generationConfig: { responseMimeType: "application/json" }
+        });
 
-        let result: any = null;
-        let usedModel = PRIMARY_MODEL;
-
-        try {
-            // Attempt 1
-            result = await tryGenerateWithModel(PRIMARY_MODEL, prompt, 9000);
-        } catch (error: any) {
-            console.warn(`[Audit] Primary failed: ${error.message}. Retrying...`);
-            try {
-                // Attempt 2
-                usedModel = FALLBACK_MODEL;
-                result = await tryGenerateWithModel(FALLBACK_MODEL, prompt, 9000);
-            } catch (fallbackError: any) {
-                return res.status(503).json({
-                    error: 'Audit service unavailable',
-                    details: fallbackError.message
-                });
-            }
-        }
-
+        const result: any = await model.generateContent(prompt);
         const responseText = result.response.text();
-        const cleanText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const parsed = JSON.parse(responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
 
-        let parsed;
-        try {
-            parsed = JSON.parse(cleanText);
-        } catch (e) {
-            parsed = { insights: [], error: 'Failed to parse AI response' };
-        }
-
-        return res.status(200).json({ ...parsed, model_used: usedModel });
+        return res.status(200).json({
+            ...parsed,
+            model_used: MODEL_NAME
+        });
 
     } catch (error: any) {
-        console.error('[Audit] Handler Error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('[Audit Error]:', error);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            details: error.message || String(error)
+        });
     }
 }

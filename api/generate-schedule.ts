@@ -1,26 +1,18 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-
 // Node.js runtime with IAD1 region (via vercel.json)
 export const config = {
     maxDuration: 10, // Max for hobby plan
 };
 
-// Initialize client ONCE (outside handler for reuse across invocations)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
 // Models - SIMPLE & STABLE
 const MODEL_NAME = 'gemini-1.5-flash';
 
-// Simple mock validation to avoid external dependencies in Serverless Function
+// Simple mock validation
 async function validateUser(req: any) {
     const authHeader = req.headers.authorization;
     if (!authHeader) return null;
-
-    // Just decode the JWT locally if possible or accept blindly to restore uptime
-    // For now, we return a mock user to bypass the crash. 
-    // Security will be handled by RLS on the frontend/database layer, not here.
     return { id: 'restored_user', app_metadata: { tenant_id: 'default' } };
 }
 
@@ -39,35 +31,17 @@ export default async function handler(req: any, res: any) {
         return;
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
     try {
-        // 1. Security Check (OPTIONAL for now to unblock user)
-        const authHeader = req.headers.authorization;
-        let user = null;
-        let tenantId = 'unknown'; // Default tenantId
-
-        if (authHeader) {
-            try {
-                user = await validateUser(req);
-                if (user) {
-                    tenantId = user.app_metadata?.tenant_id || 'unknown';
-                } else {
-                    console.warn('[Generate] Invalid or expired token. Proceeding anonymously.');
-                }
-            } catch (e) {
-                console.warn('[Generate] Token validation error (ignoring):', e);
-            }
-        } else {
-            console.warn('[Generate] Missing Authorization header. Proceeding anonymously.');
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        // The original blocking checks for missing/invalid token are now removed.
-        // The request will proceed even if `user` is null, but `tenantId` will be 'unknown'.
-        // This makes the token verification non-blocking as per the instruction.
-        // --------------------------------
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ error: 'GEMINI_API_KEY is not defined' });
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
 
         const {
             courseName,
@@ -76,15 +50,14 @@ export default async function handler(req: any, res: any) {
             timeSlot,
             daysOfWeek,
             excludedDates,
-            breakDuration = 60, // Default 60 mins
-            guidelines = ''     // Optional guidelines
+            breakDuration = 60,
+            guidelines = ''
         } = req.body;
 
-        if (!process.env.GEMINI_API_KEY) {
-            return res.status(500).json({ error: 'API Key missing in environment' });
+        if (!courseName || !subjects || !timeSlot) {
+            return res.status(400).json({ error: 'Missing required course parameters' });
         }
 
-        // Prompt otimizado para garantir geração (MANTIDO INTACTO)
         const prompt = `
 Você é um gerador de cronogramas escolares. TAREFA: Criar cronograma de aulas.
 
@@ -99,94 +72,56 @@ Intervalo de Almoço/Descanso: ${breakDuration} minutos (não agende aulas neste
 MATÉRIAS E CARGAS HORÁRIAS:
 ${subjects.map((s: any) => `- ${s.nome}: ${s.cargaHoraria} horas`).join('\n')}
 
-DIRETRIZES DO USUÁRIO (Rígidas):
-${guidelines || 'Nenhuma diretriz específica. Siga a ordem pedagógica padrão.'}
+DIRETRIZES DO USUÁRIO:
+${guidelines || 'Siga a ordem pedagógica padrão.'}
 
 REGRAS:
-1. Distribua TODA a carga horária das matérias.
-2. Cada aula deve ter duração compatível com o horário (${timeSlot.start}-${timeSlot.end}).
-3. Respeite o intervalo de ${breakDuration} minutos (subtraia do tempo útil ou divida os turnos).
-4. Siga as DIRETRIZES DO USUÁRIO acima.
-5. RETORNE APENAS JSON VÁLIDO. Sem markdown.
+1. Distribua TODA a carga horária.
+2. Cada aula deve ter duração compatível com o horário.
+3. Respeite o intervalo de ${breakDuration} minutos.
+4. RETORNE APENAS JSON VÁLIDO.
 
-FORMATO JSON ESPERADO:
+FORMATO JSON:
 {
   "schedule": [
     {
       "date": "YYYY-MM-DD",
       "startTime": "HH:MM",
       "endTime": "HH:MM",
-      "subjectId": "ID_DA_MATERIA_SE_HOUVER_OU_NOME",
-      "subjectName": "Nome da Matéria"
+      "subjectId": "ID",
+      "subjectName": "NOME"
     }
   ]
 }
-        `.trim();
+`.trim();
 
-        console.log(`Starting generation for user ${user.id} (Tenant: ${tenantId})`);
-
-        // GENERATION - SINGLE TRY (No complex fallbacks)
-        console.log(`[Generate] Starting with model: ${MODEL_NAME}`);
-
-        // Timeout handling manually since the lib doesn't support it directly in all versions
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error(`Timeout after 50s`)), 50000)
-        );
-
-        let result: any;
-        try {
-            // Direct generation call
-            const model = genAI.getGenerativeModel({
-                model: MODEL_NAME,
-                generationConfig: { responseMimeType: "application/json" }
-            });
-
-            const apiCall = model.generateContent(prompt);
-
-            result = await Promise.race([apiCall, timeoutPromise]);
-
-        } catch (error: any) {
-            console.error(`[Generate] Error:`, error);
-            // Return the RAW error so we know exactly what happened, no swapping models
-            return res.status(500).json({
-                error: 'AI Generation Failed',
-                details: error.message,
-                model_used: MODEL_NAME
-            });
-        }
-        // ----------------------------------
-
-        // Extract and parse response
-        const responseText = result.response.text();
-
-        // Try to parse JSON (Gemini sometimes wraps in markdown)
-        let scheduleData;
-        try {
-            // Remove markdown code blocks if present
-            const cleanText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            scheduleData = JSON.parse(cleanText);
-        } catch (parseErr) {
-            console.error('JSON parse error:', parseErr);
-            return res.status(500).json({
-                error: 'Invalid JSON from AI',
-                details: responseText.substring(0, 500),
-                model_used: usedModel
-            });
-        }
-
-        // Return immediately
-        return res.status(200).json({
-            schedule: scheduleData,
-            model_used: MODEL_NAME,
-            tenant_id: tenantId
+        const model = genAI.getGenerativeModel({
+            model: MODEL_NAME,
+            generationConfig: { responseMimeType: "application/json" }
         });
 
-    } catch (error: any) {
-        console.error('Handler Error:', error);
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`AI Timeout after 50s`)), 50000)
+        );
+
+        const result: any = await Promise.race([
+            model.generateContent(prompt),
+            timeoutPromise
+        ]);
+
+        const responseText = result.response.text();
+        const scheduleData = JSON.parse(responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
+
+        return res.status(200).json({
+            schedule: scheduleData.schedule || scheduleData,
+            model_used: MODEL_NAME
+        });
+
+    } catch (err: any) {
+        console.error('[API Error]:', err);
         return res.status(500).json({
-            error: error.message || 'Unknown error',
-            details: String(error)
+            error: 'Internal Server Error',
+            details: err.message || String(err)
         });
     }
 }
-```
