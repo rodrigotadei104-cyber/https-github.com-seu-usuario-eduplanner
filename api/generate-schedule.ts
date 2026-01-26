@@ -1,6 +1,6 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createClient } from '@supabase/supabase-js';
+
 
 // Node.js runtime with IAD1 region (via vercel.json)
 export const config = {
