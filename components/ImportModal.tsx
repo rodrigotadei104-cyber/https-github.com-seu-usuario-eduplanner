@@ -11,6 +11,7 @@ interface AIInsight {
 }
 import * as XLSX from 'xlsx';
 import { auditService } from '../services';
+import { supabase } from '../lib/supabase';
 
 interface ImportModalProps {
     isOpen: boolean;
@@ -163,13 +164,25 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
         setAiInsights(new Map());
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const headers: HeadersInit = {
+                'Content-Type': 'application/json'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch('/api/audit', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ rows: preview })
             });
 
             if (!response.ok) {
+                if (response.status === 401 || response.status === 403) throw new Error('Sessão expirada. Faça login novamente.');
                 if (response.status === 404) throw new Error('Serviço de IA indisponível localmente (use Vercel Dev ou Produção).');
                 throw new Error('Falha na auditoria de IA.');
             }
