@@ -151,9 +151,6 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
                         <span>{aula.horarioInicio}</span>
                         <span className="truncate">{aula.instrutor || 'Não atribuído'}</span>
                       </div>
-                      <div className="text-[9px] opacity-90 truncate leading-tight mt-px">
-                        <span title={`Curso: ${aula.numeroCurso ? aula.numeroCurso + ' - ' : ''}${aula.curso}`}>{aula.materia}</span>
-                      </div>
                     </div>
                   ))}
                   {dayAulas.length > 4 && (
@@ -167,6 +164,6 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
           })}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
