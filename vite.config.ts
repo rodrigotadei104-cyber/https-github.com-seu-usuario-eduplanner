@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      // Proxy removed - testing local optimized code
     },
     plugins: [react()],
     define: {
@@ -17,24 +18,6 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-      }
-    },
-    build: {
-      rollupOptions: {
-        // Externalize CDN-loaded dependencies (served via importmap in index.html)
-        // This prevents Vite from bundling them, avoiding dual-instance conflicts
-        external: [
-          'react',
-          'react/jsx-runtime',
-          'react/jsx-dev-runtime',
-          'react-dom',
-          'react-dom/client',
-          'date-fns',
-          'date-fns/locale',
-          'lucide-react',
-          'recharts',
-          '@supabase/supabase-js'
-        ]
       }
     }
   };
