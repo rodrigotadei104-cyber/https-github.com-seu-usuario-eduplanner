@@ -212,12 +212,14 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
   };
 
   const handleChange = (field: keyof Aula, value: any) => {
-    if (isReadOnly) return;
+    // CORRECTION: Allow editing if it's a concluded class (unless viewer)
+    // isReadOnly is true for concluded, so we must explicitly allow concluded.
+    if (isViewer || (isReadOnly && !isConcluded)) return;
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleCursoChange = (nomeCurso: string) => {
-    if (isReadOnly) return;
+    if (isReadOnly) return; // Course change strictly disabled for concluded/cancelled
     const selectedCurso = cursos.find(c => c.nome === nomeCurso);
     setFormData(prev => ({
       ...prev,
@@ -230,7 +232,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isReadOnly) return;
+    if (isReadOnly) return; // Date change strictly disabled for concluded/cancelled
     const val = e.target.value;
     if (!val) return;
     const [y, m, d] = val.split('-').map(Number);
