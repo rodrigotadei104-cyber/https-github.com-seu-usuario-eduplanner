@@ -63,12 +63,19 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
 
   // State Logic
   const isFinalState = initialData?.status === 'concluida' || initialData?.status === 'cancelada';
+  const isConcluded = initialData?.status === 'concluida';
 
   // Read Only if Viewer OR Final State
   const isReadOnly = isViewer || (!!initialData && isFinalState);
 
-  // Can Save (Edit/Create): Admin or Editor, unless readOnly
-  const canSave = !isReadOnly;
+  // Can Save (Edit/Create): Admin or Editor, unless readOnly (but allow editing concluded if not viewer)
+  const canSave = !isViewer && (!isReadOnly || isConcluded);
+
+  // Helper for inputs that should be editable even when concluded
+  // If concluded, we want to allow editing (so not locked).
+  // If readOnly is true (due to final state) AND it IS concluded -> Allow (Not Locked)
+  // If readOnly is true AND NOT concluded (e.g. cancelled or viewer) -> Locked.
+  const isLocked = isViewer || (isReadOnly && !isConcluded);
 
   // Can Cancel: Only Admin, if not already cancelled/concluded
   const canCancel = isAdmin && !!initialData && !isFinalState;
@@ -375,7 +382,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                 </div>
                 <select
                   required
-                  disabled={isReadOnly || isActionLoading}
+                  disabled={isLocked || isActionLoading}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white disabled:opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:disabled:bg-slate-800"
                   value={formData.instrutor || ''}
                   onChange={(e) => handleChange('instrutor', e.target.value)}
@@ -452,7 +459,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Observações</label>
               <textarea
-                disabled={isReadOnly || isActionLoading}
+                disabled={isLocked || isActionLoading}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:disabled:bg-slate-800"
                 rows={3}
                 value={formData.observacoes || ''}
@@ -528,11 +535,11 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
               </div>
             </div>
           </form>
-        </div >
-      </div >
+        </div>
+      </div>
 
       {/* Confirmation Modal Layer */}
-      < ConfirmationModal
+      <ConfirmationModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
         description={confirmModal.description}
