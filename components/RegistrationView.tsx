@@ -330,15 +330,19 @@ export const RegistrationView: React.FC = () => {
                                             </div>
                                             <div className="md:col-span-1">
                                                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Tipo de Hora</label>
-                                                <select
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                    value={formData.minutosPorHora}
-                                                    onChange={(e) => setFormData({ ...formData, minutosPorHora: e.target.value })}
-                                                    disabled={isActionLoading}
-                                                >
-                                                    <option value="60">60 minutos (Padrão)</option>
-                                                    <option value="50">50 minutos</option>
-                                                </select>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        min="30"
+                                                        step="1"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                        placeholder="Ex: 60"
+                                                        value={formData.minutosPorHora}
+                                                        onChange={(e) => setFormData({ ...formData, minutosPorHora: e.target.value })}
+                                                        disabled={isActionLoading}
+                                                    />
+                                                    <span className="absolute right-8 top-2.5 text-xs text-gray-500 dark:text-gray-400 pointer-events-none">minutos</span>
+                                                </div>
                                             </div>
                                             <div className="w-full">
                                                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Cor</label>

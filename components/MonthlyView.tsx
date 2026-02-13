@@ -145,10 +145,15 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
                         color: '#334155', // slate-700
                         borderLeftColor: aula.cor
                       }}
-                      title={`${aula.horarioInicio} - ${aula.materia}`}
+                      title={`${aula.horarioInicio} - ${aula.instrutor || 'Não atribuído'} - ${aula.materia}`}
                     >
-                      <span className="font-semibold mr-1">{aula.horarioInicio}</span>
-                      <span title={`Curso: ${aula.numeroCurso ? aula.numeroCurso + ' - ' : ''}${aula.curso}`}>{aula.materia}</span>
+                      <div className="flex items-center gap-1 font-semibold leading-tight">
+                        <span>{aula.horarioInicio}</span>
+                        <span className="truncate">{aula.instrutor || 'Não atribuído'}</span>
+                      </div>
+                      <div className="text-[9px] opacity-90 truncate leading-tight mt-px">
+                        <span title={`Curso: ${aula.numeroCurso ? aula.numeroCurso + ' - ' : ''}${aula.curso}`}>{aula.materia}</span>
+                      </div>
                     </div>
                   ))}
                   {dayAulas.length > 4 && (
