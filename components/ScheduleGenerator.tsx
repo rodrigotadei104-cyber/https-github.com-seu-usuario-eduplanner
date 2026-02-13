@@ -4,7 +4,7 @@ import { X, Calendar, Clock, Sparkles, CheckCircle, ChevronRight, Loader2, Alert
 import { useSchedule } from '../context/ScheduleContext';
 import { aulaService } from '../services'; // Import service directly
 import { supabase } from '../lib/supabase'; // FIX: Import supabase for auth token
-import { format, addDays } from 'date-fns';
+import { format, addDays, parseISO, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface ScheduleGeneratorProps {
@@ -22,28 +22,37 @@ interface GeneratedClass {
 }
 
 export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, onClose }) => {
-    const { cursos, materias, instrutores } = useSchedule();
+    const { cursos, materias, instrutores, refreshData, setCurrentDate } = useSchedule();
+
+
+
 
     // State
     const [step, setStep] = useState<'config' | 'generating' | 'preview'>('config');
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [selectedInstructorId, setSelectedInstructorId] = useState(''); // Default instructor
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [startTime, setStartTime] = useState('08:00');
-    const [endTime, setEndTime] = useState('17:00');
-    const [breakDuration, setBreakDuration] = useState('60'); // New: Break duration in mins
+
+    // Split Shift Logic
+    const [shift1Start, setShift1Start] = useState('08:00');
+    const [shift1End, setShift1End] = useState('12:00');
+    const [shift2Start, setShift2Start] = useState('13:00');
+    const [shift2End, setShift2End] = useState('17:00');
+
     const [guidelines, setGuidelines] = useState(''); // New: Guidelines text
     const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
+    const [targetCourseNumber, setTargetCourseNumber] = useState(''); // NEW: Mandatory Course Number
+    const [selectedRoom, setSelectedRoom] = useState(''); // NEW: Default Room
 
     // Augmented schedule item with local override ability
     const [generatedSchedule, setGeneratedSchedule] = useState<(GeneratedClass & { assignedInstructorId?: string })[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Filter courses that have subjects
-    const viableCourses = useMemo(() => {
-        return cursos.filter(c => materias.some(m => m.cursoId === c.id));
-    }, [cursos, materias]);
+    // Use 'cursos' directly instead of filtering. Filter logic moved to validation.
+    // const viableCourses = useMemo(() => {
+    //    return cursos.filter(c => materias.some(m => m.cursoId === c.id));
+    // }, [cursos, materias]);
 
     const activeSubjects = useMemo(() => {
         if (!selectedCourseId) return [];
@@ -56,6 +65,16 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
         );
     };
 
+    const handleCourseChange = (courseId: string) => {
+        setSelectedCourseId(courseId);
+        const course = cursos.find(c => c.id === courseId);
+        if (course) {
+            setTargetCourseNumber(course.numeroCurso || '');
+        } else {
+            setTargetCourseNumber('');
+        }
+    };
+
     const handleInstructorChange = (idx: number, instructorId: string) => {
         setGeneratedSchedule(prev => {
             const next = [...prev];
@@ -66,6 +85,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
 
     const handleGenerate = async () => {
         if (!selectedCourseId) return setError('Selecione um curso.');
+        if (!targetCourseNumber.trim()) return setError('O número da turma é obrigatório.');
         // Instructor now optional at start, but mandatory before saving
         if (selectedDays.length === 0) return setError('Selecione pelo menos um dia da semana.');
 
@@ -75,24 +95,32 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
         try {
             const course = cursos.find(c => c.id === selectedCourseId);
 
+            // Construct Time Slots based on inputs
+            const timeSlots = [];
+            if (shift1Start && shift1End) timeSlots.push({ start: shift1Start, end: shift1End });
+            if (shift2Start && shift2End) timeSlots.push({ start: shift2Start, end: shift2End });
+
+            if (timeSlots.length === 0) {
+                throw new Error("Defina pelo menos um turno de horário.");
+            }
+
             const payload = {
                 courseName: course?.nome,
                 subjects: activeSubjects.map(m => ({
                     id: m.id,
-                    nome: m.nome,
+                    nome: m.nome, // Keep name for debug/legacy
                     cargaHoraria: m.cargaHoraria
                 })),
                 startDate,
-                timeSlot: { start: startTime, end: endTime },
+                timeSlots, // Send Array of Slots
                 daysOfWeek: selectedDays,
                 excludedDates: [],
-                breakDuration: parseInt(breakDuration) || 60,
                 guidelines
             };
 
-            // Increase timeout to 90s
+            // Increase timeout to 120s
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 90000);
+            const timeoutId = setTimeout(() => controller.abort(), 120000);
 
             // FIX: Get Session Token
             const { data: { session } } = await supabase.auth.getSession();
@@ -145,6 +173,108 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
         }
     };
 
+    // --- EDITING HELPERS ---
+    const updateClass = (index: number, field: keyof GeneratedClass | 'assignedInstructorId', value: string) => {
+        setGeneratedSchedule(prev => {
+            const next = [...prev];
+            // @ts-ignore
+            next[index] = { ...next[index], [field]: value };
+            return next;
+        });
+    };
+
+    const removeClass = (index: number) => {
+        setGeneratedSchedule(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const addClass = () => {
+        setGeneratedSchedule(prev => {
+            const lastClass = prev[prev.length - 1];
+            let newDate = startDate;
+            let newStartTime = shift1Start || "08:00";
+            let newEndTime = shift1End || "10:00";
+
+            if (lastClass) {
+                // Smart default: Next day same time, or same day next slot?
+                // Simple: Same day, +1 hour? 
+                // Let's just duplicate the last one as a template but clear subject
+                try {
+                    const d = parseISO(lastClass.date);
+                    newDate = format(addDays(d, 1), 'yyyy-MM-dd'); // Next day by default
+                } catch (e) { }
+                newStartTime = lastClass.startTime;
+                newEndTime = lastClass.endTime;
+            }
+
+            return [...prev, {
+                date: newDate,
+                startTime: newStartTime,
+                endTime: newEndTime,
+                subjectId: '',
+                subjectName: 'Nova Aula',
+                assignedInstructorId: selectedInstructorId || ''
+            }];
+        });
+    };
+
+    const updateDuration = (index: number, newHours: string) => {
+        const hours = parseFloat(newHours);
+        if (isNaN(hours) || hours <= 0) return; // Prevent invalid inputs
+
+        setGeneratedSchedule(prev => {
+            const next = [...prev];
+            const cls = next[index];
+            if (!cls.startTime) return next;
+
+            try {
+                // Create a base date for calculation (date doesn't matter, only time)
+                const baseDate = parseISO(`2000-01-01T${cls.startTime}:00`);
+                const minutesToAdd = Math.round(hours * 60);
+                const newEndDate = addMinutes(baseDate, minutesToAdd);
+                const newEndTime = format(newEndDate, 'HH:mm');
+
+                next[index] = { ...cls, endTime: newEndTime };
+            } catch (e) {
+                console.error("Error updating duration", e);
+            }
+            return next;
+        });
+    };
+
+    // --- REACTIVE AUDIT STATS ---
+    const auditStats = useMemo(() => {
+        if (!generatedSchedule) return [];
+        return activeSubjects.map(subj => {
+            const planned = Number(subj.cargaHoraria) || 0;
+
+            // Calculate Used Hours from generatedSchedule
+            const used = generatedSchedule.reduce((acc, cls) => {
+                // Match by ID preferred, fallback to Name
+                const isMatch = cls.subjectId === subj.id ||
+                    (!cls.subjectId && cls.subjectName && cls.subjectName.toLowerCase().trim() === subj.nome.toLowerCase().trim());
+
+                if (isMatch) {
+                    const [hStart, mStart] = cls.startTime.split(':').map(Number);
+                    const [hEnd, mEnd] = cls.endTime.split(':').map(Number);
+                    if (!isNaN(hStart) && !isNaN(hEnd)) {
+                        const duration = ((hEnd * 60 + mEnd) - (hStart * 60 + mStart)) / 60;
+                        return acc + (duration > 0 ? duration : 0);
+                    }
+                }
+                return acc;
+            }, 0);
+
+            return {
+                id: subj.id,
+                name: subj.nome,
+                planned,
+                used,
+                diff: used - planned,
+                status: Math.abs(used - planned) < 0.1 ? 'ok' : (used < planned ? 'under' : 'over')
+            };
+        });
+    }, [generatedSchedule, activeSubjects]);
+
     const handleConfirm = async () => {
         // Validate all classes have instructors
         const missingInstructor = generatedSchedule.some(c => !c.assignedInstructorId);
@@ -155,55 +285,77 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
 
         if (generatedSchedule.length === 0) return;
         setIsSaving(true);
-        let successCount = 0;
-        let failCount = 0;
+
+        const results = {
+            success: 0,
+            failures: [] as string[]
+        };
 
         try {
-            // Sequential creation
-            await Promise.all(generatedSchedule.map(async (cls) => {
-                const subject = activeSubjects.find(s =>
-                    s.nome.toLowerCase().trim() === cls.subjectName.toLowerCase().trim() ||
-                    cls.subjectName.toLowerCase().includes(s.nome.toLowerCase())
-                );
+            // SEQUENTIAL EXECUTION to ensure proper conflict checking between items in the batch
+            for (const cls of generatedSchedule) {
+                // Try EXACT ID Match first
+                let subject = activeSubjects.find(s => s.id === cls.subjectId);
+
+                // Fallback to Name Match
+                if (!subject) {
+                    subject = activeSubjects.find(s =>
+                        s.nome.toLowerCase().trim() === cls.subjectName.toLowerCase().trim() ||
+                        cls.subjectName.toLowerCase().includes(s.nome.toLowerCase())
+                    );
+                }
 
                 if (!subject) {
-                    console.warn(`Matéria não encontrada para: ${cls.subjectName}`);
-                    failCount++;
-                    return;
+                    results.failures.push(`Matéria não encontrada: ${cls.subjectName}`);
+                    continue;
                 }
 
                 const result = await aulaService.create({
                     curso_id: selectedCourseId,
                     materia_id: subject.id,
-                    instrutor_id: cls.assignedInstructorId!, // Guaranteed by check above
+                    instrutor_id: cls.assignedInstructorId!,
                     data: cls.date,
                     horario_inicio: cls.startTime,
                     horario_fim: cls.endTime,
                     status: 'agendada',
-                    // Adicionando campo faltante opcional se necessário ou cast any
-                    observacoes: cls.summary
+                    observacoes: cls.summary,
+                    numero_turma: targetCourseNumber,
+                    sala: selectedRoom
                 } as any);
 
                 if (result.success) {
-                    successCount++;
+                    results.success++;
                 } else {
-                    console.error('Failed to save class:', result.error);
-                    failCount++;
+                    // Smart Error Formatting
+                    let msg = `Erro na aula de ${cls.date} (${cls.startTime}): `;
+                    if (result.warning === 'INSTRUCTOR_CONFLICT') {
+                        msg += 'Instrutor já possui aula neste horário.';
+                    } else if (result.warning === 'ROOM_CONFLICT') {
+                        msg += 'Sala ocupada neste horário.';
+                    } else {
+                        msg += result.error || 'Erro desconhecido.';
+                    }
+                    results.failures.push(msg);
                 }
-            }));
+            }
 
-            if (successCount > 0) {
-                alert(`Cronograma criado com sucesso! ${successCount} aulas agendadas.` + (failCount > 0 ? ` (${failCount} falharam)` : ''));
+            if (results.success > 0) {
+                let msg = `Processamento finalizado!\n\n✅ ${results.success} aulas criadas com sucesso.`;
+                if (results.failures.length > 0) {
+                    msg += `\n\n❌ ${results.failures.length} aulas falharam:\n${results.failures.slice(0, 5).join('\n')}`;
+                    if (results.failures.length > 5) msg += `\n...e mais ${results.failures.length - 5} erros.`;
+                }
+                alert(msg);
+                await refreshData();
+                setCurrentDate(parseISO(startDate));
                 onClose();
-                // FORCE REFRESH to update Dashboard
-                window.location.reload();
             } else {
-                alert(`Falha ao salvar aulas. Verifique conflitos de horário. (${failCount} erros)`);
+                alert(`Falha total. Nenhuma aula foi criada.\n\nErros:\n${results.failures.join('\n')}`);
             }
 
         } catch (err: any) {
             console.error(err);
-            alert('Erro crítico ao salvar aulas. Verifique o console.');
+            alert('Erro crítico do sistema ao salvar.');
         } finally {
             setIsSaving(false);
         }
@@ -222,7 +374,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                             <Sparkles size={20} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-gray-800">Agente Criador</h2>
+                            <h2 className="text-lg font-bold text-gray-800">Agente Criador (v1.1)</h2>
                             <p className="text-xs text-gray-500">Geração Automática de Cronograma (Gemini 2.0)</p>
                         </div>
                     </div>
@@ -239,14 +391,37 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
                                     <select
                                         value={selectedCourseId}
-                                        onChange={e => setSelectedCourseId(e.target.value)}
+                                        onChange={e => handleCourseChange(e.target.value)}
                                         className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                                     >
                                         <option value="">Selecione um curso...</option>
-                                        {viableCourses.map(c => (
+                                        {cursos.map(c => (
                                             <option key={c.id} value={c.id}>{c.numeroCurso ? `${c.numeroCurso} - ` : ''}{c.nome}</option>
                                         ))}
                                     </select>
+                                    {selectedCourseId && activeSubjects.length === 0 && (
+                                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                            <AlertTriangle size={12} />
+                                            Este curso não possui matérias cadastradas. O Agente precisa de matérias para gerar o cronograma.
+                                        </p>
+                                    )}
+                                </div>
+
+
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                                        Número da Turma (Ex: T01-2026) <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={targetCourseNumber}
+                                        onChange={e => setTargetCourseNumber(e.target.value)}
+                                        placeholder="Digite o identificador da turma..."
+                                        className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm font-mono ${!targetCourseNumber.trim() && error ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                                    />
+                                    <p className="text-xs text-gray-400 mt-1">Este número identifica o curso no Dashboard e nos relatórios.</p>
                                 </div>
 
                                 <div>
@@ -264,6 +439,17 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                     <p className="text-xs text-gray-500 mt-1">
                                         Você poderá alterar o instrutor de cada aula individualmente depois.
                                     </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Sala Padrão (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={selectedRoom}
+                                        onChange={e => setSelectedRoom(e.target.value)}
+                                        placeholder="Ex: Sala 01, Lab C..."
+                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -309,24 +495,53 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
 
                             <div className="space-y-6">
                                 {/* Right Column - Advanced */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Horário Aula</label>
-                                        <div className="flex items-center gap-1">
-                                            <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full p-2 border rounded text-sm" />
-                                            <span>-</span>
-                                            <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full p-2 border rounded text-sm" />
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Horários (Turnos)</label>
+                                    <div className="space-y-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+
+                                        {/* Shift 1 */}
+                                        <div>
+                                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Turno da Manhã (1º Período)</span>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="time"
+                                                    value={shift1Start}
+                                                    onChange={e => setShift1Start(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500"
+                                                />
+                                                <span className="text-gray-400 font-bold">-</span>
+                                                <input
+                                                    type="time"
+                                                    value={shift1End}
+                                                    onChange={e => setShift1End(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500"
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Intervalo (min)</label>
-                                        <input
-                                            type="number"
-                                            value={breakDuration}
-                                            onChange={e => setBreakDuration(e.target.value)}
-                                            className="w-full p-2.5 border border-gray-300 rounded-lg text-sm"
-                                            placeholder="60"
-                                        />
+
+                                        {/* Shift 2 */}
+                                        <div>
+                                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Turno da Tarde (2º Período)</span>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="time"
+                                                    value={shift2Start}
+                                                    onChange={e => setShift2Start(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500"
+                                                />
+                                                <span className="text-gray-400 font-bold">-</span>
+                                                <input
+                                                    type="time"
+                                                    value={shift2End}
+                                                    onChange={e => setShift2End(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <p className="text-[10px] text-gray-500">
+                                            O "Intervalo de Almoço" será o tempo entre o fim do 1º turno e o início do 2º.
+                                        </p>
                                     </div>
                                 </div>
 
@@ -344,6 +559,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                     <p className="text-xs text-gray-500 mt-1">Dê instruções especiais para o Agente personalizar seu cronograma.</p>
                                 </div>
                             </div>
+
                         </div>
                     )}
 
@@ -364,10 +580,51 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
 
                     {step === 'preview' && (
                         <div className="space-y-4 h-full flex flex-col">
+                            {/* AUDIT SUMMARY (Reactive) */}
+                            {(() => {
+                                const hasErrors = auditStats.some(s => s.status !== 'ok');
+                                return (
+                                    <div className={`p-4 rounded-lg border text-sm ${hasErrors ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className={`font-bold flex items-center gap-2 ${hasErrors ? 'text-amber-800' : 'text-blue-800'}`}>
+                                                {hasErrors ? <AlertTriangle size={16} /> : <CheckCircle size={16} />}
+                                                Auditoria de Carga Horária
+                                            </h3>
+                                            <span className="text-xs font-mono opacity-80">
+                                                Total Previsto: {auditStats.reduce((a, b) => a + b.planned, 0)}h |
+                                                Agendado: {auditStats.reduce((a, b) => a + Number(b.used.toFixed(1)), 0)}h
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-3 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                                            {auditStats.map(stat => (
+                                                <div key={stat.id} className={`
+                                                    flex justify-between items-center p-2 rounded border
+                                                    ${stat.status === 'ok' ? 'bg-white border-green-200 opacity-60' :
+                                                        stat.status === 'under' ? 'bg-red-50 border-red-200 min-w-0' : 'bg-yellow-50 border-yellow-200 min-w-0'}
+                                                `}>
+                                                    <span className="truncate flex-1 font-medium pr-2 text-xs" title={stat.name}>{stat.name}</span>
+                                                    <div className="flex flex-col items-end leading-none shrink-0">
+                                                        <span className={`font-bold text-xs ${stat.status === 'ok' ? 'text-green-700' : stat.status === 'under' ? 'text-red-700' : 'text-yellow-700'}`}>
+                                                            {stat.used.toFixed(1)}h <span className="text-gray-400 font-normal">/ {stat.planned}h</span>
+                                                        </span>
+                                                        {stat.status !== 'ok' && (
+                                                            <span className="text-[9px] uppercase font-bold tracking-wider mt-0.5">
+                                                                {stat.status === 'under' ? `Faltam ${Math.abs(stat.diff).toFixed(1)}h` : `Excesso ${stat.diff.toFixed(1)}h`}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
                             <div className="flex justify-between items-center bg-green-50 p-4 rounded-lg border border-green-100 shrink-0">
                                 <div>
-                                    <h3 className="font-bold text-green-800">Proposta Gerada</h3>
-                                    <p className="text-sm text-green-700">Ajuste os instrutores antes de salvar.</p>
+                                    <h3 className="font-bold text-green-800">Editor de Proposta</h3>
+                                    <p className="text-sm text-green-700">Edite as aulas abaixo para corrigir divergências antes de salvar.</p>
                                 </div>
                                 <div className="text-right">
                                     <span className="block text-2xl font-bold text-green-800">{generatedSchedule.length}</span>
@@ -375,47 +632,142 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                 </div>
                             </div>
 
-                            <div className="border border-gray-200 rounded-lg overflow-hidden flex-1 overflow-y-auto">
+                            <div className="border border-gray-200 rounded-lg overflow-hidden flex-1 overflow-y-auto bg-white">
                                 <table className="w-full text-left text-sm relative">
-                                    <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                                    <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm text-xs uppercase tracking-wider text-gray-500">
                                         <tr>
-                                            <th className="p-3 font-medium text-gray-500 w-32">Data</th>
-                                            <th className="p-3 font-medium text-gray-500 w-32">Horário</th>
-                                            <th className="p-3 font-medium text-gray-500">Matéria</th>
-                                            <th className="p-3 font-medium text-gray-500 w-48">Instrutor</th>
+                                            <th className="p-3 w-32">Data</th>
+                                            <th className="p-3 w-40">Horário</th>
+                                            <th className="p-3 w-20 text-center" title="Duração em horas">Carga</th>
+                                            <th className="p-3">Matéria</th>
+                                            <th className="p-3 w-48">Instrutor</th>
+                                            <th className="p-3 w-10 text-center">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {generatedSchedule.map((cls, idx) => (
-                                            <tr key={idx} className="hover:bg-gray-50 group">
-                                                <td className="p-3 whitespace-nowrap text-gray-600">
-                                                    {format(new Date(cls.date + 'T12:00:00'), "dd/MM (EEE)", { locale: ptBR })}
-                                                </td>
-                                                <td className="p-3 whitespace-nowrap text-gray-600">
-                                                    {cls.startTime} - {cls.endTime}
-                                                </td>
-                                                <td className="p-3 font-medium text-gray-800">
-                                                    {cls.subjectName}
-                                                </td>
-                                                <td className="p-2">
-                                                    <select
-                                                        value={cls.assignedInstructorId || ''}
-                                                        onChange={(e) => handleInstructorChange(idx, e.target.value)}
-                                                        className={`w-full p-1.5 border rounded text-sm focus:ring-2 focus:ring-indigo-500
-                                                            ${!cls.assignedInstructorId ? 'border-red-300 bg-red-50' : 'border-gray-300'}
-                                                        `}
-                                                    >
-                                                        <option value="">Selecione...</option>
-                                                        {instrutores.map(i => (
-                                                            <option key={i.id} value={i.id}>{i.nome}</option>
-                                                        ))}
-                                                    </select>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {generatedSchedule.map((cls, idx) => {
+                                            // Find Subject Stat for color coding
+                                            const stat = auditStats.find(s => s.id === cls.subjectId) ||
+                                                auditStats.find(s => s.name.toLowerCase() === cls.subjectName.toLowerCase());
+
+                                            // Determine row background based on audit status (subtle hint)
+                                            const rowBg = stat && stat.status !== 'ok' ? 'bg-yellow-50/30' : '';
+
+                                            return (
+                                                <tr key={idx} className={`hover:bg-gray-50 group transition-colors ${rowBg}`}>
+                                                    {/* DATE */}
+                                                    <td className="p-2">
+                                                        <input
+                                                            type="date"
+                                                            value={cls.date}
+                                                            onChange={e => updateClass(idx, 'date', e.target.value)}
+                                                            className="w-full text-xs p-1.5 border border-transparent hover:border-gray-300 focus:border-indigo-500 rounded bg-transparent focus:bg-white transition-all outline-none"
+                                                        />
+                                                    </td>
+
+                                                    {/* TIME */}
+                                                    <td className="p-2">
+                                                        <div className="flex items-center gap-1">
+                                                            <input
+                                                                type="time"
+                                                                value={cls.startTime}
+                                                                onChange={e => updateClass(idx, 'startTime', e.target.value)}
+                                                                className="w-full text-xs p-1.5 border border-transparent hover:border-gray-300 focus:border-indigo-500 rounded bg-transparent focus:bg-white transition-all outline-none"
+                                                            />
+                                                            <span className="text-gray-300">-</span>
+                                                            <input
+                                                                type="time"
+                                                                value={cls.endTime}
+                                                                onChange={e => updateClass(idx, 'endTime', e.target.value)}
+                                                                className="w-full text-xs p-1.5 border border-transparent hover:border-gray-300 focus:border-indigo-500 rounded bg-transparent focus:bg-white transition-all outline-none"
+                                                            />
+                                                        </div>
+                                                    </td>
+
+                                                    {/* DURATION (Calculated/Editable) */}
+                                                    <td className="p-2">
+                                                        {(() => {
+                                                            const [h1, m1] = cls.startTime.split(':').map(Number);
+                                                            const [h2, m2] = cls.endTime.split(':').map(Number);
+                                                            let duration = 0;
+                                                            if (!isNaN(h1) && !isNaN(h2)) {
+                                                                duration = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+                                                            }
+                                                            return (
+                                                                <input
+                                                                    type="number"
+                                                                    min="0.5"
+                                                                    step="0.5"
+                                                                    value={duration > 0 ? duration : ''}
+                                                                    onChange={e => updateDuration(idx, e.target.value)}
+                                                                    className="w-full text-xs p-1.5 text-center font-bold text-gray-700 border border-transparent hover:border-gray-300 focus:border-indigo-500 rounded bg-transparent focus:bg-white transition-all outline-none"
+                                                                />
+                                                            );
+                                                        })()}
+                                                    </td>
+
+                                                    {/* SUBJECT */}
+                                                    <td className="p-2">
+                                                        <select
+                                                            value={cls.subjectId || ''}
+                                                            onChange={e => {
+                                                                const s = activeSubjects.find(sub => sub.id === e.target.value);
+                                                                updateClass(idx, 'subjectId', e.target.value);
+                                                                if (s) updateClass(idx, 'subjectName', s.nome);
+                                                            }}
+                                                            className="w-full text-xs p-1.5 border border-transparent hover:border-gray-300 focus:border-indigo-500 rounded bg-transparent focus:bg-white transition-all outline-none font-medium text-gray-700 truncate"
+                                                        >
+                                                            <option value="">Selecione...</option>
+                                                            {activeSubjects.map(s => (
+                                                                <option key={s.id} value={s.id}>{s.nome}</option>
+                                                            ))}
+                                                        </select>
+                                                        {/* Error text below input */}
+                                                        {(!cls.subjectId && !activeSubjects.find(s => s.nome === cls.subjectName)) && (
+                                                            <div className="text-[10px] text-red-500 font-bold mt-1">Matéria inválida</div>
+                                                        )}
+                                                    </td>
+
+                                                    {/* INSTRUCTOR */}
+                                                    <td className="p-2">
+                                                        <select
+                                                            value={cls.assignedInstructorId || ''}
+                                                            onChange={(e) => updateClass(idx, 'assignedInstructorId', e.target.value)}
+                                                            className={`w-full text-xs p-1.5 border rounded transition-all outline-none
+                                                                ${!cls.assignedInstructorId ? 'border-red-300 bg-red-50' : 'border-transparent hover:border-gray-300 bg-transparent focus:bg-white'}
+                                                            `}
+                                                        >
+                                                            <option value="">Selecione...</option>
+                                                            {instrutores.map(i => (
+                                                                <option key={i.id} value={i.id}>{i.nome}</option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
+
+                                                    {/* ACTIONS */}
+                                                    <td className="p-2 text-center">
+                                                        <button
+                                                            onClick={() => removeClass(idx)}
+                                                            className="text-gray-300 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                                            title="Remover aula"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* ADD NEW CLASS BUTTON */}
+                            <button
+                                onClick={addClass}
+                                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 font-medium text-sm"
+                            >
+                                <Sparkles size={16} /> Adicionar Nova Aula Manualmente
+                            </button>
                         </div>
                     )}
 

@@ -137,7 +137,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                 cargaHorariaMateria: mapVal(['carga_materia', 'horas_materia', 'carga_disciplina', 'horas_disciplina', 'carga disciplina', 'carga horaria disciplina', 'carga horaria materia', 'ch materia', 'carga mat', 'ch mat', 'horas mat', 'cargamat', 'cargamateria']) ? String(mapVal(['carga_materia', 'horas_materia', 'carga_disciplina', 'horas_disciplina', 'carga disciplina', 'carga horaria disciplina', 'carga horaria materia', 'ch materia', 'carga mat', 'ch mat', 'horas mat', 'cargamat', 'cargamateria'])) : undefined,
                 tipoHora: String(mapVal(['tipo', 'minutos'])).includes('50') ? 50 : 60,
                 cor: mapVal(['cor']) ? String(mapVal(['cor'])) : undefined,
-                sala: mapVal(['sala']) ? String(mapVal(['sala'])) : undefined
+                sala: mapVal(['sala']) ? String(mapVal(['sala'])) : undefined,
+                numeroTurma: mapVal(['turma', 'no turma', 'nº turma', 'codigo turma', 'cod turma']) ? String(mapVal(['turma', 'no turma', 'nº turma', 'codigo turma', 'cod turma'])).trim() : undefined
             };
         }).filter(Boolean) as RawImportRow[];
 
@@ -181,13 +182,13 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                 body: JSON.stringify({ rows: preview })
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) throw new Error('Sessão expirada. Faça login novamente.');
                 if (response.status === 404) throw new Error('Serviço de IA indisponível localmente (use Vercel Dev ou Produção).');
-                throw new Error('Falha na auditoria de IA.');
+                throw new Error(data.details || data.error || 'Falha na auditoria de IA.');
             }
-
-            const data = await response.json();
 
             if (data.insights) {
                 const map = new Map<number, AIInsight[]>();
@@ -218,6 +219,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
         setIsImporting(true); // Ensure loading state
         let successCount = 0;
         let errorCount = 0;
+        const rowErrors: string[] = [];
 
         // We will do this sequentially to ensure IDs are available
         const { cursoService, materiaService, aulaService } = await import('../services');
@@ -292,12 +294,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                     let mId = '';
                     if (row.disciplina) {
                         // Check if subject exists in THIS course
-                        // Note: 'materias' context is stale for new courses. We assume blindly creating or re-fetching?
-                        // Fetching all materias every row is bad. Fetching once?
-                        // Let's rely on `materiaService` not duplicating?
-                        // `materiaService.create` usually inserts.
-                        // We will try to Find in Context first.
-
                         let mat = materias.find(m => m.cursoId === cId && m.nome.toLowerCase() === row.disciplina?.toLowerCase());
 
                         if (!mat) {
@@ -319,18 +315,27 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
 
                     // Create Class (Aula)
                     if (row.data && row.horarioInicio && row.horarioFim) {
-                        const instrutorObj = instrutores.find(i => i.nome.toLowerCase() === row.instrutor?.toLowerCase());
+                        // ROBUST INSTRUCTOR MAPPING
+                        const searchName = row.instrutor?.toLowerCase().trim();
+                        let instrutorObj = instrutores.find(i => i.nome.toLowerCase() === searchName);
+
+                        // Fallback: Partial match if unique
+                        if (!instrutorObj && searchName) {
+                            const partials = instrutores.filter(i => i.nome.toLowerCase().includes(searchName));
+                            if (partials.length === 1) instrutorObj = partials[0];
+                        }
 
                         const aulaPayload: any = {
                             data: row.data,
                             horario_inicio: row.horarioInicio,
                             horario_fim: row.horarioFim,
                             curso_id: cId,
-                            materia_id: mId || undefined, // Can be empty if no subject
+                            materia_id: mId || undefined,
                             instrutor_id: instrutorObj?.id,
                             sala: row.sala,
                             status: 'agendada',
-                            carga_horaria_materia: row.cargaHorariaMateria ? Number(String(row.cargaHorariaMateria).replace(/\D/g, '')) : undefined
+                            carga_horaria_materia: row.cargaHorariaMateria ? Number(String(row.cargaHorariaMateria).replace(/\D/g, '')) : undefined,
+                            numero_turma: row.numeroTurma
                         };
 
                         const aulaResult = await aulaService.create(aulaPayload);
@@ -339,18 +344,47 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                         } else {
                             console.error('Failed to create aula:', aulaResult.error, row);
                             errorCount++;
+                            let msg = aulaResult.error;
+
+                            // Handle Warnings as Errors for Import
+                            if (!msg && aulaResult.warning) {
+                                if (aulaResult.warning === 'INSTRUCTOR_CONFLICT') {
+                                    const conflicts = aulaResult.conflicts || [];
+                                    const details = conflicts.map((c: any) => `${c.materia} (${c.horarioInicio}-${c.horarioFim})`).join(', ');
+                                    msg = `Conflito de Instrutor: Já possui aula neste horário [${details}]`;
+                                } else if (aulaResult.warning === 'ROOM_CONFLICT') {
+                                    const conflicts = aulaResult.conflicts || [];
+                                    const details = conflicts.map((c: any) => `${c.materia}`).join(', ');
+                                    msg = `Conflito de Sala: Sala já ocupada [${details}]`;
+                                } else {
+                                    msg = `Aviso: ${aulaResult.warning}`;
+                                }
+                            }
+
+                            msg = msg || 'Erro desconhecido';
+
+                            rowErrors.push(`Linha ${(row.originalLine || '?')}: ${msg}`);
                         }
                     } else {
                         console.warn('Skipping row - missing required fields (data, horarioInicio, horarioFim):', row);
                         errorCount++;
+                        rowErrors.push(`Linha ${(row.originalLine || '?')}: Dados incompletos.`);
                     }
                 } else {
-                    // Course-only mode - just count the course creation
+                    // Course-only mode
                     successCount++;
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error(e);
                 errorCount++;
+                const errMsg = e.message || String(e);
+                rowErrors.push(`Linha ${(row.originalLine || '?')}: Erro de sistema (${errMsg})`);
+
+                if (errMsg.includes('violates foreign key constraint') || errMsg.includes('column')) {
+                    alert(`Erro Crítico no Banco de Dados: ${errMsg}`);
+                    setIsImporting(false);
+                    return;
+                }
             }
         }
 
@@ -361,7 +395,16 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
             alert('Importação concluída com sucesso!');
             window.location.reload();
         } else {
-            alert(`Importação concluída com ${errorCount} erros.`);
+            console.warn('Import completed with errors:', errorCount);
+
+            const maxErrorsToShow = 5;
+            const shownErrors = rowErrors.slice(0, maxErrorsToShow);
+            const remaining = rowErrors.length - maxErrorsToShow;
+
+            let errorMsg = `Importação concluída com ${errorCount} erro(s).\n\nDetalhes:\n${shownErrors.join('\n')}`;
+            if (remaining > 0) errorMsg += `\n...e mais ${remaining} erros.`;
+
+            alert(errorMsg);
             window.location.reload();
         }
     };

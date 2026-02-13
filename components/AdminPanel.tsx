@@ -31,7 +31,7 @@ export const AdminPanel: React.FC = () => {
 
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
-        await createUser(newUser.name, newUser.email, newUser.role as UserRole);
+        await createUser({ name: newUser.name, email: newUser.email, role: newUser.role as UserRole });
         setNewUser({ name: '', email: '', role: 'viewer' });
         setShowAddUser(false);
     };

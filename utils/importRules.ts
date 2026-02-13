@@ -13,7 +13,8 @@ export interface RawImportRow {
     tipoHora?: number; // 50 or 60
     cor?: string;
     sala?: string;
-    cargaHorariaMateria?: string; // New
+    cargaHorariaMateria?: string;
+    numeroTurma?: string; // New: Distinct Class ID
 }
 
 export interface ProcessedRow extends RawImportRow {

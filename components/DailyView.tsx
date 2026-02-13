@@ -1,4 +1,6 @@
-import React, { useMemo } from 'react';
+'use client';
+
+import React, { useMemo, useState } from 'react';
 import { Aula, ClassStatus, Evento } from '../types';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -43,9 +45,12 @@ interface ProcessedItem {
 
 export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit }) => {
     const { isLoading, eventos, instrutores, canManageClasses, deleteEvento, userProfile, cursos } = useSchedule();
+    const [hoveredAulaId, setHoveredAulaId] = useState<string | null>(null);
+
     // 1. Calculate layout for BOTH classes and events together
     const processedItems = useMemo(() => {
         const getMinutes = (time: string) => {
+            if (!time || typeof time !== 'string' || !time.includes(':')) return 0; // Defensive check
             const [h, m] = time.split(':').map(Number);
             return h * 60 + m;
         };
@@ -93,44 +98,122 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
         }
 
         // 3. Sort by start time, then duration (desc)
+        // 3. Sort by start time (critical for correct visual order)
         items.sort((a, b) => {
             if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
             return b.duration - a.duration;
         });
 
-        // 4. Swimlane Layout Strategy (Group by Course)
-        // Identify unique columns (Lanes)
+        // =========================================================================================
+        // 4. OPTIMIZED LAYOUT ENGINE: Group Bin Packing
+        // DO NOT just assign 1 column per LaneKey. Instead, PACK non-overlapping Groups together.
+        // =========================================================================================
+
+        // A. Define Groups
+        //    All items with same `LaneKey` MUST share the same visual column (Constraint: Course Continuity)
         const getLaneKey = (item: ProcessedItem) => {
-            if (item.type === 'evento') return ' _Eventos'; // Underscore to sort first or last? Let's sort last or distinct.
+            if (item.type === 'evento') return `_Eventos_${item.id}`; // Events float? Or group? 
+            // User wants "Distinct Courses" to share space. 
+            // BUT "Continuous Course" (Morning+Afternoon) must be 1 column.
+            // So we Group by Course Identifier.
             const aula = item.origem as Aula;
-            // Key by Course Number (if exists) + Name to ensure uniqueness and fixed order
-            // Adding a prefix to ensure Aulas come before/after Events if needed.
-            return `${aula.numeroCurso || 'ZZ'} - ${aula.curso}`;
+            const identifier = aula.numeroTurma || aula.numeroCurso || 'ZZ';
+            return `${identifier}::${aula.curso}`;
         };
 
-        const uniqueLanes = Array.from(new Set(items.map(getLaneKey))).sort();
+        // GroupMap: Key -> List of Items
+        const groups: Record<string, ProcessedItem[]> = {};
 
-        // If we have too many lanes, maybe we should warn or scroll? 
-        // For now, simple division. 
-        // If we have Events, let's put them in the last column or separate.
-        // Let's stick to simple alphanumeric sort of keys. 
-        // 'ZZ' fallback ensures courses without numbers go to end, but before Events?
-        // Wait, ' _Eventos' starts with space, so it sorts FIRST.
-        // Let's decide: Events first or last? User asked for Course Grouping.
-        // Let's put Events LAST: 'z_Eventos'
-        // But the sort above: `_Eventos` (space) -> First.
-        // Let's try putting Events First (Left) or Last (Right).
-        // Usually Schedule has "General" on left.
+        // Special case: Eventos.
+        // If we want events to share space, we treat each event as a tiny group?
+        // Or all events as one group?
+        // "Events" usually don't need to be grouped with each other unless they are same track.
+        // Let's treat Each Event as its own Group for maximum packing efficiency.
+        // For Classes, we MUST group by Course.
 
-        const totalLanes = uniqueLanes.length > 0 ? uniqueLanes.length : 1;
+        items.forEach(item => {
+            const key = getLaneKey(item);
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+        });
 
+        // B. Prepare Groups for Packing
+        interface LayoutGroup {
+            key: string;
+            items: ProcessedItem[];
+            earliestStart: number;
+            intervals: { start: number, end: number }[]; // Union of time ranges
+        }
+
+        const layoutGroups: LayoutGroup[] = Object.entries(groups).map(([key, groupItems]) => {
+            const earliest = Math.min(...groupItems.map(i => i.startMinutes));
+            return {
+                key,
+                items: groupItems,
+                earliestStart: earliest,
+                intervals: groupItems.map(i => ({ start: i.startMinutes, end: i.endMinutes }))
+            };
+        });
+
+        // Sort Groups by Start Time (Heuristic for greedy packing)
+        layoutGroups.sort((a, b) => a.earliestStart - b.earliestStart);
+
+        // C. Greedy Packing
+        // visualColumns[colIndex] = List of Groups in that column
+        const visualColumns: LayoutGroup[][] = [];
+
+        layoutGroups.forEach(group => {
+            let placed = false;
+
+            // Try to fit in existing columns
+            for (let i = 0; i < visualColumns.length; i++) {
+                const columnGroups = visualColumns[i];
+
+                // Check Collision with ALL groups in this column
+                let hasCollision = false;
+                for (const existingGroup of columnGroups) {
+                    // Check intersection of ANY interval
+                    for (const existingInterval of existingGroup.intervals) {
+                        for (const newInterval of group.intervals) {
+                            // Standard Interval Intersection: (StartA < EndB) && (EndA > StartB)
+                            if (newInterval.start < existingInterval.end && newInterval.end > existingInterval.start) {
+                                hasCollision = true;
+                                break;
+                            }
+                        }
+                        if (hasCollision) break;
+                    }
+                    if (hasCollision) break;
+                }
+
+                if (!hasCollision) {
+                    columnGroups.push(group);
+                    placed = true;
+                    // Assign items to this column index immediately
+                    group.items.forEach(item => {
+                        item.colIndex = i;
+                    });
+                    break;
+                }
+            }
+
+            // If not placed, create new column
+            if (!placed) {
+                visualColumns.push([group]);
+                group.items.forEach(item => {
+                    item.colIndex = visualColumns.length - 1;
+                });
+            }
+        });
+
+        const totalLanes = Math.max(1, visualColumns.length);
+
+        // D. Finalize Coords
         return items.map(item => {
-            const laneKey = getLaneKey(item);
-            const colIndex = uniqueLanes.indexOf(laneKey);
-
+            const colIndex = item.colIndex || 0;
             return {
                 ...item,
-                colIndex, // Store for reference
+                colIndex,
                 leftPercent: (colIndex / totalLanes) * 100,
                 widthPercent: 100 / totalLanes
             };
@@ -139,62 +222,134 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
 
     const [progressMap, setProgressMap] = React.useState<{ [key: string]: any }>({});
 
+    // Optimized: Only fetch progress for VISIBLE items (current day)
+    // Generate a stable signature for dependencies to avoid infinite loops
+    const processedIdsString = useMemo(() => {
+        return processedItems.map(i => i.id).join(',');
+    }, [processedItems]);
+
+    // Optimized: Only fetch progress for VISIBLE items (current day)
     React.useEffect(() => {
         const fetchProgress = async () => {
-            if (!aulas.length) return;
+            if (!processedItems.length) return;
 
-            // Robust Tenant ID: Try userProfile first, then first aula, finally default
-            const tenantId = userProfile?.tenantId || aulas[0]?.tenantId;
-            if (!tenantId) {
-                // Should technically not happen if authorized, but safe guard
-                return;
-            }
+            // Robust Tenant ID: Try userProfile first, then first item, finally default
+            const firstAulaItem = processedItems.find(i => i.type === 'aula');
+            const tenantId = userProfile?.tenantId || (firstAulaItem?.origem as Aula)?.tenantId;
 
-            const uniqueCourseIds = new Set<string>();
+            if (!tenantId) return;
 
-            aulas.forEach(a => {
-                // Try direct ID
-                if (a.cursoId) {
-                    uniqueCourseIds.add(a.cursoId);
-                }
-                // Fallback: Try matching by Name from Context
-                else if (a.curso) {
+            // Group by CourseID + Cohort (numeroTurma)
+            const uniqueCohortKeys = new Set<string>();
+
+            processedItems.forEach(item => {
+                if (item.type !== 'aula') return;
+                const a = item.origem as Aula;
+
+                let cId = a.cursoId;
+                if (!cId && a.curso) {
                     const matched = cursos.find(c => c.nome === a.curso);
-                    if (matched) uniqueCourseIds.add(matched.id);
+                    if (matched) cId = matched.id;
+                }
+
+                if (cId) {
+                    const cohortId = a.numeroTurma || a.numeroCurso || '';
+                    uniqueCohortKeys.add(`${cId}::${cohortId}`);
                 }
             });
 
-            if (uniqueCourseIds.size === 0) return;
+            if (uniqueCohortKeys.size === 0) return;
 
             const map: { [key: string]: any } = {};
 
             await Promise.all(
-                Array.from(uniqueCourseIds).map(async (courseId) => {
+                Array.from(uniqueCohortKeys).map(async (compositeKey) => {
+                    const [courseId, cohortId] = compositeKey.split('::');
                     try {
-                        const progress = await courseService.getCourseProgress(courseId, tenantId);
+                        const progress = await courseService.getCourseProgress(courseId, tenantId, cohortId || undefined);
                         if (progress) {
-                            map[courseId] = progress;
+                            map[compositeKey] = progress;
                         }
                     } catch (err) {
-                        console.error(`Failed loading progress: ${courseId}`, err);
+                        console.error(`Failed loading progress: ${compositeKey}`, err);
                     }
                 })
             );
 
-            setProgressMap(map);
+            // Functional update to avoid dependency loop
+            setProgressMap(prev => ({ ...prev, ...map }));
         };
 
         fetchProgress();
-    }, [aulas, userProfile, cursos]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [processedIdsString, userProfile, cursos]);
 
 
 
+    // --- NEW: Cumulative Progress Logic ---
+    const { aulas: allAulas, cursos: allCourses } = useSchedule();
+
+    const cumulativeMap = useMemo(() => {
+        const map: Record<string, number> = {};
+        const courseMap: Record<string, Aula[]> = {};
+
+        // 1. Group by Course
+        allAulas.forEach(a => {
+            if (!a.cursoId) return;
+            // Key by Course + Cohort (to be safe)
+            const key = `${a.cursoId}::${a.numeroTurma || a.numeroCurso || 'default'}`;
+            if (!courseMap[key]) courseMap[key] = [];
+            courseMap[key].push(a);
+        });
+
+        // 2. Sort and Calculate
+        Object.values(courseMap).forEach(group => {
+            // Deduplicate by ID to prevent double counting or overwrite
+            const uniqueGroup = Array.from(new Map(group.map(a => [a.id, a])).values());
+
+            // Sort by Date + Time (Lexical sort works for ISO strings YYYY-MM-DD)
+            uniqueGroup.sort((a, b) => {
+                const timeA = `${a.data}T${a.horarioInicio}`;
+                const timeB = `${b.data}T${b.horarioInicio}`;
+                return timeA.localeCompare(timeB);
+            });
+
+            let runningTotal = 0;
+            uniqueGroup.forEach((a, index) => {
+                // Calculate Duration
+                const [h1, m1] = a.horarioInicio.split(':').map(Number);
+                const [h2, m2] = a.horarioFim.split(':').map(Number);
+                const dur = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+
+                // User Rule: "Deducted progressively, each class effectively given"
+                if (a.status === 'concluida' || a.status === 'em-andamento') {
+                    runningTotal += dur;
+                    map[a.id] = runningTotal;
+                } else {
+                    map[a.id] = runningTotal;
+                }
+
+                // DEBUG LOG
+                if (index < 5 || index > uniqueGroup.length - 5) {
+                    console.log(`[CumulativeDebug] ID: ${a.id.substring(0, 6)} | Time: ${a.data} ${a.horarioInicio} | Status: ${a.status} | Added: ${dur} | Total: ${runningTotal}`);
+                }
+            });
+        });
+
+        console.log('[CumulativeDebug] Map Size:', Object.keys(map).length);
+        return map;
+    }, [allAulas]);
+    // ---------------------------------------
     // Helper to calculate current time indicator position
     const getCurrentTimePosition = () => {
         const now = new Date();
         const hours = now.getHours() + now.getMinutes() / 60;
         return hours;
     };
+
+    // ...
+
+
 
     const currentHours = getCurrentTimePosition();
     const showTimeIndicator = isSameDay(new Date(), currentDate) && currentHours >= START_HOUR;
@@ -343,164 +498,248 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                             }
 
                             // ============================================
-                            // RENDER: CLASS CARD (AULA)
+                            // RENDER: CLASS CARD (AULA) - REDESIGNED
                             // ============================================
                             const aula = item.origem as Aula;
-                            const isShort = item.duration <= 45;
-                            const isVeryShort = item.duration <= 30;
+                            // Definition of Compact: Less than 70 minutes (Includes 1h classes)
+                            const isCompact = item.duration < 70;
+                            const isHovered = hoveredAulaId === aula.id;
 
+                            // Determine status/color
                             const statusConfig = getStatusConfig(aula.status);
-                            const StatusIcon = statusConfig.icon;
+                            const statusColor = aula.status === 'concluida' ? '#10b981' : (aula.cor || '#3b82f6');
+
+                            // Calculate Opacity based on status
+                            const opacityClass = aula.status === 'cancelada' ? 'opacity-60 grayscale' : 'opacity-100';
 
                             return (
                                 <div
                                     key={aula.id}
+                                    onMouseEnter={() => setHoveredAulaId(aula.id)}
+                                    onMouseLeave={() => setHoveredAulaId(null)}
                                     onClick={() => onEdit(aula)}
                                     className={`
-                                    absolute cursor-pointer hover:shadow-xl hover:z-20 transition-all duration-200 z-10 group
-                                    overflow-hidden print:shadow-none rounded-lg shadow-sm
-                                    ${aula.status === 'cancelada' ? 'opacity-80 grayscale-[0.3]' : ''}
-                                `}
+                                        absolute cursor-pointer transition-all duration-200 z-10 group
+                                        rounded-md border border-gray-100 shadow-sm bg-white
+                                        ${opacityClass}
+                                        ${isHovered ? 'z-50 shadow-xl ring-2 ring-indigo-500/20' : 'hover:shadow-md'}
+                                    `}
                                     style={{
-                                        // Adiciona margem interna para evitar overlap
-                                        top: `calc(${top} + 2px)`,
-                                        height: `calc(${height} - 4px)`,
-                                        // Espaçamento horizontal entre cards side-by-side
-                                        left: `calc(${leftPercent}% + 4px)`,
-                                        width: `calc(${widthPercent}% - 8px)`,
-                                        backgroundColor: aula.status === 'concluida' ? '#f0fdf4' : (aula.cor ? `${aula.cor}15` : '#f8f9fa'), // 15 = ~8% opacity
-                                        borderLeftColor: aula.cor,
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+                                        top: `calc(${top} + 1px)`,
+                                        height: `calc(${height} - 2px)`,
+                                        left: `calc(${leftPercent}% + 2px)`,
+                                        width: `calc(${widthPercent}% - 4px)`,
                                     }}
                                 >
-                                    {/* Borda colorida isolada dentro do card */}
+                                    {/* Left Accent Strip */}
                                     <div
-                                        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
-                                        style={{ backgroundColor: aula.cor }}
+                                        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-md"
+                                        style={{ backgroundColor: statusColor }}
                                     />
-                                    {/* --- Layout for VERY SHORT events (<= 30 min) --- */}
-                                    {isVeryShort ? (
-                                        <div className="h-full px-2 flex items-center gap-2 text-xs">
-                                            <span className="font-mono font-bold text-gray-600 flex-shrink-0">{formatTime(aula.horarioInicio)}</span>
-                                            <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                                            <span className="font-semibold text-gray-800 truncate flex-1">
-                                                {aula.numeroCurso ? `${aula.numeroCurso} - ` : ''}{aula.materia}
-                                            </span>
-                                            {/* Mini Status Icon for very short events */}
-                                            <div className={`p-0.5 rounded-full ${statusConfig.bg} ${statusConfig.text}`} title={statusConfig.label}>
-                                                <StatusIcon size={12} />
+
+                                    {/* COMPACT LAYOUT (Horizontal) */}
+                                    {isCompact ? (
+                                        <div className="h-full flex items-center pl-2.5 pr-2 gap-2 overflow-hidden">
+                                            {/* Time & Status Badge */}
+                                            <div className="flex flex-col flex-shrink-0 min-w-[60px]">
+                                                <span className="text-[10px] font-mono font-bold text-gray-600 leading-tight">
+                                                    {formatTime(aula.horarioInicio)}
+                                                </span>
+                                                <div className={`
+                                                    text-[8px] uppercase tracking-wider font-bold rounded px-1 py-0 w-fit mt-0.5
+                                                    ${aula.status === 'em-andamento' ? 'bg-amber-100 text-amber-700 animate-pulse' :
+                                                        aula.status === 'concluida' ? 'bg-emerald-100 text-emerald-700' :
+                                                            'bg-gray-100 text-gray-500'}
+                                                `}>
+                                                    {aula.status === 'agendada' ? 'Agend.' :
+                                                        aula.status === 'em-andamento' ? 'Andamento' :
+                                                            aula.status === 'concluida' ? 'Fim' : 'Cancel.'}
+                                                </div>
+                                            </div>
+
+                                            {/* Divider */}
+                                            <div className="h-4 w-px bg-gray-200 flex-shrink-0 mx-1"></div>
+
+                                            {/* Subject Info */}
+                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                <span className="text-xs font-bold text-gray-800 truncate leading-tight">
+                                                    {aula.materia}
+                                                </span>
+                                                <span className="text-[10px] text-gray-500 truncate">
+                                                    {aula.curso}
+                                                </span>
+                                            </div>
+
+                                            {/* Minimal Icons if space allows */}
+                                            <div className="flex-shrink-0 text-gray-400 hidden sm:block">
+                                                {aula.sala && <span className="text-[9px] font-mono bg-gray-50 px-1 rounded border border-gray-100">{aula.sala}</span>}
                                             </div>
                                         </div>
                                     ) : (
-                                        /* --- Layout for NORMAL events --- */
-                                        <div className="h-full flex flex-col p-2 sm:p-3">
-
-                                            {/* Header: Course Name & Status Badge */}
-                                            <div className="flex justify-between items-start mb-1 gap-2">
-                                                <div className="flex flex-col truncate">
-                                                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate dark:text-gray-400" style={{ color: aula.cor }}>
-                                                        {aula.numeroCurso ? `${aula.numeroCurso} - ` : ''}{aula.curso}
+                                        // STANDARD LAYOUT (Vertical Stack) - Refined
+                                        <div className="h-full flex flex-col pl-3 pr-2 py-2 relative overflow-hidden">
+                                            {/* Header: Time & Badges */}
+                                            <div className="flex justify-between items-start mb-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[11px] font-mono font-bold text-gray-600 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                                                        {formatTime(aula.horarioInicio)} - {formatTime(aula.horarioFim)}
                                                     </span>
-
-                                                    {/* Course Progress & Completion */}
-                                                    {(() => {
-                                                        const cId = aula.cursoId || cursos.find(c => c.nome === aula.curso)?.id;
-                                                        const p = cId ? progressMap[cId] : null;
-
-                                                        if (!p) return null;
-
-                                                        return (
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                <span className="text-[10px] text-gray-500 font-medium" title="Progresso Planejado (Agendado / Total)">
-                                                                    {p.displayPlanned}
-                                                                </span>
-
-                                                                {p.isCompleted && (
-                                                                    <span className="text-[9px] font-bold text-green-600 flex items-center gap-0.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 shadow-sm animate-pulse">
-                                                                        <CheckCircle size={9} /> Carga Horária Concluída
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })()}
+                                                    {(aula.numeroTurma || aula.numeroCurso) && (
+                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                                                            {aula.numeroTurma || aula.numeroCurso}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 {/* Status Badge */}
+                                                <span className={`
+                                                    px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border
+                                                    ${aula.status === 'em-andamento' ? 'bg-amber-100 text-amber-700 border-amber-200 animate-pulse' :
+                                                        aula.status === 'concluida' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                                            aula.status === 'cancelada' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                'bg-gray-100 text-gray-600 border-gray-200'}
+                                                `}>
+                                                    {statusConfig.label}
+                                                </span>
+                                            </div>
+
+                                            {/* Body: Course & Subject */}
+                                            <div className="flex-1 min-w-0 mt-1">
+                                                <h4 className="font-bold text-gray-900 text-xs leading-tight line-clamp-2" title={aula.curso}>
+                                                    {aula.curso}
+                                                </h4>
+                                                <p className="text-xs text-gray-600 mt-0.5 font-medium flex items-center gap-1.5">
+                                                    <span className="truncate">{aula.materia}</span>
+
+                                                    {/* Subject Progress Dot */}
+                                                    {(() => {
+                                                        const cId = aula.cursoId || cursos.find(c => c.nome === aula.curso)?.id;
+                                                        const p = cId ? progressMap[`${cId}::${aula.numeroTurma || aula.numeroCurso || ''}`] : null;
+                                                        const sub = p?.subjects?.find((s: any) => s.name === aula.materia || s.id === aula.materiaId);
+                                                        if (sub && sub.status === 'completed') {
+                                                            return <CheckCircle size={10} className="text-emerald-500 flex-shrink-0" />;
+                                                        }
+                                                        return null;
+                                                    })()}
+                                                </p>
+                                            </div>
+
+                                            {/* Footer: Instructor & Room */}
+                                            <div className="mt-auto pt-2 border-t border-gray-50 flex items-center justify-between gap-2 text-[10px] text-gray-500">
+                                                <div className="flex items-center gap-1.5 truncate">
+                                                    <User size={12} className="opacity-60" />
+                                                    <span className="truncate font-medium">{aula.instrutor?.split(' ')[0]}</span>
+                                                </div>
+                                                {aula.sala && (
+                                                    <div className="flex items-center gap-1 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 shrink-0">
+                                                        <MapPin size={10} className="opacity-60" />
+                                                        <span className="font-bold text-gray-700">Sala {aula.sala}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Progress Bar (Bottom Edge) */}
+                                            {(() => {
+                                                const cId = aula.cursoId || cursos.find(c => c.nome === aula.curso)?.id;
+                                                const p = cId ? progressMap[`${cId}::${aula.numeroTurma || aula.numeroCurso || ''}`] : null;
+                                                if (p) {
+                                                    return (
+                                                        <div className="absolute bottom-0 left-1 right-0 h-1 bg-gray-100">
+                                                            <div
+                                                                className={`h-full ${p.isCompleted ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                                                style={{ width: `${p.percentage}%` }}
+                                                            />
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
+                                        </div>
+                                    )}
+
+                                    {/* HOVER DETAIL POPOVER (Only shows when hovered) */}
+                                    {isHovered && (
+                                        <div className={`
+                                            absolute z-50 w-64 bg-white rounded-lg shadow-2xl border border-gray-200 ring-1 ring-black/5
+                                            p-3 cursor-default animate-in fade-in zoom-in-95 duration-150
+                                            ${leftPercent > 60 ? 'right-full mr-2' : 'left-full ml-2'}
+                                            ${(startHours > 16) ? 'bottom-0' : 'top-0'}
+                                        `}>
+                                            <div className="flex items-start justify-between mb-2 pb-2 border-b border-gray-100">
+                                                <div>
+                                                    <span className="text-[10px] font-mono text-gray-500 block mb-0.5">
+                                                        {formatTime(aula.horarioInicio)} - {formatTime(aula.horarioFim)}
+                                                    </span>
+                                                    <span className="text-xs font-bold text-gray-900 block leading-tight">
+                                                        {aula.materia}
+                                                    </span>
+                                                </div>
                                                 <div className={`
-                                flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border shadow-sm whitespace-nowrap
-                                ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}
-                            `}>
-                                                    <StatusIcon size={10} />
-                                                    <span>{statusConfig.label}</span>
+                                                    p-1.5 rounded-full 
+                                                    ${aula.status === 'em-andamento' ? 'bg-amber-100 text-amber-600' :
+                                                        aula.status === 'concluida' ? 'bg-emerald-100 text-emerald-600' :
+                                                            'bg-blue-50 text-blue-600'}
+                                                `}>
+                                                    {statusConfig.icon ? <statusConfig.icon size={14} /> : <Calendar size={14} />}
                                                 </div>
                                             </div>
 
-                                            {/* Body: Subject Name */}
-                                            <div className={`font-bold text-gray-800 leading-tight mb-auto ${isShort ? 'text-xs line-clamp-1' : 'text-sm line-clamp-2'}`}>
-                                                {aula.materia}
+                                            <div className="space-y-2">
+                                                <div>
+                                                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Curso</p>
+                                                    <p className="text-xs text-gray-700 leading-snug">{aula.curso}</p>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Instrutor</p>
+                                                        <div className="flex items-center gap-1.5 text-xs text-gray-700">
+                                                            <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                                                                {aula.instrutor?.charAt(0)}
+                                                            </div>
+                                                            <span className="truncate">{aula.instrutor?.split(' ')[0]}</span>
+                                                        </div>
+                                                    </div>
+                                                    {aula.sala && (
+                                                        <div>
+                                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Sala</p>
+                                                            <p className="text-xs text-gray-700">{aula.sala}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Full Course Progress in Popover */}
+                                                {(() => {
+                                                    const cId = aula.cursoId || cursos.find(c => c.nome === aula.curso)?.id;
+                                                    const p = cId ? progressMap[`${cId}::${aula.numeroTurma || aula.numeroCurso || ''}`] : null;
+                                                    if (p) {
+                                                        return (
+                                                            <div className="pt-1">
+                                                                <div className="flex justify-between text-[10px] mb-1">
+                                                                    <span className="text-gray-500">Progresso do Curso</span>
+                                                                    <span className="font-bold text-gray-700">{p.percentage}%</span>
+                                                                </div>
+                                                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className={`h-full ${p.isCompleted ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                                                        style={{ width: `${p.percentage}%` }}
+                                                                    />
+                                                                </div>
+                                                                <div className="flex justify-between text-[9px] text-gray-400 mt-0.5">
+                                                                    <span>{p.completedSubjects}/{p.totalSubjects} Matérias</span>
+                                                                    <span>{p.completedHours}/{p.totalHours}h</span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
                                             </div>
 
-                                            {/* Footer: Details (Time, Room, Instructor) */}
-                                            {!isShort && (
-                                                <div className="mt-2 pt-2 border-t border-gray-100/50 space-y-1">
-                                                    <div className="flex items-center gap-1.5 text-xs text-gray-600" title="Horário">
-                                                        <Clock size={12} className="text-gray-400" />
-                                                        <span>{formatTime(aula.horarioInicio)} - {formatTime(aula.horarioFim)}</span>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-1.5 text-xs text-gray-600" title="Carga horária efetiva">
-                                                        <span className="font-medium text-blue-600 dark:text-blue-400">
-                                                            Carga: {(item.duration / (Number(aula.minutosPorHora) || 60)).toFixed(1).replace('.0', '')}h
-                                                        </span>
-
-                                                        {/* PROGRESS TRACKING */}
-                                                        {aula.cursoId && progressMap[aula.cursoId] && (
-                                                            (() => {
-                                                                const courseP = progressMap[aula.cursoId];
-                                                                const subjectP = courseP.subjects.find((s: any) => s.id === aula.materiaId);
-
-                                                                if (subjectP && subjectP.targetHours > 0) {
-                                                                    const isCompleted = subjectP.completedHours >= subjectP.targetHours;
-                                                                    return (
-                                                                        <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold border ${isCompleted
-                                                                            ? 'bg-green-100 text-green-700 border-green-200'
-                                                                            : 'bg-indigo-50 text-indigo-700 border-indigo-100'
-                                                                            }`}>
-                                                                            {subjectP.display}
-                                                                            {isCompleted ? ' ✅' : ''}
-                                                                        </span>
-                                                                    );
-                                                                }
-                                                                return null;
-                                                            })()
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex items-center gap-4 text-xs text-gray-600">
-                                                        <div className="flex items-center gap-1.5 truncate" title="Instrutor">
-                                                            <User size={12} className="text-gray-400" />
-                                                            <span>{aula.instrutor}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 truncate" title="Sala">
-                                                            <MapPin size={12} className="text-gray-400" />
-                                                            <span>Sala: {aula.sala || 'N/D'}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Footer for Short events (Compact) */}
-                                            {isShort && !isVeryShort && (
-                                                <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-600 truncate">
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock size={10} /> {formatTime(aula.horarioInicio)}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <MapPin size={10} /> Sala: {aula.sala}
-                                                    </span>
-                                                </div>
-                                            )}
-
+                                            {/* Click Hint */}
+                                            <div className="mt-3 text-[9px] text-center text-gray-400 bg-gray-50 py-1 rounded border border-gray-100">
+                                                Clique para editar
+                                            </div>
                                         </div>
                                     )}
                                 </div>

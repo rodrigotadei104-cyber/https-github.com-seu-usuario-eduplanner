@@ -17,6 +17,7 @@ export interface Aula {
   observacoes?: string;
   minutosPorHora?: number; // Para cálculo de carga horária (50 ou 60)
   numeroCurso?: string; // Para exibição no calendário
+  numeroTurma?: string; // Para identificar turmas diferentes (cohorts)
   cargaHorariaMateria?: number; // Carga horária da matéria (em horas/aula)
 }
 

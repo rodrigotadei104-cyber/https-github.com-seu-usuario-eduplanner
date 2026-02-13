@@ -84,7 +84,10 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
-        setFormData(initialData);
+        setFormData({
+          ...initialData,
+          numeroTurma: initialData.numeroTurma || initialData.numeroCurso || ''
+        });
       } else {
         const defaultCurso = cursos[0];
         const startTime = '08:00';
@@ -105,6 +108,8 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
           status: 'agendada',
           cor: defaultCurso?.cor || '#3b82f6',
           observacoes: '',
+          numeroCurso: defaultCurso?.numeroCurso || '',
+          numeroTurma: defaultCurso?.numeroCurso || ''
         });
       }
     }
@@ -211,7 +216,9 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
       ...prev,
       curso: nomeCurso,
       materia: '',
-      cor: selectedCurso ? selectedCurso.cor : prev.cor
+      cor: selectedCurso ? selectedCurso.cor : prev.cor,
+      numeroCurso: selectedCurso?.numeroCurso || '',
+      numeroTurma: selectedCurso?.numeroCurso || '' // Auto-fill cohort with course number
     }));
   };
 
@@ -330,16 +337,16 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Número do Curso (Confirmado)</label>
-                <div className="relative">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Número do Curso (Confirmado)</label>
                   <input
                     type="text"
-                    disabled
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 font-mono text-sm cursor-not-allowed dark:bg-slate-800 dark:border-slate-600 dark:text-gray-400"
-                    value={cursos.find(c => c.nome === formData.curso)?.numeroCurso || '—'}
-                    title="Identificador acadêmico do curso (Automático)"
+                    disabled={isReadOnly || isActionLoading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:disabled:bg-slate-800"
+                    value={formData.numeroTurma || ''}
+                    onChange={(e) => handleChange('numeroTurma', e.target.value)}
+                    placeholder={formData.numeroCurso || 'Número da turma'}
                   />
-                  <Lock size={14} className="absolute right-3 top-3 text-gray-400" />
                 </div>
               </div>
 

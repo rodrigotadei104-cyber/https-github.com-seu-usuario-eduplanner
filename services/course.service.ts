@@ -31,7 +31,7 @@ export const courseService = {
      * Calcula o progresso de um curso e suas matérias
      * Baseado na soma de carga_horaria_materia das aulas
      */
-    async getCourseProgress(courseId: string, tenantId: string): Promise<CourseProgress | null> {
+    async getCourseProgress(courseId: string, tenantId: string, numeroTurma?: string): Promise<CourseProgress | null> {
         // 1. Buscar Curso e Matérias
         const { data: curso, error: cursoError } = await supabase
             .from('cursos')
@@ -44,18 +44,37 @@ export const courseService = {
             return null;
         }
 
+        const minutosPorHora = Number(curso.minutos_por_hora) || 60;
+
         // 2. Buscar Aulas do Curso (para somar horas)
         // Apenas aulas que não foram canceladas
-        const { data: aulas, error: aulasError } = await supabase
+        let request = supabase
             .from('aulas')
-            .select('materia_id, carga_horaria_materia, status')
+            .select('materia_id, horario_inicio, horario_fim, status, data, numero_turma')
             .eq('curso_id', courseId)
-            .neq('status', 'cancelada'); // Fetch all active instructions (Agendada + Active + Done)
+            .neq('status', 'cancelada');
+
+        // Filter by Cohort if provided
+        if (numeroTurma) {
+            request = request.eq('numero_turma', numeroTurma);
+        }
+
+        const { data: aulas, error: aulasError } = await request;
 
         if (aulasError) {
             console.error('Error fetching classes:', aulasError);
             return null;
         }
+
+        // Helper to calc duration in hours (Legal Hours)
+        const calcLegalHours = (start: string, end: string) => {
+            if (!start || !end) return 0;
+            const [h1, m1] = start.split(':').map(Number);
+            const [h2, m2] = end.split(':').map(Number);
+            const minutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+            if (minutes <= 0) return 0;
+            return Number((minutes / minutosPorHora).toFixed(2));
+        };
 
         // 3. Processar Progresso por Matéria
         const subjectsProgress: SubjectProgress[] = (curso.materias || []).map((materia: any) => {
@@ -64,73 +83,79 @@ export const courseService = {
             // Somar horas das aulas desta matéria
             const subjectClasses = aulas?.filter(a => a.materia_id === materia.id) || [];
 
-            // Realized: Only Concluded or In Progress
-            const completed = subjectClasses.reduce((acc, aula) => {
-                const isRealized = ['concluida', 'em_andamento', 'em_andamento'].includes(aula.status); // check snake_case too if needed
-                if (!isRealized) return acc;
-                const horas = Number(aula.carga_horaria_materia) || 0;
-                return acc + horas;
+            // STRICT Completed: Only 'concluida'
+            const strictCompleted = subjectClasses.reduce((acc, aula) => {
+                const isDone = ['concluida'].includes(aula.status);
+                if (!isDone) return acc;
+                return acc + calcLegalHours(aula.horario_inicio, aula.horario_fim);
             }, 0);
 
-            // Planned: All non-cancelled (already filtered by query)
+            // Active: 'em_andamento'
+            const active = subjectClasses.reduce((acc, aula) => {
+                const isActive = ['em_andamento', 'em_andamento'].includes(aula.status); // Keep typo compatible just in case
+                if (!isActive) return acc;
+                return acc + calcLegalHours(aula.horario_inicio, aula.horario_fim);
+            }, 0);
+
+            const totalRealized = strictCompleted + active; // For percentage/bar
             const planned = subjectClasses.reduce((acc, aula) => {
-                const horas = Number(aula.carga_horaria_materia) || 0;
-                return acc + horas;
+                return acc + calcLegalHours(aula.horario_inicio, aula.horario_fim);
             }, 0);
 
-            const percentage = target > 0 ? Math.round((completed / target) * 100) : 0;
-            const status = completed >= target ? 'completed' : (completed > 0 ? 'in_progress' : 'pending');
+            // Round for display
+            const completedDisplay = Math.round(strictCompleted);
+            const activeDisplay = Math.round(active);
+
+            // Percentage based on Realized (Completed + Active) to show progress bar moving
+            const percentage = target > 0 ? Math.round((totalRealized / target) * 100) : 0;
+
+            // Status Logic: Only completed if STRICT completed meets target
+            const status = strictCompleted >= target ? 'completed' : (totalRealized > 0 ? 'in_progress' : 'pending');
 
             return {
                 id: materia.id,
                 name: materia.nome,
                 targetHours: target,
-                completedHours: completed,
+                completedHours: strictCompleted, // Export Strict
+                activeHours: active, // Export Active
                 percentage,
                 status,
-                display: `${completed}h/${target}h`,
-                displayPlanned: `${planned}h/${target}h`
+                display: `${Math.round(totalRealized)}h/${target}h`, // Display total realized (so user sees active count)
+                displayPlanned: `${Math.round(planned)}h/${target}h`
             };
         });
 
         // 4. Processar Progresso Total do Curso
-        // Nota: A carga horária do curso pode vir de 'curso.carga_horaria' (string "50h") ou soma das matérias
-        // Vamos tentar usar a soma das matérias se curso.carga_horaria for vazio ou inconsistente
-
         let courseTarget = 0;
         if (curso.carga_horaria) {
-            // Tentar extrair número da string "50h"
             const match = curso.carga_horaria.toString().match(/(\d+)/);
             if (match) {
                 courseTarget = parseInt(match[1], 10);
             }
         }
 
-        // Se não conseguiu parsear, usa soma das matérias
         if (!courseTarget) {
             courseTarget = subjectsProgress.reduce((acc, s) => acc + s.targetHours, 0);
         }
 
-        const courseCompleted = subjectsProgress.reduce((acc, s) => acc + s.completedHours, 0);
+        const courseStrictCompleted = subjectsProgress.reduce((acc, s) => acc + s.completedHours, 0);
+        const courseActive = subjectsProgress.reduce((acc, s) => acc + (s as any).activeHours, 0);
+        const courseTotalRealized = courseStrictCompleted + courseActive;
 
-        // Extract planned from display string: "10h/10h" -> 10.
-        const coursePlanned = subjectsProgress.reduce((acc, s) => {
-            const val = parseInt(s.displayPlanned.split('h')[0]) || 0;
-            return acc + val;
-        }, 0);
+        const globalPlanned = aulas?.reduce((acc, aula) => acc + calcLegalHours(aula.horario_inicio, aula.horario_fim), 0) || 0;
 
-        const coursePercentage = courseTarget > 0 ? Math.round((courseCompleted / courseTarget) * 100) : 0;
+        const coursePercentage = courseTarget > 0 ? Math.round((courseTotalRealized / courseTarget) * 100) : 0;
 
         return {
             courseId: curso.id,
             courseName: curso.nome,
             targetHours: courseTarget,
-            completedHours: courseCompleted,
-            plannedHours: coursePlanned,
-            percentage: coursePercentage,
-            isCompleted: courseCompleted >= courseTarget && courseTarget > 0,
-            display: `${courseCompleted}h/${courseTarget}h`,
-            displayPlanned: `${coursePlanned}h/${courseTarget}h`,
+            completedHours: Math.round(courseStrictCompleted), // Strict for logical checks
+            plannedHours: Math.round(globalPlanned),
+            percentage: coursePercentage, // Realized for Visuals
+            isCompleted: courseStrictCompleted >= courseTarget && courseTarget > 0, // Strict Check
+            display: `${Math.round(courseTotalRealized)}h/${courseTarget}h`, // Display Realized
+            displayPlanned: `${Math.round(globalPlanned)}h/${courseTarget}h`,
             subjects: subjectsProgress
         };
     }

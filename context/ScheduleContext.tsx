@@ -121,6 +121,9 @@ interface ScheduleContextType {
   // Permissions Helpers (UI only - backend validates)
   canManageClasses: () => boolean;
   canManageRegistrations: () => boolean;
+
+  // Data Refresh
+  refreshData: () => Promise<void>;
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -204,6 +207,12 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await aulaService.syncClassStatuses().catch(err => console.error('Sync error:', err));
       }
 
+      // SCHEMA CHECK: Validate if numero_turma exists
+      const { error: schemaError } = await supabase.from('aulas').select('numero_turma').limit(1);
+      if (schemaError && schemaError.message?.includes('column')) {
+        showNotification("CRÍTICO: Coluna 'numero_turma' não encontrada no banco. Execute a migração SQL imediatamente!", 'error');
+      }
+
       // Load data from services (RLS filters by tenant automatically)
       const [aulasData, instrutoresData, cursosData, materiasData, eventsData] = await Promise.all([
         aulaService.list({ includeRelations: true }).catch(() => []),
@@ -235,10 +244,16 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         cor: a.curso?.cor || '#3B82F6',
         minutosPorHora: a.curso?.minutos_por_hora || 60,
         numeroCurso: a.curso?.numero_curso,
+        numeroTurma: a.numero_turma, // New field for Cohort separation
         cargaHorariaMateria: a.carga_horaria_materia,
         cursoId: a.curso_id,
         materiaId: a.materia_id
       })));
+
+      if (aulasData.length > 0) {
+        console.log('[DEBUG-LOAD] First raw item numero_turma:', (aulasData[0] as any).numero_turma);
+        console.log('[DEBUG-LOAD] First mapped item numeroTurma:', (aulasData[0] as any).numero_turma);
+      }
 
       setInstrutores(instrutoresData.map((i: any) => ({
         id: i.id,
@@ -498,7 +513,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       curso_id: cursos.find(c => c.nome === data.curso)?.id || '',
       materia_id: materias.find(m => m.nome === data.materia)?.id || '',
       sala: data.sala,
-      observacoes: data.observacoes
+      observacoes: data.observacoes,
+      numero_turma: data.numeroTurma // Pass custom cohort number
     };
 
     const result = await aulaService.create(serviceInput, forceCreate);
@@ -542,8 +558,12 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       materia_id: materias.find(m => m.nome === data.materia)?.id,
       sala: data.sala,
       status: data.status === 'em-andamento' ? 'em_andamento' as const : data.status as any,
-      observacoes: data.observacoes
+      observacoes: data.observacoes,
+      numero_turma: data.numeroTurma // Update custom cohort number
     };
+
+    console.log('[DEBUG-UPDATE] Sending payload:', serviceInput);
+
 
     try {
       setIsActionLoading(true);
@@ -934,7 +954,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   return (
     <ScheduleContext.Provider
-      value={{
+      value={useMemo(() => ({
         isAuthenticated,
         isLoading,
         isDemo,
@@ -996,8 +1016,21 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isActionLoading,
 
         canManageClasses,
-        canManageRegistrations
-      }}
+        canManageRegistrations,
+        refreshData: loadAllData
+      }), [
+        isAuthenticated, isLoading, isDemo, login, logout, enterDemoMode, activateAccount, resetPassword,
+        aulas, instrutores, cursos, materias, users, systemLogs, eventos,
+        filteredAulas, currentDate, viewMode, filters,
+        addAula, updateAula, deleteAula,
+        addInstrutor, deleteInstrutor, addCurso, updateCurso, deleteCurso, addMateria, deleteMateria,
+        addEvento, updateEvento, deleteEvento,
+        createUser, updateUserStatus, updateUserRole, resendInvitation, acceptInvitation, deleteUser, setTestPassword,
+        stats,
+        userProfile, updateUserProfile, appSettings, updateAppSettings,
+        notification, closeNotification, isActionLoading,
+        canManageClasses, canManageRegistrations, loadAllData
+      ])}
     >
       {children}
     </ScheduleContext.Provider>
