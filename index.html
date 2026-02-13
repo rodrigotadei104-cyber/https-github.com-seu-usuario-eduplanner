@@ -1,123 +1,143 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EduPlanner</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            colors: {
-              primary: '#2563eb', // blue-600
-              secondary: '#475569', // slate-600
-            }
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EduPlanner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: '#2563eb', // blue-600
+            secondary: '#475569', // slate-600
           }
         }
       }
-    </script>
-    <style>
-      /* Custom scrollbar for better aesthetics */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f5f9; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
-      
-      /* Dark mode scrollbar */
-      .dark ::-webkit-scrollbar-track {
-        background: #1e293b;
-      }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #475569;
-      }
-      .dark ::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for better aesthetics */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Dark mode scrollbar */
+    .dark ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+
+    .dark ::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
+    /* PRINT STYLES */
+    @media print {
+      @page {
+        margin: 1cm;
+        size: portrait;
       }
 
-      /* PRINT STYLES */
-      @media print {
-        @page {
-          margin: 1cm;
-          size: portrait;
-        }
-        
-        body {
-          background-color: white !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          overflow: visible !important;
-        }
-
-        /* Hide UI elements */
-        aside, 
-        header, 
-        .no-print,
-        button:not(.print-visible) {
-          display: none !important;
-        }
-
-        /* Reset layout for print */
-        #root, .flex-1, main {
-          display: block !important;
-          width: 100% !important;
-          height: auto !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: visible !important;
-        }
-
-        /* Specific fix for Daily View scrolling container */
-        .custom-scrollbar {
-          overflow: visible !important;
-          height: auto !important;
-        }
-
-        /* Hide borders and shadows for cleaner look */
-        .shadow-sm, .shadow-md, .shadow-xl {
-          box-shadow: none !important;
-        }
-        
-        .border, .border-l-4 {
-          border-color: #e2e8f0 !important; /* Force light gray borders */
-        }
+      body {
+        background-color: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        overflow: visible !important;
       }
-    </style>
+
+      /* Hide UI elements */
+      aside,
+      header,
+      .no-print,
+      button:not(.print-visible) {
+        display: none !important;
+      }
+
+      /* Reset layout for print */
+      #root,
+      .flex-1,
+      main {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+
+      /* Specific fix for Daily View scrolling container */
+      .custom-scrollbar {
+        overflow: visible !important;
+        height: auto !important;
+      }
+
+      /* Hide borders and shadows for cleaner look */
+      .shadow-sm,
+      .shadow-md,
+      .shadow-xl {
+        box-shadow: none !important;
+      }
+
+      .border,
+      .border-l-4 {
+        border-color: #e2e8f0 !important;
+        /* Force light gray borders */
+      }
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "date-fns/": "https://esm.sh/date-fns@^4.1.0/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react/jsx-runtime": "https://esm.sh/react@^19.2.3/jsx-runtime",
+    "react/jsx-dev-runtime": "https://esm.sh/react@^19.2.3/jsx-dev-runtime",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
     "date-fns": "https://esm.sh/date-fns@^4.1.0",
+    "date-fns/": "https://esm.sh/date-fns@^4.1.0/",
+    "date-fns/locale": "https://esm.sh/date-fns@^4.1.0/locale",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
     "recharts": "https://esm.sh/recharts@^3.6.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.3"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50 text-slate-900 antialiased overflow-hidden transition-colors dark:bg-slate-900 dark:text-white">
-    <div id="root"></div>
+
+<body
+  class="bg-slate-50 text-slate-900 antialiased overflow-hidden transition-colors dark:bg-slate-900 dark:text-white">
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>
