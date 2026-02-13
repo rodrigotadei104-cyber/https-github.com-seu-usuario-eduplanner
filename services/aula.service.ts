@@ -19,6 +19,7 @@ export interface AulaInput {
     materia_id: string;
     sala?: string;
     observacoes?: string;
+    numero_turma?: string; // Identifier for the specific cohort (e.g. T01-2026)
 }
 
 export interface AulaUpdateInput extends Partial<AulaInput> {
@@ -60,7 +61,7 @@ export const aulaService = {
     }): Promise<unknown[]> {
         let query = supabase.from('aulas').select(
             filters?.includeRelations
-                ? `*, carga_horaria_materia, instrutor:instrutores(id, nome), curso:cursos(id, nome, cor, minutos_por_hora, numero_curso), materia:materias(id, nome, carga_horaria)`
+                ? `*, numero_turma, carga_horaria_materia, instrutor:instrutores(id, nome), curso:cursos(id, nome, cor, minutos_por_hora, numero_curso), materia:materias(id, nome, carga_horaria)`
                 : '*'
         );
 
@@ -107,6 +108,8 @@ export const aulaService = {
         excludeAulaId?: string;
     }): Promise<{ hasConflict: boolean; conflicts: ConflictInfo[] }> {
         const { instructorId, date, startTime, endTime, excludeAulaId } = params;
+
+        if (!instructorId) return { hasConflict: false, conflicts: [] };
 
         // Buscar aulas do instrutor no mesmo dia (exceto canceladas)
         let query = supabase
@@ -347,13 +350,23 @@ export const aulaService = {
             });
         }
 
-        // 4. Inserção com tenant forçado
+        // 3.7. CALCULAR CARGA HORÁRIA (Horas Aula) AUTOMATICAMENTE
+        const [h1, m1] = input.horario_inicio.split(':').map(Number);
+        const [h2, m2] = input.horario_fim.split(':').map(Number);
+        const totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+        const computedCargaHoraria = totalMinutes > 0
+            ? Math.round((totalMinutes / (curso.minutos_por_hora || 60)) * 100) / 100
+            : 0;
+
+        // 4. Inserção com tenant forçado e carga horária calculada
         const { data, error } = await supabase
             .from('aulas')
             .insert({
                 ...input,
                 tenant_id: tenantId,
-                status: 'agendada'
+                status: 'agendada',
+                carga_horaria_materia: (input as any).carga_horaria_materia || computedCargaHoraria,
+                numero_turma: input.numero_turma // Save cohort ID to the class itself
             })
             .select()
             .single();
@@ -512,10 +525,36 @@ export const aulaService = {
         const safeInput = { ...input };
         delete (safeInput as Record<string, unknown>).tenant_id;
 
-        // 5. Executar update
+        // 4.1. Recalcular Carga Horária se necessário
+        let cargaHorariaCalculada = existing.carga_horaria_materia;
+        if (input.horario_inicio || input.horario_fim || input.curso_id) {
+            const hStart = input.horario_inicio || existing.horario_inicio;
+            const hEnd = input.horario_fim || existing.horario_fim;
+            const targetCursoId = input.curso_id || existing.curso_id;
+
+            // Buscar minutos_por_hora do curso alvo
+            const { data: targetCurso } = await supabase
+                .from('cursos')
+                .select('minutos_por_hora')
+                .eq('id', targetCursoId)
+                .single();
+
+            const [h1, m1] = hStart.split(':').map(Number);
+            const [h2, m2] = hEnd.split(':').map(Number);
+            const totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+
+            if (totalMinutes > 0) {
+                cargaHorariaCalculada = Math.round((totalMinutes / (targetCurso?.minutos_por_hora || 60)) * 100) / 100;
+            }
+        }
+
+        // 5. Executar update com carga horária persistida
         const { data: updated, error: updateError } = await supabase
             .from('aulas')
-            .update(safeInput)
+            .update({
+                ...safeInput,
+                carga_horaria_materia: (input as any).carga_horaria_materia || cargaHorariaCalculada
+            })
             .eq('id', id)
             .select()
             .single();
@@ -814,7 +853,7 @@ export const aulaService = {
 
         const { data: aulas, error } = await supabase
             .from('aulas')
-            .select('data, instrutor:instrutores(nome), status, carga_horaria_materia')
+            .select('data, instrutor:instrutores(nome), status, carga_horaria_materia, horario_inicio, horario_fim, curso:cursos(minutos_por_hora)')
             .gte('data', startOfYear)
             .lte('data', endOfYear)
             .neq('status', 'cancelada');
@@ -824,8 +863,23 @@ export const aulaService = {
         const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
         const instructorMap = new Map<string, number[]>();
 
+        const instructorsList = aulas?.map((a: any) => a.instrutor?.nome).filter(Boolean);
+        console.log(`[Report Debug] Total aulas: ${aulas?.length || 0}`);
+        console.log(`[Report Debug] Instructors found: ${Array.from(new Set(instructorsList)).join(', ')}`);
+
         aulas?.forEach((aula: any) => {
-            const nome = aula.instrutor?.nome || 'Desconhecido';
+            // Robust name extraction (handles object or array join results)
+            let nomeRaw = 'Desconhecido';
+            if (aula.instrutor) {
+                if (Array.isArray(aula.instrutor) && aula.instrutor.length > 0) {
+                    nomeRaw = aula.instrutor[0].nome;
+                } else if (typeof aula.instrutor === 'object') {
+                    nomeRaw = aula.instrutor.nome;
+                }
+            }
+            const nome = (nomeRaw || '').trim();
+            if (!nome || nome === 'Desconhecido') return; // Skip orphaned/deleted instructors
+
             if (!instructorMap.has(nome)) {
                 instructorMap.set(nome, Array(12).fill(0));
             }
@@ -842,10 +896,26 @@ export const aulaService = {
 
             if (monthIndex >= 0 && monthIndex <= 11) {
                 const currentCounts = instructorMap.get(nome)!;
-                // NEW: Sum hours/class instead of counting events
-                const horas = aula.carga_horaria_materia && !isNaN(Number(aula.carga_horaria_materia))
-                    ? Number(aula.carga_horaria_materia)
-                    : 0;
+
+                // NEW: Sum hours/class with duration fallback for resilience
+                let horas = 0;
+                if (aula.carga_horaria_materia && !isNaN(Number(aula.carga_horaria_materia)) && Number(aula.carga_horaria_materia) > 0) {
+                    horas = Number(aula.carga_horaria_materia);
+                } else if (aula.horario_inicio && aula.horario_fim) {
+                    try {
+                        const [h1, m1] = aula.horario_inicio.split(':').map(Number);
+                        const [h2, m2] = aula.horario_fim.split(':').map(Number);
+                        const totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+                        if (totalMinutes > 0) {
+                            horas = Math.round((totalMinutes / (aula.curso?.minutos_por_hora || 60)) * 100) / 100;
+                        }
+                    } catch { horas = 0; }
+                }
+
+                if (horas > 0 && nome.includes('Deivid')) {
+                    console.log(`[Report Debug] Deivid Aula: ${aula.data} - Horas: ${horas} (Carga: ${aula.carga_horaria_materia}, Dur: ${aula.horario_inicio}-${aula.horario_fim})`);
+                }
+
                 currentCounts[monthIndex] += horas;
             }
         });
@@ -877,7 +947,7 @@ export const aulaService = {
 
         const { data: aulas, error } = await supabase
             .from('aulas')
-            .select('data, status, carga_horaria_materia')
+            .select('data, status, carga_horaria_materia, horario_inicio, horario_fim, curso:cursos(minutos_por_hora)')
             .gte('data', startOfYear)
             .lte('data', endOfYear)
             .neq('status', 'cancelada');
@@ -892,15 +962,25 @@ export const aulaService = {
             historyMap.set(monthKey, { totalClasses: 0, totalHours: 0, completed: 0 });
         }
 
-        aulas?.forEach(aula => {
+        aulas?.forEach((aula: any) => {
             const monthKey = aula.data.slice(0, 7);
             if (historyMap.has(monthKey)) {
                 const entry = historyMap.get(monthKey)!;
 
-                // NEW: Sum hours/class from carga_horaria_materia
-                const horas = aula.carga_horaria_materia && !isNaN(Number(aula.carga_horaria_materia))
-                    ? Number(aula.carga_horaria_materia)
-                    : 0;
+                // NEW: Sum hours/class with duration fallback for resilience
+                let horas = 0;
+                if (aula.carga_horaria_materia && !isNaN(Number(aula.carga_horaria_materia)) && Number(aula.carga_horaria_materia) > 0) {
+                    horas = Number(aula.carga_horaria_materia);
+                } else if (aula.horario_inicio && aula.horario_fim) {
+                    try {
+                        const [h1, m1] = aula.horario_inicio.split(':').map(Number);
+                        const [h2, m2] = aula.horario_fim.split(':').map(Number);
+                        const totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+                        if (totalMinutes > 0) {
+                            horas = Math.round((totalMinutes / (aula.curso?.minutos_por_hora || 60)) * 100) / 100;
+                        }
+                    } catch { horas = 0; }
+                }
 
                 entry.totalClasses += horas; // Now represents hours/class, not event count
                 entry.totalHours += horas; // Keep both for compatibility

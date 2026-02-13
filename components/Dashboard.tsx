@@ -59,10 +59,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
     let activeClassesCount = 0;
 
     periodAulas.forEach(aula => {
+      // Helper for duration calculation (Minutes)
+      const getDuration = (start?: string, end?: string) => {
+        if (!start || !end) return 0;
+        try {
+          const [h1, m1] = start.split(':').map(Number);
+          const [h2, m2] = end.split(':').map(Number);
+          if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return 0;
+          return (h2 * 60 + m2) - (h1 * 60 + m1);
+        } catch { return 0; }
+      };
+
       // NEW: Sum hours/class by status instead of counting events
-      const horasAula = aula.cargaHorariaMateria && !isNaN(Number(aula.cargaHorariaMateria))
-        ? Number(aula.cargaHorariaMateria)
-        : 0;
+      // Prioritize cargaHorariaMateria, but fallback to duration calculation
+      let horasAula = 0;
+      if (aula.cargaHorariaMateria && !isNaN(Number(aula.cargaHorariaMateria)) && Number(aula.cargaHorariaMateria) > 0) {
+        horasAula = Number(aula.cargaHorariaMateria);
+      } else {
+        const duration = getDuration(aula.horarioInicio, aula.horarioFim);
+        if (duration > 0) {
+          horasAula = Math.round((duration / (aula.minutosPorHora || 60)) * 100) / 100;
+        }
+      }
 
       if (statusCounts[aula.status as keyof typeof statusCounts] !== undefined) {
         statusCounts[aula.status as keyof typeof statusCounts] += horasAula;
@@ -71,25 +89,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       // STRICT METRICS: Cancelled classes do NOT contribute to Headline Stats
       if (aula.status !== 'cancelada') {
         activeClassesCount++;
-        instructors.add(aula.instrutor);
+        if (aula.instrutor && aula.instrutor.trim() !== '') {
+          instructors.add(aula.instrutor);
+        }
 
-        // NEW: Track unique course numbers (each represents an active class/turma)
-        if (aula.numeroCurso) {
+        // Identification strictly by Cohort (Turma) first, then Course Number
+        if (aula.numeroTurma) {
+          uniqueCourses.add(String(aula.numeroTurma)); // e.g. "T01-2026"
+        } else if (aula.numeroCurso) {
           uniqueCourses.add(String(aula.numeroCurso));
+        } else {
+          // Fallback only if number is missing (e.g. legacy data)
+          uniqueCourses.add(`curso-${aula.curso}`);
         }
 
-        // NEW: Sum class hours from subject workload
-        if (aula.cargaHorariaMateria && !isNaN(Number(aula.cargaHorariaMateria))) {
-          totalHorasAula += Number(aula.cargaHorariaMateria);
-        }
-
-        // Calculate duration - horários vêm como HH:mm ou HH:mm:ss
-        const startTime = aula.horarioInicio?.substring(0, 5) || '00:00';
-        const endTime = aula.horarioFim?.substring(0, 5) || '00:00';
-        const s = parse(startTime, 'HH:mm', new Date());
-        const e = parse(endTime, 'HH:mm', new Date());
-        const diff = differenceInMinutes(e, s);
-        if (!isNaN(diff) && diff > 0) totalMinutes += diff;
+        totalHorasAula += horasAula;
+        totalMinutes += getDuration(aula.horarioInicio, aula.horarioFim);
       }
     });
 
@@ -118,9 +133,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
     );
 
     const totalHorasAula = monthAulas.reduce((sum, aula) => {
-      const horas = aula.cargaHorariaMateria && !isNaN(Number(aula.cargaHorariaMateria))
-        ? Number(aula.cargaHorariaMateria)
-        : 0;
+      let horas = 0;
+      if (aula.cargaHorariaMateria && !isNaN(Number(aula.cargaHorariaMateria)) && Number(aula.cargaHorariaMateria) > 0) {
+        horas = Number(aula.cargaHorariaMateria);
+      } else {
+        const startTime = aula.horarioInicio?.substring(0, 5) || '00:00';
+        const endTime = aula.horarioFim?.substring(0, 5) || '00:00';
+        const s = parse(startTime, 'HH:mm', new Date());
+        const e = parse(endTime, 'HH:mm', new Date());
+        const diff = differenceInMinutes(e, s);
+        if (!isNaN(diff) && diff > 0) {
+          horas = Math.round((diff / (aula.minutosPorHora || 60)) * 100) / 100;
+        }
+      }
       return sum + horas;
     }, 0);
 
@@ -156,10 +181,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
     // Group by Instructor - Sum hours/class instead of counting events
     const counts: Record<string, number> = {};
     filtered.forEach(a => {
-      const horas = a.cargaHorariaMateria && !isNaN(Number(a.cargaHorariaMateria))
-        ? Number(a.cargaHorariaMateria)
-        : 0;
-      counts[a.instrutor] = (counts[a.instrutor] || 0) + horas;
+      let horas = 0;
+      if (a.cargaHorariaMateria && !isNaN(Number(a.cargaHorariaMateria)) && Number(a.cargaHorariaMateria) > 0) {
+        horas = Number(a.cargaHorariaMateria);
+      } else {
+        const startTime = a.horarioInicio?.substring(0, 5) || '00:00';
+        const endTime = a.horarioFim?.substring(0, 5) || '00:00';
+        const s = parse(startTime, 'HH:mm', new Date());
+        const e = parse(endTime, 'HH:mm', new Date());
+        const diff = differenceInMinutes(e, s);
+        if (!isNaN(diff) && diff > 0) {
+          horas = Math.round((diff / (a.minutosPorHora || 60)) * 100) / 100;
+        }
+      }
+      const instructorName = (a.instrutor || '').trim();
+      if (!instructorName) return; // Skip classes with no instructor (deleted/orphaned)
+      counts[instructorName] = (counts[instructorName] || 0) + horas;
     });
 
     // Convert to Array and Sort
@@ -230,7 +267,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
 
   const visibleInstructors = useMemo(() => {
     if (!comparisonData) return [];
-    return showAllInstructors ? comparisonData.data : comparisonData.data.slice(0, 3);
+    // Aumentado para 6 instrutores por padrão para evitar que o Deivid suma em caso de empate
+    return showAllInstructors ? comparisonData.data : comparisonData.data.slice(0, 6);
   }, [comparisonData, showAllInstructors]);
 
   const LINE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
@@ -568,7 +606,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
                   dataKey={inst.instructorName}
                   name={inst.instructorName}
                   stroke={LINE_COLORS[index % LINE_COLORS.length]}
-                  strokeWidth={3}
+                  // Cycle stroke width: 4px, 3px, 2px to show nested lines on overlap
+                  strokeWidth={4 - (index % 3)}
+                  strokeOpacity={0.8}
+                  strokeDasharray={index % 2 === 0 ? "0" : "4 4"}
                   dot={{ r: 4, fill: LINE_COLORS[index % LINE_COLORS.length], strokeWidth: 0 }}
                   activeDot={{ r: 6 }}
                 />
@@ -587,6 +628,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
             </button>
           </div>
         )}
+
+        {/* Diagnostic Table - To prove existence */}
+        <div className="mt-8 overflow-x-auto">
+          <table className="min-w-full text-xs text-left text-gray-500 dark:text-gray-400">
+            <thead className="bg-gray-50 dark:bg-slate-700 font-medium">
+              <tr>
+                <th className="px-4 py-2">Instrutor</th>
+                <th className="px-4 py-2">Total Anual</th>
+                {comparisonData?.months.map(m => <th key={m} className="px-4 py-2">{m}</th>)}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 border-t border-gray-100 dark:border-slate-700">
+              {visibleInstructors.map((inst, idx) => (
+                <tr key={inst.instructorName} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                  <td className="px-4 py-2 font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LINE_COLORS[idx % LINE_COLORS.length] }}></div>
+                    {inst.instructorName}
+                  </td>
+                  <td className="px-4 py-2 font-bold">{inst.total}h</td>
+                  {inst.values.map((v, i) => <td key={i} className="px-4 py-2">{v > 0 ? v : '-'}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div >
   );
