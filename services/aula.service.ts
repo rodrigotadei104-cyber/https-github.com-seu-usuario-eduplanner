@@ -275,6 +275,13 @@ export const aulaService = {
 
         // 3. Verificar conflito de instrutor (se não forçado)
         if (!forceCreate) {
+            // 3.0. Validar status ativo sem instrutor (embora create force 'agendada', bom garantir se algo mudar)
+            // Se status for passado e for diferente de agendada... (mas aqui forçamos agendada na linha 367)
+            // Então só precisamos checar se o instrutor está presente caso tivéssemos flexibilidade.
+            // Como create força 'agendada', a validação aqui é redundante mas deixamos pronta.
+            if (['em_andamento', 'concluida'].includes((input as any).status) && !input.instrutor_id) {
+                return { success: false, error: 'Instrutor obrigatório para iniciar ou concluir aula.' };
+            }
             const conflictCheck = await this.checkInstructorConflict({
                 instructorId: input.instrutor_id,
                 date: input.data,
@@ -398,7 +405,7 @@ export const aulaService = {
     /**
      * Atualizar aula (Admin ou Editor, com restrições para cancelamento)
      */
-    async update(id: string, input: AulaUpdateInput, forceUpdate: boolean = false): Promise<ServiceResult> {
+    async update(id: string, input: AulaUpdateInput, forceUpdate: boolean = false, propagateRoom: boolean = false): Promise<ServiceResult> {
         // 1. Buscar aula atual para validações
         const { data: existing, error: fetchError } = await supabase
             .from('aulas')
@@ -443,6 +450,16 @@ export const aulaService = {
             const canEdit = await permissionService.checkPermission('EDIT_CLASS', `Aula:${id}`);
             if (!canEdit) {
                 return { success: false, error: 'Permissão negada.' };
+            }
+        }
+
+        // 3.1. CRÍTICO: Validar Instrutor para Status Ativo
+        const nextStatus = input.status || existing.status;
+        const nextInstrutor = (input as any).instrutor_id !== undefined ? (input as any).instrutor_id : existing.instrutor_id;
+
+        if (['em_andamento', 'concluida'].includes(nextStatus)) {
+            if (!nextInstrutor) {
+                return { success: false, error: 'Instrutor obrigatório para iniciar ou concluir aula.' };
             }
         }
 
@@ -561,6 +578,45 @@ export const aulaService = {
 
         if (updateError) {
             return { success: false, error: updateError.message };
+        }
+
+        // --- PROPAGAÇÃO DE SALA EM LOTE ---
+        if (propagateRoom && input.sala && input.sala !== existing.sala) {
+            try {
+                // Buscar todas as aulas do mesmo curso e turma (cohort) que possuem a SALA ANTIGA
+                // Limitamos ao mesmo curso e turma para evitar efeitos colaterais indesejados
+                const { data: relatedAulas } = await supabase
+                    .from('aulas')
+                    .select('id')
+                    .eq('curso_id', existing.curso_id)
+                    .eq('numero_turma', existing.numero_turma)
+                    .eq('sala', existing.sala || '') // Supabase lida com string vazia vs null dependendo do schema
+                    .neq('id', id); // Excluir a aula que já acabamos de atualizar
+
+                if (relatedAulas && relatedAulas.length > 0) {
+                    const idsToUpdate = relatedAulas.map(a => a.id);
+                    await supabase
+                        .from('aulas')
+                        .update({ sala: input.sala })
+                        .in('id', idsToUpdate);
+
+                    await auditService.log({
+                        action: 'UPDATE',
+                        entity: 'aula',
+                        entityId: id,
+                        details: {
+                            type: 'ROOM_PROPAGATION',
+                            newRoom: input.sala,
+                            affectedCount: idsToUpdate.length,
+                            cohort: existing.numero_turma
+                        },
+                        result: 'success'
+                    });
+                }
+            } catch (err) {
+                console.error('Erro na propagação de sala:', err);
+                // Não falhamos a operação principal por erro na propagação
+            }
         }
 
         // 6. Audit com tipo apropriado
@@ -1028,5 +1084,53 @@ export const aulaService = {
             currentMonth: Math.round(current),
             previousMonth: Math.round(previous)
         };
+    },
+
+    /**
+     * MAPA DE SALAS — Fonte de dados centralizada
+     * Reutiliza aulaService.list() com includeRelations para garantir
+     * consistência total com as demais visões do sistema.
+     * NÃO filtra no frontend — delega tudo ao backend (RLS + filtro de data).
+     */
+    async getAulasEntrePeriodo(dataInicio: string, dataFim: string): Promise<AulaMapaSala[]> {
+        const rawData = await this.list({
+            dateFrom: dataInicio,
+            dateTo: dataFim,
+            includeRelations: true
+        });
+
+        return (rawData as any[]).map((a): AulaMapaSala => ({
+            id: a.id,
+            data: a.data,
+            horarioInicio: a.horario_inicio,
+            horarioFim: a.horario_fim,
+            salaId: a.sala || 'sem-sala',
+            sala: a.sala || 'Sem sala definida',
+            curso: a.curso?.nome || '',
+            materia: a.materia?.nome || '',
+            instrutor: a.instrutor?.nome || '',
+            cor: a.curso?.cor || '#3B82F6',
+            status: a.status,
+            minutosPorHora: a.curso?.minutos_por_hora || 60
+        }));
     }
 };
+
+// ============================================
+// TIPOS PÚBLICOS DO MAPA DE SALAS
+// ============================================
+
+export interface AulaMapaSala {
+    id: string;
+    data: string;          // YYYY-MM-DD
+    horarioInicio: string; // HH:mm
+    horarioFim: string;    // HH:mm
+    salaId: string;        // sala normalizada (lowercase) para agrupamentos
+    sala: string;          // sala para exibição
+    curso: string;
+    materia: string;
+    instrutor: string;
+    cor: string;           // hex color para identidade visual
+    status: string;
+    minutosPorHora: number;
+}

@@ -38,6 +38,7 @@ import { TermsOfUse } from './components/TermsOfUse';
 import { AboutPage } from './components/AboutPage';
 import { DataInspector } from './components/DataInspector';
 import { ScheduleGenerator } from './components/ScheduleGenerator';
+import { RoomMapView } from './components/RoomMapView';
 
 const App: React.FC = () => {
     const {
@@ -227,6 +228,7 @@ const App: React.FC = () => {
         if (viewMode === 'monthly' || viewMode === 'dashboard') return format(currentDate, "MMMM 'de' yyyy", { locale: ptBR });
         if (viewMode === 'registrations') return 'Gestão Acadêmica';
         if (viewMode === 'admin') return 'Gestão de Usuários & Logs';
+        if (viewMode === 'room-map') return 'Mapa de Salas';
         return format(currentDate, "dd 'de' MMMM", { locale: ptBR });
     };
 
@@ -234,7 +236,7 @@ const App: React.FC = () => {
         window.print();
     };
 
-    const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin';
+    const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin' && viewMode !== 'room-map';
     const showSearchBar = showNavControls && viewMode !== 'dashboard'; // Hide search in dashboard
 
     const handleExportMonth = async () => {
@@ -303,6 +305,12 @@ const App: React.FC = () => {
                     return <AccessDenied onNavigateBack={() => setViewMode('dashboard')} />;
                 }
                 return <AdminPanel />;
+            case 'room-map': // Mapa de Salas — visão semanal por sala
+                return (
+                    <RoomMapView
+                        onEditAula={handleEditAula}
+                    />
+                );
             default:
                 return (
                     <div className="flex items-center justify-center h-full text-gray-500">

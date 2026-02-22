@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { formatHoras, formatHorasDetalhado, formatNumber } from '../lib/formatters';
 import { Stats, Aula } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, Legend } from 'recharts';
 import { Users, Clock, BookOpen, AlertCircle, CheckCircle, Calendar, Filter, ArrowRight } from 'lucide-react';
@@ -301,9 +302,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total de Horas/Aula"
-          value={periodStats.totalAulas} // Reverted to workload sum (Horas Aula)
+          value={formatHorasDetalhado(periodStats.totalAulas)}
           icon={BookOpen}
-          color="bg-purple-500" // Changed color distinctive
+          color="bg-purple-500"
           subtext={`Carga horária em ${formattedPeriodLabel}`}
         />
         <StatCard
@@ -322,10 +323,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
         />
         <StatCard
           title="Conclusão"
-          value={`${periodStats.activeClassesCount > 0 ? Math.round((periodStats.aulasPorStatus.concluida / periodStats.activeClassesCount) * 100) : 0}%`}
+          value={`${periodStats.totalAulas > 0 ? Math.round((periodStats.aulasPorStatus.concluida / periodStats.totalAulas) * 100) : 0}%`}
           icon={CheckCircle}
           color="bg-teal-500"
-          subtext={`${periodStats.aulasPorStatus.concluida} concluídas em ${formattedPeriodLabel}`}
+          subtext={`${formatHoras(periodStats.aulasPorStatus.concluida)}h concluídas em ${formattedPeriodLabel}`}
         />
       </div>
 
@@ -337,7 +338,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
           <h3 className="text-sm font-medium text-gray-500 mb-4 dark:text-gray-400">Tendência de Crescimento</h3>
           <div className="flex items-end gap-2 mb-2">
             <div className={`flex items-center gap-1 text-3xl font-bold ${trend.growthRate > 0 ? 'text-green-600 dark:text-green-400' : trend.growthRate < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
-              {trend.growthRate > 0 ? '+' : ''}{trend.growthRate}%
+              {trend.growthRate > 0 ? '+' : ''}{Math.round(trend.growthRate)}%
             </div>
             <span className={`text-sm mb-1 font-medium px-2 py-0.5 rounded ${trend.growthRate > 0
               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
@@ -349,7 +350,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
             </span>
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Comparativo: {trend.previousMonth} horas/aula (mês anterior) vs {trend.currentMonth} (atual).
+            Comparativo: {formatHoras(trend.previousMonth)}h (mês anterior) vs {formatHoras(trend.currentMonth)}h (atual).
           </p>
         </div>
 
@@ -358,12 +359,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
           <h3 className="text-sm font-medium text-gray-500 mb-4 dark:text-gray-400">Projeção Anual</h3>
           <div className="flex items-end gap-2 mb-2">
             <span className="text-3xl font-bold text-gray-900 dark:text-white">
-              ~{projection.projectedYearTotal}
+              ~{formatNumber(projection.projectedYearTotal, 0)}
             </span>
             <span className="text-sm mb-1 text-gray-500 dark:text-gray-400">horas/aula</span>
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Baseado na média de {Math.round(projection.averagePerMonth)} horas/aula por mês dos últimos 12 meses.
+            Baseado na média de {formatHoras(projection.averagePerMonth)}h/mês dos últimos 12 meses.
           </p>
         </div>
 
@@ -441,7 +442,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
                 <div key={item.label}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600 dark:text-gray-400">{item.label}</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{item.val}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{formatHoras(item.val)}h</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2 dark:bg-slate-700">
                     <div
@@ -463,7 +464,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
               <AlertCircle size={20} className="flex-shrink-0" />
               <div className="flex-1">
                 <span className="font-semibold block">Atenção</span>
-                {periodStats.aulasPorStatus.cancelada} aulas canceladas em {formattedPeriodLabel}.
+                {formatHoras(periodStats.aulasPorStatus.cancelada)}h canceladas em {formattedPeriodLabel}.
               </div>
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
             </button>
@@ -525,7 +526,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
                       {item.name}
                     </span>
                     <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                      {item.count}
+                      {formatHoras(item.count)}h
                     </span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-1.5 dark:bg-slate-900">
@@ -646,8 +647,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentDate, onNavigateToM
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LINE_COLORS[idx % LINE_COLORS.length] }}></div>
                     {inst.instructorName}
                   </td>
-                  <td className="px-4 py-2 font-bold">{inst.total}h</td>
-                  {inst.values.map((v, i) => <td key={i} className="px-4 py-2">{v > 0 ? v : '-'}</td>)}
+                  <td className="px-4 py-2 font-bold">{formatHoras(inst.total)}h</td>
+                  {inst.values.map((v, i) => <td key={i} className="px-4 py-2">{v > 0 ? formatHoras(v) : '-'}</td>)}
                 </tr>
               ))}
             </tbody>

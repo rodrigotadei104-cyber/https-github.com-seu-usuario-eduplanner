@@ -33,7 +33,8 @@ export interface ProcessedRow extends RawImportRow {
  */
 export const processImportData = (
     rawData: RawImportRow[],
-    existingCourses: Curso[]
+    existingCourses: Curso[],
+    instrutores: any[] = [] // Default to empty if not passed
 ): ProcessedRow[] => {
     const processed: ProcessedRow[] = [];
 
@@ -47,8 +48,6 @@ export const processImportData = (
         let courseId: string | undefined;
 
         // 1. Minimum Requirements
-        // If it's a Schedule import, we might need Data/Disciplina.
-        // But let's check basic Course info first.
         if (!row.numeroCurso && !row.nomeCurso) {
             errors.push('Linha sem identificação de curso (Nome ou Número).');
             isValid = false;
@@ -61,7 +60,6 @@ export const processImportData = (
                 if (fileCourses.has(row.numeroCurso)) {
                     const prev = fileCourses.get(row.numeroCurso)!;
 
-                    // Allow blank carga in subsequent rows, but if present, must match
                     if (row.cargaHorariaCurso && row.cargaHorariaCurso !== prev.carga) {
                         errors.push(`Inconsistência: Carga horária (${row.cargaHorariaCurso}) difere da anterior (${prev.carga}) para este número.`);
                         isValid = false;
@@ -71,7 +69,6 @@ export const processImportData = (
                         isValid = false;
                     }
                 } else if (row.cargaHorariaCurso || row.tipoHora || row.nomeCurso) {
-                    // Register first occurrence
                     fileCourses.set(row.numeroCurso, {
                         carga: row.cargaHorariaCurso || '',
                         tipo: row.tipoHora || 60,
@@ -84,16 +81,11 @@ export const processImportData = (
                 if (existing) {
                     courseAction = 'reuse';
                     courseId = existing.id;
-                    // Validate if file tries to redefine existing course properties?
-                    // User Rule: "Reutilizar". We generally don't block unless major conflict, 
-                    // but usually we trust the DB. Let's strictly reuse.
                 } else {
                     courseAction = 'create';
                 }
 
             } else {
-                // No number -> Fallback to Name
-                // Warning!
                 errors.push('Aviso: Curso identificado apenas por nome (sem número externo).');
                 const existing = existingCourses.find(c => c.nome.toLowerCase() === row.nomeCurso?.toLowerCase());
                 if (existing) {
@@ -102,6 +94,19 @@ export const processImportData = (
                 } else {
                     courseAction = 'create';
                 }
+            }
+        }
+
+        // 3. Instructor Validation (New)
+        if (isValid && row.instrutor) {
+            // If instructor is provided, it MUST exist in the system
+            const searchName = row.instrutor.trim().toLowerCase();
+            const exists = instrutores.some(i => i.nome.toLowerCase() === searchName) ||
+                instrutores.some(i => i.nome.toLowerCase().includes(searchName)); // Loose match allowed for import convenience
+
+            if (!exists) {
+                errors.push(`Instrutor não encontrado: "${row.instrutor}". Cadastre-o antes ou deixe em branco.`);
+                isValid = false;
             }
         }
 

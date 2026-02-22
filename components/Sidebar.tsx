@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Calendar, CalendarDays, BarChart3, Plus, Settings, LogOut, Database, Shield, Building2, BookOpen, FileText, Info } from 'lucide-react';
+import { LayoutDashboard, Calendar, CalendarDays, BarChart3, Plus, Settings, LogOut, Database, Shield, Building2, BookOpen, FileText, Info, LayoutGrid } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useSchedule } from '../context/ScheduleContext';
 import { EduPlannerLogo } from './EduPlannerLogo';
@@ -147,6 +147,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
                                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'annual' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
                                 >
                                     <BarChart3 size={18} /> Anual
+                                </button>
+                                <button
+                                    onClick={() => { onChangeView('room-map'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'room-map' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
+                                >
+                                    <LayoutGrid size={18} /> Mapa de Salas
                                 </button>
                             </div>
                         </div>

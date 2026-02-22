@@ -149,7 +149,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
             // For "Carga Curso", normalizer makes 'cargacurso'. Search key 'cargacurso' works.
         });
 
-        const processed = processImportData(rawData, cursos);
+        const processed = processImportData(rawData, cursos, instrutores);
         setPreview(processed);
 
         if (processed.length === 0 && rows.length > 0) {

@@ -22,6 +22,7 @@ interface ClassModalProps {
 export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave, initialData }) => {
   const { instrutores, cursos, materias, appSettings, currentDate, userProfile, addAula, updateAula, deleteAula, isActionLoading } = useSchedule();
 
+  const [propagateRoom, setPropagateRoom] = useState(false);
   const [formData, setFormData] = useState<Partial<Aula>>({
     data: new Date(),
     horarioInicio: '08:00',
@@ -133,7 +134,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
     if (initialData) {
       // Update
       const fullData = { ...initialData, ...dataToSave } as Aula;
-      result = await updateAula(fullData, force);
+      result = await updateAula(fullData, force, propagateRoom);
     } else {
       // Create
       result = await addAula(dataToSave as Omit<Aula, 'id' | 'tenantId'>, force);
@@ -397,13 +398,30 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Sala</label>
-                <input
-                  type="text"
-                  disabled={isReadOnly || isActionLoading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:disabled:bg-slate-800"
-                  value={formData.sala || ''}
-                  onChange={(e) => handleChange('sala', e.target.value)}
-                />
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    disabled={isReadOnly || isActionLoading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:disabled:bg-slate-800"
+                    value={formData.sala || ''}
+                    onChange={(e) => handleChange('sala', e.target.value)}
+                  />
+
+                  {initialData && formData.sala !== (initialData.sala || '') && (
+                    <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 animate-in fade-in slide-in-from-top-1">
+                      <input
+                        type="checkbox"
+                        id="propagateRoom"
+                        checked={propagateRoom}
+                        onChange={(e) => setPropagateRoom(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="propagateRoom" className="text-xs text-blue-700 dark:text-blue-300 font-medium cursor-pointer">
+                        Atualizar para todas as aulas desta turma
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>

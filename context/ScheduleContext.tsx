@@ -73,7 +73,7 @@ interface ScheduleContextType {
     conflicts?: Array<{ aulaId: string; materia: string; horarioInicio: string; horarioFim: string }>;
     error?: string;
   }>;
-  updateAula: (aula: Aula, forceUpdate?: boolean) => Promise<{
+  updateAula: (aula: Aula, forceUpdate?: boolean, propagateRoom?: boolean) => Promise<{
     success: boolean;
     warning?: 'INSTRUCTOR_CONFLICT' | 'ROOM_CONFLICT';
     conflicts?: Array<{ aulaId: string; materia: string; horarioInicio: string; horarioFim: string }>;
@@ -538,7 +538,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [instrutores, cursos, materias, loadAllData, showNotification]);
 
-  const updateAula = useCallback(async (data: Aula, forceUpdate: boolean = false) => {
+  const updateAula = useCallback(async (data: Aula, forceUpdate: boolean = false, propagateRoom: boolean = false) => {
     // FIX: Usar formato local para evitar problema de fuso horário
     let dateStr: string;
     if (typeof data.data === 'string') {
@@ -567,7 +567,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       setIsActionLoading(true);
-      const result = await aulaService.update(data.id, serviceInput, forceUpdate);
+      const result = await aulaService.update(data.id, serviceInput, forceUpdate, propagateRoom);
 
       if (result.warning) {
         return {

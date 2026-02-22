@@ -64,7 +64,7 @@ export interface Evento {
   status: EventStatus;
 }
 
-export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin';
+export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin' | 'room-map';
 
 export interface FilterState {
   search: string;
