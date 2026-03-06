@@ -44,8 +44,14 @@ interface ProcessedItem {
 }
 
 export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit }) => {
-    const { isLoading, eventos, instrutores, canManageClasses, deleteEvento, userProfile, cursos } = useSchedule();
+    const { isLoading, eventos, instrutores, canManageClasses, deleteEvento, userProfile, cursos, feriadosSet, feriados } = useSchedule();
     const [hoveredAulaId, setHoveredAulaId] = useState<string | null>(null);
+
+    // Verificar se o dia atual é feriado
+    const dataISO = format(currentDate, 'yyyy-MM-dd');
+    const feriadoDoDia = feriadosSet.has(dataISO)
+        ? (feriados.find(f => f.data === dataISO) || { descricao: 'Feriado', tipo: 'nacional' })
+        : null;
 
     // 1. Calculate layout for BOTH classes and events together
     const processedItems = useMemo(() => {
@@ -379,6 +385,18 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                     {processedItems.length} itens agendados
                 </div>
             </div>
+
+            {/* Banner de Feriado */}
+            {feriadoDoDia && (
+                <div className="px-4 py-2 bg-red-50 border-b border-red-200 dark:bg-red-900/20 dark:border-red-900/40 flex items-center gap-2">
+                    <span className="text-lg">🎉</span>
+                    <div>
+                        <span className="text-sm font-bold text-red-700 dark:text-red-300">{feriadoDoDia.descricao}</span>
+                        <span className="ml-2 text-xs text-red-500 dark:text-red-400 capitalize bg-red-100 dark:bg-red-900/40 px-1.5 py-0.5 rounded-full">{feriadoDoDia.tipo}</span>
+                    </div>
+                    <span className="ml-auto text-xs text-red-500 dark:text-red-400 italic">Aulas não realizadas neste dia</span>
+                </div>
+            )}
 
             <div className="flex-1 overflow-y-auto relative custom-scrollbar print:overflow-visible print:h-auto pt-5 pb-5">
                 <div className="flex">

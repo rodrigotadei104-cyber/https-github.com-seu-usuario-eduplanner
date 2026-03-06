@@ -30,7 +30,7 @@ interface MonthlyViewProps {
 }
 
 export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, onSelectDate, onEditAula }) => {
-  const { isLoading, filters, eventos, instrutores } = useSchedule();
+  const { isLoading, filters, eventos, instrutores, feriadosSet, feriados } = useSchedule();
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
@@ -38,6 +38,13 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  // Helper: buscar feriado de um dia específico
+  const getFeriado = (day: Date) => {
+    const iso = format(day, 'yyyy-MM-dd');
+    if (!feriadosSet.has(iso)) return null;
+    return feriados.find(f => f.data === iso) || { data: iso, descricao: 'Feriado', tipo: 'nacional' };
+  };
 
   // Empty State Logic
   const hasAulas = aulas.length > 0;
@@ -95,21 +102,25 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
 
             const isCurrentMonth = isSameMonth(day, monthStart);
             const isDayToday = isToday(day);
+            const feriado = getFeriado(day);
 
             return (
               <div
                 key={day.toString()}
                 onClick={() => onSelectDate(day)}
+                title={feriado ? `🎉 ${feriado.descricao}` : undefined}
                 className={`
-                min-h-[120px] p-2 border-b border-r border-gray-100 relative group cursor-pointer transition-colors
-                ${!isCurrentMonth ? 'bg-gray-50/50 text-gray-400' : 'bg-white'}
-                ${isDayToday ? 'bg-blue-50/30' : 'hover:bg-gray-50'}
+                min-h-[120px] p-2 border-b border-r relative group cursor-pointer transition-colors
+                ${feriado ? 'bg-red-50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30' :
+                    !isCurrentMonth ? 'bg-gray-50/50 text-gray-400 border-gray-100' : 'bg-white border-gray-100'}
+                ${isDayToday && !feriado ? 'bg-blue-50/30' : ''}
+                ${!feriado ? 'hover:bg-gray-50' : 'hover:bg-red-100/60'}
               `}
               >
                 <div className="flex justify-between items-start mb-1">
                   <span className={`
                   text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full
-                  ${isDayToday ? 'bg-blue-600 text-white' : 'text-gray-700'}
+                  ${isDayToday ? 'bg-blue-600 text-white' : feriado ? 'text-red-700 font-bold' : 'text-gray-700'}
                 `}>
                     {format(day, 'd')}
                   </span>
@@ -118,6 +129,14 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
                   )}
                 </div>
 
+                {/* Badge de feriado */}
+                {feriado && (
+                  <div className="mb-1">
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-300 px-1.5 py-0.5 rounded-full leading-tight">
+                      🎉 {feriado.descricao.length > 18 ? feriado.descricao.substring(0, 18) + '…' : feriado.descricao}
+                    </span>
+                  </div>
+                )}
                 <div className="space-y-1 overflow-y-auto max-h-[100px] custom-scrollbar">
                   {/* Events first */}
                   {dayEventos.map((evento) => (

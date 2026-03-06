@@ -37,9 +37,10 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { TermsOfUse } from './components/TermsOfUse';
 import { AboutPage } from './components/AboutPage';
 import { DataInspector } from './components/DataInspector';
-import { ScheduleGenerator } from './components/ScheduleGenerator';
+import { AberturaTurmaWizard } from './components/AberturaTurmaWizard';
 import { RoomMapView } from './components/RoomMapView';
-
+import { CatalogoView } from './components/CatalogoView';
+import { CalendarioInstitucionalView } from './components/CalendarioInstitucionalView';
 const App: React.FC = () => {
     const {
         isAuthenticated,
@@ -229,6 +230,8 @@ const App: React.FC = () => {
         if (viewMode === 'registrations') return 'Gestão Acadêmica';
         if (viewMode === 'admin') return 'Gestão de Usuários & Logs';
         if (viewMode === 'room-map') return 'Mapa de Salas';
+        if (viewMode === 'catalog') return 'Catálogo Base Institucional';
+        if (viewMode === 'calendar') return 'Gestão do Calendário Escolar';
         return format(currentDate, "dd 'de' MMMM", { locale: ptBR });
     };
 
@@ -236,7 +239,7 @@ const App: React.FC = () => {
         window.print();
     };
 
-    const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin' && viewMode !== 'room-map';
+    const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin' && viewMode !== 'room-map' && viewMode !== 'catalog' && viewMode !== 'calendar';
     const showSearchBar = showNavControls && viewMode !== 'dashboard'; // Hide search in dashboard
 
     const handleExportMonth = async () => {
@@ -296,9 +299,13 @@ const App: React.FC = () => {
                     />
                 );
             case 'registrations': // 4. Gerenciamento Acadêmico
-                // All authenticated users can technically view this list, but only Admin edits.
-                // If strict requirements say Viewers can't even see the list, add check here.
                 return <RegistrationView />;
+            case 'catalog': // Nova Arquitetura
+                if (!isAdmin) return <AccessDenied onNavigateBack={() => setViewMode('dashboard')} />;
+                return <CatalogoView />;
+            case 'calendar': // Nova Arquitetura
+                if (!isAdmin) return <AccessDenied onNavigateBack={() => setViewMode('dashboard')} />;
+                return <CalendarioInstitucionalView />;
             case 'admin': // 5. Gerenciamento de Usuários & 7. Logs
                 // STRICT PERMISSION CHECK
                 if (!canViewAdminPanel) {
@@ -504,7 +511,7 @@ const App: React.FC = () => {
                 type={passwordModal.type}
             />
 
-            <ScheduleGenerator
+            <AberturaTurmaWizard
                 isOpen={isGeneratorOpen}
                 onClose={() => setIsGeneratorOpen(false)}
             />

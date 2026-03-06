@@ -74,7 +74,7 @@ interface RoomMapViewProps {
 // ============================================
 
 export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
-    const { aulas: aulasGlobais, isLoading } = useSchedule();
+    const { aulas: aulasGlobais, isLoading, feriadosSet, feriados } = useSchedule();
     const [semanaBase, setSemanaBase] = useState<Date>(new Date());
     const [aba, setAba] = useState<'grade' | 'lista' | 'dia'>('grade');
     const [filtroBusca, setFiltroBusca] = useState('');
@@ -565,23 +565,32 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                 {diasDaSemana.map(dia => {
                                                     const diaStr = format(dia, 'yyyy-MM-dd');
                                                     const isHoje = diaStr === hoje;
+                                                    const feriado = feriadosSet.has(diaStr)
+                                                        ? (feriados.find(f => f.data === diaStr) || { descricao: 'Feriado', tipo: 'nacional' })
+                                                        : null;
                                                     return (
                                                         <th
                                                             key={diaStr}
                                                             style={{
-                                                                background: isHoje ? '#eff6ff' : '#f9fafb',
+                                                                background: feriado ? '#fff1f2' : isHoje ? '#eff6ff' : '#f9fafb',
                                                                 width: '134px', minWidth: '134px',
-                                                                borderBottom: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb',
+                                                                borderBottom: `2px solid ${feriado ? '#fca5a5' : isHoje ? '#93c5fd' : '#e5e7eb'}`,
+                                                                borderRight: '1px solid #e5e7eb',
                                                                 padding: '8px',
                                                                 textAlign: 'center'
                                                             }}
                                                         >
-                                                            <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: isHoje ? '#3b82f6' : '#9ca3af' }}>
+                                                            <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: feriado ? '#ef4444' : isHoje ? '#3b82f6' : '#9ca3af' }}>
                                                                 {format(dia, 'EEE', { locale: ptBR })}
                                                             </p>
-                                                            <p style={{ fontSize: '14px', fontWeight: 700, color: isHoje ? '#1d4ed8' : '#374151' }}>
+                                                            <p style={{ fontSize: '14px', fontWeight: 700, color: feriado ? '#dc2626' : isHoje ? '#1d4ed8' : '#374151' }}>
                                                                 {format(dia, 'dd/MM')}
                                                             </p>
+                                                            {feriado && (
+                                                                <p style={{ fontSize: '8px', color: '#ef4444', fontWeight: 600, marginTop: '2px', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                                                                    🎉 {feriado.descricao}
+                                                                </p>
+                                                            )}
                                                         </th>
                                                     );
                                                 })}
@@ -648,7 +657,7 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                                                         cursor: 'pointer',
                                                                                         border: 'none',
                                                                                         padding: 0,
-                                                                                        opacity: isCancelada ? 0.5 : 1,
+                                                                                        opacity: isCancelada ? 0.5 : (filtroInstrutor && aula.instrutor !== filtroInstrutor ? 0.3 : 1),
                                                                                         outline: isConflito ? '1px solid #f87171' : 'none',
                                                                                         backgroundColor: isConflito ? '#fef2f2' : isCancelada ? '#f9fafb' : `${aula.cor}11`,
                                                                                         borderLeft: `3px solid ${isConflito ? '#f87171' : isCancelada ? '#d1d5db' : aula.cor}`
@@ -725,6 +734,14 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                     <span className="text-xs text-gray-400 ml-2">
                                         {aulasFiltradasDia.length} aula{aulasFiltradasDia.length !== 1 ? 's' : ''}
                                     </span>
+                                    {feriadosSet.has(diaSelecionadoStr) && (() => {
+                                        const f = feriados.find(x => x.data === diaSelecionadoStr);
+                                        return (
+                                            <span className="ml-2 inline-flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full dark:bg-red-900/20 dark:text-red-400 dark:border-red-900">
+                                                🎉 {f?.descricao || 'Feriado'}
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
 
                                 {aulasFiltradasDia.length === 0 ? (

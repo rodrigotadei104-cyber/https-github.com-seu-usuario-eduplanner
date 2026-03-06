@@ -22,6 +22,7 @@ import {
   eventService,
   EventInput
 } from '../services';
+import { calendarioService } from '../services/calendario.service';
 import { supabase } from '../lib/supabase';
 
 // ============================================
@@ -57,6 +58,8 @@ interface ScheduleContextType {
   users: UserAccount[];
   systemLogs: SystemLog[];
   eventos: Evento[];
+  feriadosSet: Set<string>;                              // YYYY-MM-DD para lookup rápido
+  feriados: Array<{ data: string; descricao: string; tipo: string }>; // para tooltip/label
 
   filteredAulas: Aula[];
   currentDate: Date;
@@ -155,6 +158,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
+  const [feriadosSet, setFeriadosSet] = useState<Set<string>>(new Set());
+  const [feriados, setFeriados] = useState<Array<{ data: string; descricao: string; tipo: string }>>([]);
 
   // --- UI State ---
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -222,11 +227,16 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         eventService.list().catch(() => [])
       ]);
 
-      // Log for Debugging
-      if (aulasData.length > 0) {
-        console.log('[DEBUG] Raw Aulas Data 0:', aulasData[0]);
-        console.log('[DEBUG] First Aula Course:', (aulasData[0] as any).curso);
-      }
+      // Carregar feriados para exibicão nas views
+      const feriadosData = await calendarioService.getFeriados().catch(() => []);
+      const novoFeriadosSet = new Set(feriadosData.map((f: any) => String(f.data || f.dataReferencia || '').substring(0, 10)));
+      setFeriadosSet(novoFeriadosSet);
+      setFeriados(feriadosData.map((f: any) => ({
+        data: String(f.data || f.dataReferencia || '').substring(0, 10),
+        descricao: f.descricao || f.nome || 'Feriado',
+        tipo: f.tipo || 'nacional',
+      })));
+
 
       // Transform to legacy format if needed
       setAulas(aulasData.map((a: any) => ({
@@ -236,8 +246,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         horarioInicio: a.horario_inicio,
         horarioFim: a.horario_fim,
         instrutor: a.instrutor?.nome || '',
-        curso: a.curso?.nome || '',
-        materia: a.materia?.nome || '',
+        curso: a.curso?.nome || a.disciplina?.curso?.nome_curso || '',
+        materia: a.materia?.nome || a.disciplina?.nome_disciplina || '',
         sala: a.sala || '',
         status: a.status === 'em_andamento' ? 'em-andamento' : a.status,
         observacoes: a.observacoes || '',
@@ -250,10 +260,6 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         materiaId: a.materia_id
       })));
 
-      if (aulasData.length > 0) {
-        console.log('[DEBUG-LOAD] First raw item numero_turma:', (aulasData[0] as any).numero_turma);
-        console.log('[DEBUG-LOAD] First mapped item numeroTurma:', (aulasData[0] as any).numero_turma);
-      }
 
       setInstrutores(instrutoresData.map((i: any) => ({
         id: i.id,
@@ -1017,10 +1023,12 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         canManageClasses,
         canManageRegistrations,
-        refreshData: loadAllData
+        refreshData: loadAllData,
+        feriadosSet,
+        feriados,
       }), [
         isAuthenticated, isLoading, isDemo, login, logout, enterDemoMode, activateAccount, resetPassword,
-        aulas, instrutores, cursos, materias, users, systemLogs, eventos,
+        aulas, instrutores, cursos, materias, users, systemLogs, eventos, feriadosSet, feriados,
         filteredAulas, currentDate, viewMode, filters,
         addAula, updateAula, deleteAula,
         addInstrutor, deleteInstrutor, addCurso, updateCurso, deleteCurso, addMateria, deleteMateria,
