@@ -1,5 +1,4 @@
 import React from 'react';
-import { AlertTriangle, X } from 'lucide-react';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -59,24 +58,24 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       >
         <div className="p-6">
           <div className="flex items-start gap-4">
-            <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${styles.iconBg}`}>
-              <AlertTriangle className={`w-6 h-6 ${styles.iconColor}`} />
+            <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-black text-xl ${styles.iconBg} ${styles.iconColor}`}>
+              !
             </div>
             <div className="flex-1">
-              <h3 id="modal-title" className="text-lg font-bold text-gray-900 dark:text-white leading-6">
+              <h3 id="modal-title" className="text-lg font-black uppercase tracking-tighter text-gray-900 dark:text-white leading-6">
                 {title}
               </h3>
               <div className="mt-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                   {description}
                 </p>
               </div>
             </div>
             <button 
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest transition-colors"
             >
-              <X size={20} />
+              FECHAR
             </button>
           </div>
         </div>
@@ -84,7 +83,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="bg-gray-50 dark:bg-slate-900/50 px-6 py-4 flex flex-row-reverse gap-3 border-t border-gray-100 dark:border-slate-700">
           <button
             type="button"
-            className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 sm:w-auto transition-colors ${styles.confirmBtn}`}
+            className={`inline-flex justify-center rounded-lg border border-transparent px-6 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 sm:w-auto transition-colors ${styles.confirmBtn}`}
             onClick={() => {
               onConfirm();
               onClose();
@@ -94,7 +93,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           </button>
           <button
             type="button"
-            className="inline-flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto transition-colors dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600 dark:hover:bg-slate-700"
+            className="inline-flex justify-center rounded-lg border border-gray-300 bg-white px-6 py-2 text-[10px] font-black uppercase tracking-widest text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto transition-colors dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600 dark:hover:bg-slate-700"
             onClick={onClose}
           >
             {cancelLabel}

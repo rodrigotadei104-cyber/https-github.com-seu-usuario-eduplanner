@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
 import { format } from 'date-fns';
 
@@ -17,10 +16,12 @@ export const DataInspector: React.FC<{ isOpen: boolean; onClose: () => void }> =
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col font-mono text-xs">
-                <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-lg font-bold">Data Inspector ({aulas.length} total)</h2>
-                    <button onClick={onClose}><X size={20} /></button>
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col font-mono text-xs overflow-hidden border border-gray-200">
+                <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+                    <h2 className="text-sm font-black uppercase tracking-widest text-indigo-600">
+                      [ RAW DATA ENGINE ] ({aulas.length} TOTAL)
+                    </h2>
+                    <button onClick={onClose} className="text-[10px] font-black text-gray-400 hover:text-black uppercase">Fechar [X]</button>
                 </div>
 
                 <div className="p-4 bg-gray-50 border-b">

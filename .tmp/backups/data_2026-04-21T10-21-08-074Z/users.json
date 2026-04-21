@@ -1,0 +1,122 @@
+[
+  {
+    "id": "7abf36b9-f327-47af-8b88-e26ed0090557",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "liliancz@yahoo.com.br",
+    "name": "Lilian",
+    "role": "admin",
+    "status": "active",
+    "created_at": "2026-01-21T18:08:25.55+00:00",
+    "last_login": "2026-04-17T11:51:07.802+00:00",
+    "avatar_url": null,
+    "photo_url": null
+  },
+  {
+    "id": "7382e3e7-10c9-44db-ba76-68d67d728ecc",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "matusalem.francisco@hotmail.com",
+    "name": "Matusalém Francisco dos Santos ",
+    "role": "viewer",
+    "status": "active",
+    "created_at": "2026-01-16T18:52:30.728+00:00",
+    "last_login": null,
+    "avatar_url": null,
+    "photo_url": null
+  },
+  {
+    "id": "c4d41d6b-a640-435a-899d-d61746e02ab8",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "giothais@hotmail.com",
+    "name": "Giovanna Thais Cassemiro Trizolio",
+    "role": "viewer",
+    "status": "active",
+    "created_at": "2026-01-20T14:55:45.91+00:00",
+    "last_login": "2026-02-20T21:20:43.448+00:00",
+    "avatar_url": null,
+    "photo_url": null
+  },
+  {
+    "id": "8ae51369-1603-4cc8-b081-77c29a62b675",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "leandrohenrique.costa@gmail.com",
+    "name": "Leandro Henrique Costa ",
+    "role": "editor",
+    "status": "active",
+    "created_at": "2026-01-10T17:34:55.569+00:00",
+    "last_login": "2026-03-19T11:01:55.11+00:00",
+    "avatar_url": null,
+    "photo_url": null
+  },
+  {
+    "id": "e3fd6b7b-2da2-4c40-98f8-60333dc7a4b5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "lenono95@gmail.com",
+    "name": "Rodrigo Tadei",
+    "role": "admin",
+    "status": "active",
+    "created_at": "2026-01-05T15:49:39.016137+00:00",
+    "last_login": "2026-03-31T23:05:13.653+00:00",
+    "avatar_url": null,
+    "photo_url": "https://ubhtibihkpwocgazwtur.supabase.co/storage/v1/object/public/avatars/e3fd6b7b-2da2-4c40-98f8-60333dc7a4b5/profile.jpg?v=1771601683194"
+  },
+  {
+    "id": "e0cee3dd-d9e3-4dd2-8635-a45eba3c2cc2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "camila.caiano42@gmail.com",
+    "name": "Camila Moreira Caiano",
+    "role": "editor",
+    "status": "active",
+    "created_at": "2026-04-06T14:02:00.564+00:00",
+    "last_login": null,
+    "avatar_url": null,
+    "photo_url": null
+  },
+  {
+    "id": "9d34b366-23de-404f-bf3d-09c686380390",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "deivis.txt@gmail.com",
+    "name": "Deivid Diniz da Silva",
+    "role": "viewer",
+    "status": "active",
+    "created_at": "2026-01-20T18:31:36.116+00:00",
+    "last_login": "2026-03-04T16:28:48.975+00:00",
+    "avatar_url": null,
+    "photo_url": null
+  },
+  {
+    "id": "1b16debd-9313-4e5e-9ac7-4805a73585c5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "silviaapdaborges@hotmail.com",
+    "name": "Silvia Aparecida Borges ",
+    "role": "viewer",
+    "status": "active",
+    "created_at": "2026-01-20T19:07:29.835+00:00",
+    "last_login": "2026-04-07T19:22:59.713+00:00",
+    "avatar_url": null,
+    "photo_url": null
+  },
+  {
+    "id": "bf14a312-b917-49ce-abd1-14dca5a900b6",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "wrjunior2912@gmail.com",
+    "name": "Wilson Rogério Junior ",
+    "role": "viewer",
+    "status": "active",
+    "created_at": "2026-01-16T12:36:45.256+00:00",
+    "last_login": "2026-04-09T20:12:21.314+00:00",
+    "avatar_url": null,
+    "photo_url": null
+  },
+  {
+    "id": "6c70734f-7927-44e5-b35e-5bf45516bf79",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "email": "edlranjo46@gmail.com",
+    "name": "Edson Laranjo",
+    "role": "viewer",
+    "status": "active",
+    "created_at": "2026-01-21T17:38:18.959+00:00",
+    "last_login": "2026-04-15T15:42:10.639+00:00",
+    "avatar_url": null,
+    "photo_url": null
+  }
+]

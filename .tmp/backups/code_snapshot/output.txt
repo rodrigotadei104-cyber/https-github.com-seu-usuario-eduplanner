@@ -1,0 +1,81 @@
+﻿Inspecting data for 2026-02-07...
+
+Found 15 records for 2026-02-07
+
+--- BY INSTRUCTOR ---
+
+Instructor: "UNASSIGNED" (15 classes)
+  [concluida   ] 13:00:00-15:00:00 | undefined (ID: dbc4e18f-5eb1-4ec4-b60d-a52bc01fbdf3)
+  [concluida   ] 08:00:00-12:00:00 | undefined (ID: 06a46eb7-2cd1-4a64-b479-859c487fee00)
+  [concluida   ] 15:00:00-17:00:00 | undefined (ID: c9433468-faee-4164-ac57-e7f58d351907)
+  [concluida   ] 13:00:00-14:00:00 | undefined (ID: a47ef1e3-c2d4-4d05-bc50-79fad4131b71)
+  [concluida   ] 16:00:00-17:00:00 | undefined (ID: 03a686c0-68dd-45d3-a855-dcef702fb09b)
+  [concluida   ] 08:00:00-12:00:00 | undefined (ID: 23f71721-f86c-40b0-977a-0610cdaa202e)
+  [concluida   ] 10:00:00-12:00:00 | undefined (ID: 74e23f6f-8a63-467e-b664-49a50a3d9705)
+  [concluida   ] 08:00:00-12:00:00 | undefined (ID: 98c73b5e-0dc7-4bd7-a22e-3dae7257af7f)
+  [concluida   ] 13:00:00-15:00:00 | undefined (ID: 8f608395-5112-43aa-98fe-c0773fded84d)
+  [concluida   ] 15:00:00-17:00:00 | undefined (ID: 24b66a87-31b5-4cb9-be14-751697012661)
+  [concluida   ] 15:00:00-17:00:00 | undefined (ID: 42c4f16a-89ab-464c-a72f-44bd67107297)
+  [concluida   ] 13:00:00-15:00:00 | undefined (ID: d0124787-0ece-4a05-8769-c9967fcba5ba)
+  [concluida   ] 08:00:00-10:00:00 | undefined (ID: c00a677a-5db1-41aa-877b-c58bcff811d3)
+  [concluida   ] 18:00:00-22:00:00 | undefined (ID: b24aae08-9712-4677-ba83-f24bf607b618)
+  [concluida   ] 08:00:00-12:00:00 | undefined (ID: 397e5eb0-7149-44ea-986b-696f6c472a12)
+
+--- POTENTIAL DUPLICATES ---
+  WARNING: Overlap for UNASSIGNED at 13:00:00
+    1. dbc4e18f-5eb1-4ec4-b60d-a52bc01fbdf3 (concluida) - undefined
+    2. a47ef1e3-c2d4-4d05-bc50-79fad4131b71 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 13:00:00
+    1. dbc4e18f-5eb1-4ec4-b60d-a52bc01fbdf3 (concluida) - undefined
+    2. 8f608395-5112-43aa-98fe-c0773fded84d (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 13:00:00
+    1. dbc4e18f-5eb1-4ec4-b60d-a52bc01fbdf3 (concluida) - undefined
+    2. d0124787-0ece-4a05-8769-c9967fcba5ba (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 06a46eb7-2cd1-4a64-b479-859c487fee00 (concluida) - undefined
+    2. 23f71721-f86c-40b0-977a-0610cdaa202e (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 06a46eb7-2cd1-4a64-b479-859c487fee00 (concluida) - undefined
+    2. 98c73b5e-0dc7-4bd7-a22e-3dae7257af7f (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 06a46eb7-2cd1-4a64-b479-859c487fee00 (concluida) - undefined
+    2. c00a677a-5db1-41aa-877b-c58bcff811d3 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 06a46eb7-2cd1-4a64-b479-859c487fee00 (concluida) - undefined
+    2. 397e5eb0-7149-44ea-986b-696f6c472a12 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 15:00:00
+    1. c9433468-faee-4164-ac57-e7f58d351907 (concluida) - undefined
+    2. 24b66a87-31b5-4cb9-be14-751697012661 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 15:00:00
+    1. c9433468-faee-4164-ac57-e7f58d351907 (concluida) - undefined
+    2. 42c4f16a-89ab-464c-a72f-44bd67107297 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 13:00:00
+    1. a47ef1e3-c2d4-4d05-bc50-79fad4131b71 (concluida) - undefined
+    2. 8f608395-5112-43aa-98fe-c0773fded84d (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 13:00:00
+    1. a47ef1e3-c2d4-4d05-bc50-79fad4131b71 (concluida) - undefined
+    2. d0124787-0ece-4a05-8769-c9967fcba5ba (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 23f71721-f86c-40b0-977a-0610cdaa202e (concluida) - undefined
+    2. 98c73b5e-0dc7-4bd7-a22e-3dae7257af7f (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 23f71721-f86c-40b0-977a-0610cdaa202e (concluida) - undefined
+    2. c00a677a-5db1-41aa-877b-c58bcff811d3 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 23f71721-f86c-40b0-977a-0610cdaa202e (concluida) - undefined
+    2. 397e5eb0-7149-44ea-986b-696f6c472a12 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 98c73b5e-0dc7-4bd7-a22e-3dae7257af7f (concluida) - undefined
+    2. c00a677a-5db1-41aa-877b-c58bcff811d3 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. 98c73b5e-0dc7-4bd7-a22e-3dae7257af7f (concluida) - undefined
+    2. 397e5eb0-7149-44ea-986b-696f6c472a12 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 13:00:00
+    1. 8f608395-5112-43aa-98fe-c0773fded84d (concluida) - undefined
+    2. d0124787-0ece-4a05-8769-c9967fcba5ba (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 15:00:00
+    1. 24b66a87-31b5-4cb9-be14-751697012661 (concluida) - undefined
+    2. 42c4f16a-89ab-464c-a72f-44bd67107297 (concluida) - undefined
+  WARNING: Overlap for UNASSIGNED at 08:00:00
+    1. c00a677a-5db1-41aa-877b-c58bcff811d3 (concluida) - undefined
+    2. 397e5eb0-7149-44ea-986b-696f6c472a12 (concluida) - undefined

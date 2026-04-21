@@ -82,6 +82,12 @@ interface ScheduleContextType {
     conflicts?: Array<{ aulaId: string; materia: string; horarioInicio: string; horarioFim: string }>;
     error?: string;
   }>;
+  addAulaPrograma: (data: Omit<Aula, 'id' | 'tenantId'>, forceCreate?: boolean) => Promise<{
+    success: boolean;
+    warning?: 'INSTRUCTOR_CONFLICT' | 'ROOM_CONFLICT';
+    conflicts?: Array<{ aulaId: string; materia: string; horarioInicio: string; horarioFim: string }>;
+    error?: string;
+  }>;
   deleteAula: (id: string) => Promise<boolean>;
 
   // Actions - Registrations
@@ -242,7 +248,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setAulas(aulasData.map((a: any) => ({
         id: a.id,
         tenantId: a.tenant_id,
-        data: a.data,
+        data: a.data instanceof Date ? a.data : new Date(a.data + 'T00:00:00'),
         horarioInicio: a.horario_inicio,
         horarioFim: a.horario_fim,
         instrutor: a.instrutor?.nome || '',
@@ -257,7 +263,11 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         numeroTurma: a.numero_turma, // New field for Cohort separation
         cargaHorariaMateria: a.carga_horaria_materia,
         cursoId: a.curso_id,
-        materiaId: a.materia_id
+        materiaId: a.materia_id,
+        tipoAula: a.tipo_aula || 'NORMAL',
+        origem: a.origem,
+        contabilizaCarga: a.contabiliza_carga ?? true,
+        instrutorId: a.instrutor_id
       })));
 
 
@@ -543,6 +553,68 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return { success: false, error: result.error };
     }
   }, [instrutores, cursos, materias, loadAllData, showNotification]);
+
+  const addAulaPrograma = useCallback(async (data: Omit<Aula, 'id' | 'tenantId'>, forceCreate: boolean = false) => {
+    let dateStr: string;
+    if (typeof data.data === 'string') {
+      dateStr = data.data;
+    } else if (data.data instanceof Date) {
+      const d = data.data;
+      dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    } else {
+      dateStr = String(data.data);
+    }
+
+    // 1. Criar objeto otimista para atualização instantânea
+    const tempId = `temp-${Math.random().toString(36).substr(2, 9)}`;
+    const optimisticAula: Aula = {
+      ...data,
+      id: tempId,
+      tenantId: userProfile.tenantId,
+      data: data.data instanceof Date ? data.data : new Date(data.data),
+      status: 'agendada'
+    };
+
+    // 2. Atualizar estado imediatamente
+    setAulas(prev => [...prev, optimisticAula]);
+
+    const serviceInput = {
+      data: dateStr,
+      horario_inicio: data.horarioInicio,
+      horario_fim: data.horarioFim,
+      instrutor_id: data.instrutorId || null, // NUNCA enviar '' (vazio) para UUID, usar NULL
+      sala: data.sala,
+      observacoes: data.observacoes,
+      tipo_aula: data.tipoAula || 'PROGRAMA',
+      origem: data.origem || 'PROGRAMA',
+      contabiliza_carga: data.contabilizaCarga ?? true,
+      carga_horaria_materia: data.cargaHorariaMateria
+    };
+
+    const result = await aulaService.createPrograma(serviceInput, forceCreate);
+
+    if (result.warning) {
+      // Reverter alteração otimista em caso de conflito/aviso para o usuário decidir
+      setAulas(prev => prev.filter(a => a.id !== tempId));
+      return {
+        success: false,
+        warning: result.warning,
+        conflicts: result.conflicts || []
+      };
+    }
+
+    if (result.success && result.data) {
+      // 3. Atualizar o ID temporário com o real do banco, sem recarregar tudo
+      setAulas(prev => prev.map(a => a.id === tempId ? { ...a, id: (result.data as any).id } : a));
+      showNotification('Programa cadastrado com sucesso.', 'success');
+      return { success: true };
+    } else {
+      // Reverter em caso de erro real
+      setAulas(prev => prev.filter(a => a.id !== tempId));
+      showNotification(result.error || 'Erro ao compor agenda.', 'error');
+      return { success: false, error: result.error };
+    }
+  }, [instrutores, userProfile.tenantId, showNotification]);
 
   const updateAula = useCallback(async (data: Aula, forceUpdate: boolean = false, propagateRoom: boolean = false) => {
     // FIX: Usar formato local para evitar problema de fuso horário
@@ -988,6 +1060,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         addAula,
         updateAula,
+        addAulaPrograma,
         deleteAula,
 
         addInstrutor,
@@ -1030,7 +1103,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isAuthenticated, isLoading, isDemo, login, logout, enterDemoMode, activateAccount, resetPassword,
         aulas, instrutores, cursos, materias, users, systemLogs, eventos, feriadosSet, feriados,
         filteredAulas, currentDate, viewMode, filters,
-        addAula, updateAula, deleteAula,
+        addAula, updateAula, addAulaPrograma, deleteAula,
         addInstrutor, deleteInstrutor, addCurso, updateCurso, deleteCurso, addMateria, deleteMateria,
         addEvento, updateEvento, deleteEvento,
         createUser, updateUserStatus, updateUserRole, resendInvitation, acceptInvitation, deleteUser, setTestPassword,

@@ -1,0 +1,200 @@
+[
+  {
+    "id": "8cba112a-b06e-4d6f-a8b7-0da99b9993cb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Giovava",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-05T18:07:05.678786+00:00",
+    "active": false
+  },
+  {
+    "id": "30d5833c-cc8f-4d35-9a2d-b28806e632e1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Adriana Tadei",
+    "email": "adriana@gamil.com",
+    "telefone": "16992506434",
+    "created_at": "2026-01-06T22:22:23.522426+00:00",
+    "active": false
+  },
+  {
+    "id": "269e7589-e27e-4d23-b8d5-e2232a951b8d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Camila",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-07T13:22:42.74629+00:00",
+    "active": false
+  },
+  {
+    "id": "fb0aeee8-c744-4e06-959d-972cffed6cdd",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Diniz",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-05T16:30:23.205651+00:00",
+    "active": false
+  },
+  {
+    "id": "002a2ccc-a333-45b2-bd2e-25e0202ce8e1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Edson",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-05T16:30:47.322671+00:00",
+    "active": false
+  },
+  {
+    "id": "c939a765-b862-454c-93c2-e8b48f626f48",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Marcos Roberto Ferreira ",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-19T19:10:06.094085+00:00",
+    "active": false
+  },
+  {
+    "id": "49aea28a-8d41-4293-90d2-d709faa9c2a2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Giovanna",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-20T14:49:46.515395+00:00",
+    "active": false
+  },
+  {
+    "id": "ff226659-7ceb-4bbb-811b-3b2d84cd99cb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Lilian Zenti",
+    "email": "rrerer@gmail.com",
+    "telefone": "",
+    "created_at": "2026-01-07T11:58:29.454369+00:00",
+    "active": false
+  },
+  {
+    "id": "24b2d7de-fad2-45f1-a01f-e2fc15a7faf7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Matusa",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-16T18:42:11.298954+00:00",
+    "active": false
+  },
+  {
+    "id": "d896aa4a-40dc-46c8-b38c-2a60839bf403",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "RODRIGO TADEI",
+    "email": "lenono98@gmail.com",
+    "telefone": "16981552475",
+    "created_at": "2026-01-05T19:18:30.730823+00:00",
+    "active": false
+  },
+  {
+    "id": "29f57ac1-d878-4002-b991-60a8fe01ad14",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Silvia",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-05T16:30:57.399075+00:00",
+    "active": false
+  },
+  {
+    "id": "f5bc2786-7688-4cd3-a7db-0389120fb759",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Wilson",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-01-05T17:00:28.267807+00:00",
+    "active": false
+  },
+  {
+    "id": "cda79d01-95ff-43a5-8aad-6c72e76e8fed",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Deivid Diniz da Silva",
+    "email": "deivis.txt@gmail.com",
+    "telefone": "(11) 947819413",
+    "created_at": "2026-01-20T18:28:09.11712+00:00",
+    "active": true
+  },
+  {
+    "id": "516ff473-4a89-4d2f-a6a0-affeb8e39a12",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Matusalem Francisco dos Santos",
+    "email": "",
+    "telefone": "(16) 997714969",
+    "created_at": "2026-01-20T18:56:45.14304+00:00",
+    "active": true
+  },
+  {
+    "id": "78af98bd-ec94-43c5-9340-d5a069677275",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Wilson Rogério Junior",
+    "email": "wrjunior2912@gmail.com",
+    "telefone": "(16)98120-0041",
+    "created_at": "2026-01-20T19:02:55.509164+00:00",
+    "active": true
+  },
+  {
+    "id": "6a20e000-ce5f-428a-8875-4c2bae802fa7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Edson Laranjo",
+    "email": "",
+    "telefone": "(16) 99232.8519",
+    "created_at": "2026-01-20T19:09:46.672533+00:00",
+    "active": true
+  },
+  {
+    "id": "d8f78d12-3c9d-4a02-82d5-3ba0b3663512",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Rodrigo de Souza Tadei ",
+    "email": "lenono95@gmail.com",
+    "telefone": "(16) 981552475",
+    "created_at": "2026-01-20T19:10:38.554044+00:00",
+    "active": true
+  },
+  {
+    "id": "edde1d66-ff37-43f1-9b73-5f0de0e2219c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Leandro Henrique da Costa",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-02-12T18:22:01.41176+00:00",
+    "active": true
+  },
+  {
+    "id": "335a8453-756d-4153-94e1-ad3a04be0d72",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Silvia Aparecida Borges",
+    "email": "silviaapdaborges@hotmail.com",
+    "telefone": "(35) 9178.5045",
+    "created_at": "2026-01-20T19:06:54.423642+00:00",
+    "active": false
+  },
+  {
+    "id": "4e3d74fb-4342-42fe-8e47-cca30dd09f05",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Silvia Aparecida Borges",
+    "email": "",
+    "telefone": "",
+    "created_at": "2026-02-12T18:53:34.800327+00:00",
+    "active": true
+  },
+  {
+    "id": "62141ab9-4fd2-4c10-a2b3-b0319371bd5d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Giovanna Thais Cassemiro Trizolio",
+    "email": "giothais@hotmail.com",
+    "telefone": "(16) 997210110",
+    "created_at": "2026-02-18T19:26:37.038555+00:00",
+    "active": true
+  },
+  {
+    "id": "e1a49268-eda0-4b33-8303-8226c7046a0c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "nome": "Giovana Thais Cassemiro Trizolio",
+    "email": "giothais@hotmail.com",
+    "telefone": "(16) 997210110",
+    "created_at": "2026-01-20T19:00:41.510469+00:00",
+    "active": false
+  }
+]

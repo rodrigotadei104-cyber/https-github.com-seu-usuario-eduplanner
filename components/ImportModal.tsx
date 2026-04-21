@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Upload, X, AlertTriangle, CheckCircle, FileText, Loader2, XCircle, Calendar, HelpCircle, Sparkles } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
 import { processImportData, ProcessedRow, RawImportRow, normalizeDate, normalizeTime } from '../utils/importRules';
 
@@ -539,50 +538,53 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="flex justify-between items-center p-6 border-b border-gray-100">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <Upload className="w-6 h-6 text-blue-600" />
+                <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-indigo-50 dark:bg-slate-700 dark:border-slate-600">
+                    <h2 className="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter flex items-center gap-3">
+                        <div className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] rounded uppercase tracking-widest font-black">Motor</div>
                         Importar {importMode === 'schedule' ? 'Cronograma' : 'Cursos'}
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                    <button onClick={onClose} className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest transition-colors dark:hover:text-gray-200">
+                        Fechar [X]
+                    </button>
                 </div>
 
                 <div className="flex-1 overflow-auto p-6">
                     {step === 'upload' ? (
-                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-12 bg-gray-50">
-                            <FileText size={48} className="text-gray-400 mb-4" />
-                            <p className="text-gray-600 mb-2 font-medium">Arraste seu arquivo Excel (.xlsx) ou CSV</p>
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-12 bg-gray-50 dark:bg-slate-800/50 dark:border-slate-700">
+                            <div className="text-[14px] font-black text-gray-400 mb-4 uppercase tracking-[0.2em] border-2 border-gray-200 px-4 py-2 rounded">
+                                [ ARQUIVO ]
+                            </div>
+                            <p className="text-gray-600 mb-2 font-black uppercase tracking-widest text-[10px] dark:text-gray-400">Arraste seu arquivo Excel (.xlsx) ou CSV</p>
 
                             <div className="space-y-2 text-center mb-6">
-                                <p className="text-xs text-gray-500">Modo Cronograma (Recomendado):</p>
-                                <code className="text-[10px] bg-gray-100 px-2 py-1 rounded block text-gray-500">
-                                    Numero do Curso, Nome do Curso, Matéria, Data, Horario Inicio, Horario Fim, Instrutor
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-70">Estrutura Sugerida:</p>
+                                <code className="text-[10px] bg-white border border-gray-200 px-2 py-1 rounded block text-gray-500 font-black dark:bg-slate-800 dark:border-slate-700">
+                                    NUMERO DO CURSO, NOME DO CURSO, MATÉRIA, DATA, INÍCIO, FIM, INSTRUTOR
                                 </code>
                             </div>
 
-                            <label className="px-6 py-2.5 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition shadow-sm font-medium">
-                                Selecionar Arquivo
+                            <label className="px-8 py-3 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700 transition shadow-sm font-black text-[10px] uppercase tracking-widest">
+                                SELECIONAR ARQUIVO LOCAL
                                 <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileChange} />
                             </label>
 
                             <button
                                 onClick={() => {
-                                    const csvContent = 'Numero do Curso,Nome do Curso,Carga Curso,Tipo Hora,Cor,Matéria,Carga Matéria,Data,Horario Inicio,Horario Fim,Instrutor,Sala\n1001,Curso Exemplo,20,50,#3b82f6,Matemática,10,2026-01-25,08:00,10:00,Joao,Sala 1';
+                                    const csvContent = 'Numero do Curso,Nome do Curso,Carga Curso,Tipo Hora,Cor,Matéria,Carga Matéria,Data,Horario Inicio,Horario Fim,Instrutor,Sala\n1001,Curso Exemplo,20,60,#3b82f6,Matemática,10,2026-01-25,08:00,10:00,Instrutor Exemplo,Sala 1';
                                     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                                     const link = document.createElement('a');
                                     link.href = URL.createObjectURL(blob);
                                     link.download = 'modelo_importacao.csv';
                                     link.click();
                                 }}
-                                className="mt-4 text-xs text-blue-600 hover:text-blue-800 underline"
+                                className="mt-4 text-[10px] font-black text-indigo-600 hover:text-indigo-800 underline uppercase tracking-widest dark:text-indigo-400"
                             >
-                                Baixar Modelo de Exemplo (.csv)
+                                Baixar Modelo (.CSV)
                             </button>
 
                             {error && (
-                                <div className="mt-6 flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
-                                    <AlertTriangle size={16} />
-                                    {error}
+                                <div className="mt-6 flex items-center gap-2 text-red-600 bg-red-50 p-4 border border-red-200 rounded-lg text-[10px] font-black uppercase tracking-widest dark:bg-red-900/10 dark:border-red-900/30">
+                                    [ ! ] ERRO: {error}
                                 </div>
                             )}
                         </div>
@@ -627,8 +629,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                                             <tr key={i} className={!row.isValid ? 'bg-red-50' : row.courseAction === 'create' ? 'bg-blue-50/30' : ''}>
                                                 <td className="p-3">
                                                     {row.isValid
-                                                        ? <CheckCircle size={16} className="text-green-500" />
-                                                        : <XCircle size={16} className="text-red-500" />
+                                                        ? <div className="text-[10px] font-black text-emerald-600 uppercase">OK</div>
+                                                        : <div className="text-[10px] font-black text-rose-600 uppercase">ERR</div>
                                                     }
                                                 </td>
                                                 <td className="p-3 font-mono text-xs">{row.numeroCurso || '-'}</td>
@@ -653,7 +655,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                                                     {(aiInsights.get(row.originalLine) || []).map((insight, idx) => (
                                                         <div key={`ai-${idx}`} className={`mt-1 block text-xs flex items-start gap-1 font-medium ${insight.severity === 'high' ? 'text-red-600' : 'text-amber-600'
                                                             }`}>
-                                                            <Sparkles size={10} className="mt-0.5 flex-shrink-0" /> {insight.message}
+                                                            [ INFO ] {insight.message}
                                                         </div>
                                                     ))}
                                                 </td>
@@ -669,27 +671,25 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                 <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
                     <button
                         onClick={() => { setStep('upload'); setFile(null); setPreview([]); }}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600"
                     >
-                        Cancelar
+                        [ VOLTAR ]
                     </button>
                     {step === 'preview' && (
                         <>
                             <button
                                 onClick={handleAIAudit}
                                 disabled={aiLoading || isImporting}
-                                className="px-4 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-2"
+                                className="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 flex items-center gap-2 transition dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/50"
                             >
-                                {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                                {aiLoading ? 'Analisando...' : 'Auditar com IA'}
+                                {aiLoading ? 'ANALISANDO...' : 'AUDITAR COM IA'}
                             </button>
                             <button
                                 onClick={handleImport}
                                 disabled={isImporting || preview.filter(r => r.isValid).length === 0}
-                                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm flex items-center gap-2 disabled:opacity-50"
+                                className="px-8 py-2 text-[10px] font-black uppercase tracking-widest text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm flex items-center gap-2 transition disabled:opacity-50"
                             >
-                                {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                                {isImporting ? 'Processando...' : 'Confirmar Importação'}
+                                {isImporting ? 'PROCESSANDO...' : 'CONFIRMAR IMPORTAÇÃO'}
                             </button>
                         </>
                     )}

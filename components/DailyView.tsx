@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { Aula, ClassStatus, Evento } from '../types';
+import React, { useState, useMemo } from 'react';
 import { format, isSameDay, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { MapPin, User, Clock, CheckCircle, PlayCircle, Calendar, XCircle, Loader2, Trash2 } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
-import { courseService } from '../services/course.service';
+import { Aula, Evento, ClassStatus } from '../types';
+import { ptBR } from 'date-fns/locale';
+
 
 // Helper para parsear data sem problema de fuso horário
 const parseLocalDate = (dateStr: string | Date): Date => {
@@ -272,7 +271,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                 Array.from(uniqueCohortKeys).map(async (compositeKey) => {
                     const [courseId, cohortId] = compositeKey.split('::');
                     try {
-                        const progress = await courseService.getCourseProgress(courseId, tenantId, cohortId || undefined);
+                        const progress = null; // getCourseProgress not available in current aulaService
                         if (progress) {
                             map[compositeKey] = progress;
                         }
@@ -353,10 +352,6 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
         return hours;
     };
 
-    // ...
-
-
-
     const currentHours = getCurrentTimePosition();
     const showTimeIndicator = isSameDay(new Date(), currentDate) && currentHours >= START_HOUR;
 
@@ -364,25 +359,28 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
     const getStatusConfig = (status: ClassStatus) => {
         switch (status) {
             case 'em-andamento':
-                return { label: 'Em Andamento', icon: PlayCircle, bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' };
+                return { label: 'Em Andamento', bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' };
             case 'concluida':
-                return { label: 'Concluída', icon: CheckCircle, bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
+                return { label: 'Concluída', bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
             case 'cancelada':
-                return { label: 'Cancelada', icon: XCircle, bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' };
+                return { label: 'Cancelada', bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' };
             case 'agendada':
             default:
-                return { label: 'Agendada', icon: Calendar, bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' };
+                return { label: 'Agendada', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' };
         }
     };
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden print:overflow-visible print:border-0 print:shadow-none print:h-auto">
-            <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center sticky top-0 z-20 print:static print:bg-white print:border-b-2 print:mb-4">
-                <h2 className="text-lg font-semibold text-gray-800 capitalize">
-                    {format(currentDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                </h2>
-                <div className="text-sm text-gray-500">
-                    {processedItems.length} itens agendados
+        <div className="flex flex-col h-full bg-white rounded-lg border border-slate-200 overflow-hidden print:overflow-visible print:border-0 print:shadow-none print:h-auto">
+            <div className="px-6 py-6 border-b border-slate-100 bg-white flex justify-between items-end sticky top-0 z-20 print:static print:bg-white print:border-b-2 print:mb-4">
+                <div>
+                    <h2 className="text-xl font-bold text-slate-900 capitalize tracking-tight">
+                        {format(currentDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                    </h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Visão Operacional Diária</p>
+                </div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    {processedItems.length} Registros
                 </div>
             </div>
 
@@ -408,7 +406,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                         {HOURS.map((hour) => (
                             <div
                                 key={hour}
-                                className="absolute w-full text-xs text-gray-400 text-right pr-4 select-none print:text-gray-600"
+                                className="absolute w-full text-[10px] font-bold text-slate-300 text-right pr-6 select-none print:text-gray-600 uppercase tracking-tight"
                                 style={{ top: `${(hour - START_HOUR) * 5}rem`, transform: 'translateY(-50%)' }}
                             >
                                 {hour.toString().padStart(2, '0')}:00
@@ -425,7 +423,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                         {HOURS.map((hour) => (
                             <div
                                 key={hour}
-                                className="absolute w-full border-t border-gray-100 print:border-gray-200 pointer-events-none"
+                                className="absolute w-full border-t border-slate-100/60 print:border-gray-200 pointer-events-none"
                                 style={{ top: `${(hour - START_HOUR) * 5}rem` }}
                             />
                         ))}
@@ -433,10 +431,13 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                         {/* Current Time Indicator (Hide on print) */}
                         {showTimeIndicator && (
                             <div
-                                className="absolute w-full border-t-2 border-red-500/70 z-[15] pointer-events-none print:hidden"
+                                className="absolute w-full border-t border-blue-500 z-[15] pointer-events-none print:hidden flex items-center"
                                 style={{ top: `${(currentHours - START_HOUR) * 5}rem` }}
                             >
-                                <div className="w-3 h-3 bg-red-500 rounded-full absolute -left-1.5 -translate-y-1/2 shadow-md"></div>
+                                <div className="absolute left-0 -translate-x-1/2 flex items-center">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                    <div className="ml-2 bg-blue-500 text-[7px] font-bold text-white px-1.5 py-0.5 rounded uppercase tracking-widest">Agora</div>
+                                </div>
                             </div>
                         )}
 
@@ -484,9 +485,9 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                                         e.stopPropagation();
                                                         if (confirm('Excluir evento?')) deleteEvento(evento.id);
                                                     }}
-                                                    className="p-0.5 hover:bg-black/10 rounded flex-shrink-0 ml-1"
+                                                    className="px-1.5 py-0.5 hover:bg-black/10 rounded flex-shrink-0 ml-1 text-[8px] font-black border border-black/10"
                                                 >
-                                                    <Trash2 size={12} />
+                                                    EXCLUIR
                                                 </button>
                                             )}
                                         </div>
@@ -495,18 +496,18 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                         {durationHours >= 0.7 && (
                                             <>
                                                 <div className="flex gap-1 items-center opacity-75 mt-1 truncate">
-                                                    <Clock size={10} className="flex-shrink-0" /> {formatTime(evento.horarioInicio)} - {formatTime(evento.horarioFim)}
+                                                    <span className="font-bold">HORA:</span> {formatTime(evento.horarioInicio)} - {formatTime(evento.horarioFim)}
                                                 </div>
                                                 {/* Consolidated Info Row */}
                                                 <div className="flex gap-2 items-center opacity-75 mt-0.5 truncate flex-wrap">
                                                     {evento.sala && (
                                                         <div className="flex gap-1 items-center">
-                                                            <MapPin size={10} className="flex-shrink-0" /> <span className="truncate">{evento.sala}</span>
+                                                            <span className="font-bold">SALA:</span> <span className="truncate">{evento.sala}</span>
                                                         </div>
                                                     )}
                                                     {/* Always show instructor info, default to 'Todos' */}
                                                     <div className="flex gap-1 items-center">
-                                                        <User size={10} className="flex-shrink-0" /> <span className="truncate">{evento.instrutorId ? (instrutores.find(i => i.id === evento.instrutorId)?.nome || 'Todos') : 'Todos'}</span>
+                                                        <span className="font-bold">INSTR:</span> <span className="truncate">{evento.instrutorId ? (instrutores.find(i => i.id === evento.instrutorId)?.nome || 'Todos') : 'Todos'}</span>
                                                     </div>
                                                 </div>
                                             </>
@@ -523,11 +524,9 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                             const isCompact = item.duration < 70;
                             const isHovered = hoveredAulaId === aula.id;
 
-                            // Determine status/color
+                            const isProgram = aula.tipoAula === 'PROGRAMA';
                             const statusConfig = getStatusConfig(aula.status);
-                            const statusColor = aula.status === 'concluida' ? '#10b981' : (aula.cor || '#3b82f6');
-
-                            // Calculate Opacity based on status
+                            const statusColor = isProgram ? '#d97706' : (aula.status === 'concluida' ? '#10b981' : (aula.cor || '#3b82f6'));
                             const opacityClass = aula.status === 'cancelada' ? 'opacity-60 grayscale' : 'opacity-100';
 
                             return (
@@ -549,133 +548,89 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                         width: `calc(${widthPercent}% - 4px)`,
                                     }}
                                 >
-                                    {/* Left Accent Strip */}
+                                    {/* Barra Lateral de Status */}
                                     <div
                                         className="absolute left-0 top-0 bottom-0 w-1 rounded-l-md"
                                         style={{ backgroundColor: statusColor }}
                                     />
 
-                                    {/* COMPACT LAYOUT (Horizontal) */}
+                                    {/* Alternância de Layout (Compacto vs Padrão) */}
                                     {isCompact ? (
-                                        <div className="h-full flex items-center pl-2.5 pr-2 gap-2 overflow-hidden">
-                                            {/* Time & Status Badge */}
-                                            <div className="flex flex-col flex-shrink-0 min-w-[60px]">
-                                                <span className="text-[10px] font-mono font-bold text-gray-600 leading-tight">
+                                        <div className="h-full flex items-center pl-4 pr-3 gap-4 overflow-hidden">
+                                            <div className="flex flex-col flex-shrink-0">
+                                                <span className="text-[10px] font-bold text-slate-900 leading-none">
                                                     {formatTime(aula.horarioInicio)}
                                                 </span>
-                                                <div className={`
-                                                    text-[8px] uppercase tracking-wider font-bold rounded px-1 py-0 w-fit mt-0.5
-                                                    ${aula.status === 'em-andamento' ? 'bg-amber-100 text-amber-700 animate-pulse' :
-                                                        aula.status === 'concluida' ? 'bg-emerald-100 text-emerald-700' :
-                                                            'bg-gray-100 text-gray-500'}
-                                                `}>
-                                                    {aula.status === 'agendada' ? 'Agend.' :
-                                                        aula.status === 'em-andamento' ? 'Andamento' :
-                                                            aula.status === 'concluida' ? 'Fim' : 'Cancel.'}
-                                                </div>
                                             </div>
 
-                                            {/* Divider */}
-                                            <div className="h-4 w-px bg-gray-200 flex-shrink-0 mx-1"></div>
+                                            <div className="h-4 w-px bg-slate-100 flex-shrink-0"></div>
 
-                                            {/* Subject Info */}
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                <span className="text-xs font-bold text-gray-800 truncate leading-tight">
-                                                    {aula.materia}
-                                                </span>
-                                                <span className="text-[10px] text-gray-500 truncate">
-                                                    {aula.curso}
+                                                <span className="text-[11px] font-bold text-slate-900 truncate uppercase tracking-tight">
+                                                    {isProgram ? 'JOVEM APRENDIZ' : aula.curso}
                                                 </span>
                                             </div>
 
-                                            {/* Minimal Icons if space allows */}
-                                            <div className="flex-shrink-0 text-gray-400 hidden sm:block">
-                                                {aula.sala && <span className="text-[9px] font-mono bg-gray-50 px-1 rounded border border-gray-100">{aula.sala}</span>}
+                                            <div className="flex-shrink-0 text-slate-400 hidden sm:block">
+                                                {aula.sala && <span className="text-[9px] font-bold text-slate-500">S {aula.sala}</span>}
                                             </div>
                                         </div>
                                     ) : (
-                                        // STANDARD LAYOUT (Vertical Stack) - Refined
-                                        <div className="h-full flex flex-col pl-3 pr-2 py-2 relative overflow-hidden">
-                                            {/* Header: Time & Badges */}
-                                            <div className="flex justify-between items-start mb-1">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-[11px] font-mono font-bold text-gray-600 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
-                                                        {formatTime(aula.horarioInicio)} - {formatTime(aula.horarioFim)}
-                                                    </span>
-                                                    {(aula.numeroTurma || aula.numeroCurso) && (
-                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                                                            {aula.numeroTurma || aula.numeroCurso}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* Status Badge */}
-                                                <span className={`
-                                                    px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border
-                                                    ${aula.status === 'em-andamento' ? 'bg-amber-100 text-amber-700 border-amber-200 animate-pulse' :
-                                                        aula.status === 'concluida' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                                                            aula.status === 'cancelada' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                                'bg-gray-100 text-gray-600 border-gray-200'}
-                                                `}>
-                                                    {statusConfig.label}
+                                        <div className="h-full flex flex-col pl-4 pr-4 py-4 relative overflow-hidden">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <span className="text-[10px] font-bold text-slate-900">
+                                                    {formatTime(aula.horarioInicio)} — {formatTime(aula.horarioFim)}
                                                 </span>
+                                                <div className={`
+                                                    px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest border
+                                                    ${aula.status === 'em-andamento' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                                        aula.status === 'concluida' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                            'bg-slate-50 text-slate-500 border-slate-200'}
+                                                `}>
+                                                    {aula.status}
+                                                </div>
                                             </div>
 
-                                            {/* Body: Course & Subject */}
-                                            <div className="flex-1 min-w-0 mt-1">
-                                                <h4 className="font-bold text-gray-900 text-xs leading-tight line-clamp-2" title={aula.curso}>
-                                                    {aula.curso}
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-xs leading-tight text-slate-900 uppercase tracking-tight line-clamp-2">
+                                                    {isProgram ? (aula.origem || 'Jovem Aprendiz') : aula.curso}
                                                 </h4>
-                                                <p className="text-xs text-gray-600 mt-0.5 font-medium flex items-center gap-1.5">
-                                                    <span className="truncate">{aula.materia}</span>
-
-                                                    {/* Subject Progress Dot */}
-                                                    {(() => {
-                                                        const cId = aula.cursoId || cursos.find(c => c.nome === aula.curso)?.id;
-                                                        const p = cId ? progressMap[`${cId}::${aula.numeroTurma || aula.numeroCurso || ''}`] : null;
-                                                        const sub = p?.subjects?.find((s: any) => s.name === aula.materia || s.id === aula.materiaId);
-                                                        if (sub && sub.status === 'completed') {
-                                                            return <CheckCircle size={10} className="text-emerald-500 flex-shrink-0" />;
-                                                        }
-                                                        return null;
-                                                    })()}
+                                                <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wide truncate">
+                                                    {isProgram ? 'Programa' : aula.materia}
                                                 </p>
                                             </div>
 
-                                            {/* Footer: Instructor & Room */}
-                                            <div className="mt-auto pt-2 border-t border-gray-50 flex items-center justify-between gap-2 text-[10px] text-gray-500">
-                                                <div className="flex items-center gap-1.5 truncate">
-                                                    <User size={12} className="opacity-60" />
-                                                    <span className="truncate font-medium">{aula.instrutor?.split(' ')[0]}</span>
-                                                </div>
+                                            <div className="mt-auto pt-3 border-t border-slate-50 flex items-center justify-between">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[120px]">
+                                                    {aula.instrutor}
+                                                </span>
                                                 {aula.sala && (
-                                                    <div className="flex items-center gap-1 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 shrink-0">
-                                                        <MapPin size={10} className="opacity-60" />
-                                                        <span className="font-bold text-gray-700">Sala {aula.sala}</span>
-                                                    </div>
+                                                    <span className="text-[9px] font-bold text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded">
+                                                        S {aula.sala}
+                                                    </span>
                                                 )}
                                             </div>
-
-                                            {/* Progress Bar (Bottom Edge) */}
-                                            {(() => {
-                                                const cId = aula.cursoId || cursos.find(c => c.nome === aula.curso)?.id;
-                                                const p = cId ? progressMap[`${cId}::${aula.numeroTurma || aula.numeroCurso || ''}`] : null;
-                                                if (p) {
-                                                    return (
-                                                        <div className="absolute bottom-0 left-1 right-0 h-1 bg-gray-100">
-                                                            <div
-                                                                className={`h-full ${p.isCompleted ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                                                                style={{ width: `${p.percentage}%` }}
-                                                            />
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            })()}
                                         </div>
                                     )}
 
-                                    {/* HOVER DETAIL POPOVER (Only shows when hovered) */}
+                                    {/* Barra de Progresso (Rodapé do Card) */}
+                                    {(() => {
+                                        const cId = aula.cursoId || cursos.find(c => c.nome === aula.curso)?.id;
+                                        const p = cId ? progressMap[`${cId}::${aula.numeroTurma || aula.numeroCurso || ''}`] : null;
+                                        if (p) {
+                                            return (
+                                                <div className="absolute bottom-0 left-1 right-0 h-1 bg-gray-100">
+                                                    <div
+                                                        className={`h-full ${p.isCompleted ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                                        style={{ width: `${p.percentage}%` }}
+                                                    />
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
+
+                                    {/* Detalhes ao passar o Mouse (Popover) */}
                                     {isHovered && (
                                         <div className={`
                                             absolute z-50 w-64 bg-white rounded-lg shadow-2xl border border-gray-200 ring-1 ring-black/5
@@ -689,23 +644,23 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                                         {formatTime(aula.horarioInicio)} - {formatTime(aula.horarioFim)}
                                                     </span>
                                                     <span className="text-xs font-bold text-gray-900 block leading-tight">
-                                                        {aula.materia}
+                                                        {isProgram ? 'Jovem Aprendiz' : aula.curso}
                                                     </span>
                                                 </div>
                                                 <div className={`
-                                                    p-1.5 rounded-full 
+                                                    p-1.5 rounded-full font-black text-[10px] uppercase tracking-widest
                                                     ${aula.status === 'em-andamento' ? 'bg-amber-100 text-amber-600' :
                                                         aula.status === 'concluida' ? 'bg-emerald-100 text-emerald-600' :
                                                             'bg-blue-50 text-blue-600'}
                                                 `}>
-                                                    {statusConfig.icon ? <statusConfig.icon size={14} /> : <Calendar size={14} />}
+                                                    {statusConfig.label.slice(0, 3)}
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2">
                                                 <div>
-                                                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Curso</p>
-                                                    <p className="text-xs text-gray-700 leading-snug">{aula.curso}</p>
+                                                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Matéria</p>
+                                                    <p className="text-xs text-gray-700 leading-snug">{isProgram ? aula.origem : aula.materia}</p>
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-2">
@@ -767,18 +722,17 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                         {isLoading ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[1px] z-30">
                                 <div className="flex flex-col items-center gap-2">
-                                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                                    <p className="text-sm font-medium text-gray-500">Carregando agenda...</p>
+                                    <p className="text-xs font-black text-blue-600 uppercase tracking-widest animate-pulse">Carregando Agenda...</p>
                                 </div>
                             </div>
                         ) : processedItems.length === 0 && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                 <div className="text-center animate-in fade-in zoom-in duration-300">
-                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
-                                        <Calendar className="w-8 h-8 text-gray-300" />
+                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 font-black text-gray-300 text-2xl">
+                                        EP
                                     </div>
-                                    <p className="text-gray-500 text-lg font-medium">Dia livre!</p>
-                                    <p className="text-gray-400 text-sm">Não há itens agendados para esta data.</p>
+                                    <p className="text-gray-500 text-lg font-bold uppercase tracking-widest">Dia Livre</p>
+                                    <p className="text-[10px] text-gray-400 uppercase font-black">Não há itens agendados.</p>
                                 </div>
                             </div>
                         )}

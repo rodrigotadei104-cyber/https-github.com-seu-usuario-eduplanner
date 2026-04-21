@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Aula } from '../types';
-import { X, Trash2, Loader2, AlertTriangle, Check, XCircle, Lock, Info, Ban, Search } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
 import { addMinutes, format, parseISO } from 'date-fns';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -251,14 +250,12 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                 {isReadOnly ? 'Detalhes da Aula' : (initialData ? 'Editar Aula' : 'Nova Aula')}
               </h2>
               {isViewer && (
-                <span className="flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">
-                  <Lock size={12} />
+                <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100 uppercase tracking-widest">
                   Apenas Leitura
                 </span>
               )}
               {!isViewer && isFinalState && (
-                <span className="flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full border border-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:border-slate-600">
-                  <Lock size={12} />
+                <span className="text-[10px] font-black text-gray-600 bg-gray-100 px-2 py-1 rounded border border-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:border-slate-600 uppercase tracking-widest">
                   Finalizada
                 </span>
               )}
@@ -266,9 +263,9 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
             <button
               onClick={onClose}
               disabled={isActionLoading}
-              className="text-gray-400 hover:text-gray-600 transition-colors dark:hover:text-gray-200 disabled:opacity-30"
+              className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest transition-colors dark:hover:text-gray-200 disabled:opacity-30"
             >
-              <X size={24} />
+              Fechar [X]
             </button>
           </div>
 
@@ -338,7 +335,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                       </option>
                     ))}
                   </datalist>
-                  <Search className="absolute right-3 top-3 text-blue-400" size={16} />
+                  <span className="absolute right-3 top-2.5 text-[9px] font-black text-blue-400 uppercase">BUSCA</span>
                 </div>
                 <p className="text-xs text-blue-600 mt-1 dark:text-blue-400">
                   Digite o número para selecionar automaticamente.
@@ -494,11 +491,10 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                   <button
                     type="button"
                     onClick={handleCancelClass}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+                    className="px-3 py-2 text-[10px] font-black text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 uppercase tracking-widest"
                     title="Cancela a aula mantendo o histórico"
                   >
-                    <Ban size={16} />
-                    Cancelar
+                    Cancelar Aula
                   </button>
                 )}
 
@@ -516,28 +512,21 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                         }
                       });
                     }}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                    className="px-3 py-2 text-[10px] font-black text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 uppercase tracking-widest"
                     title="Remove a aula do banco de dados"
                   >
-                    <Trash2 size={16} />
-                    Excluir
+                    Excluir Permanentemente
                   </button>
                 )}
 
                 {/* Information for Editors */}
-                {initialData && isEditor && !isFinalState && (
-                  <span className="text-xs text-gray-400 flex items-center gap-1 self-center ml-2">
-                    <Info size={12} />
-                    Edição permitida
-                  </span>
-                )}
               </div>
 
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600 dark:hover:bg-slate-700"
+                  className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600 dark:hover:bg-slate-700"
                 >
                   {canSave ? 'Cancelar' : 'Fechar'}
                 </button>
@@ -546,10 +535,9 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                   <button
                     type="submit"
                     disabled={isActionLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-6 py-2 text-xs font-black text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
                   >
-                    {isActionLoading && <Loader2 size={16} className="animate-spin" />}
-                    {isActionLoading ? 'Salvando...' : 'Salvar Aula'}
+                    {isActionLoading ? 'Salvando...' : 'Gravar Aula'}
                   </button>
                 )}
               </div>
@@ -573,14 +561,10 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
         conflictModal.isOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 dark:bg-slate-800">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-amber-100 rounded-full">
-                  <AlertTriangle className="w-6 h-6 text-amber-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                  {conflictModal.type === 'ROOM_CONFLICT' ? 'Conflito de Sala' : 'Conflito de Horário'}
-                </h3>
-              </div>
+              <div className="px-2 py-1 bg-amber-600 text-white text-[10px] font-black rounded uppercase tracking-widest mb-4 inline-block">Atenção</div>
+              <h3 className="text-lg font-black text-gray-800 dark:text-white uppercase tracking-tight mb-4">
+                {conflictModal.type === 'ROOM_CONFLICT' ? 'Conflito de Sala' : 'Conflito de Instrutor'}
+              </h3>
 
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 {conflictModal.type === 'ROOM_CONFLICT'
@@ -607,15 +591,15 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setConflictModal({ isOpen: false, type: null, conflicts: [], pendingData: null })}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600"
+                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleForceProceed}
-                  className="px-4 py-2 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition shadow-sm"
+                  className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition shadow-sm"
                 >
-                  Prosseguir Mesmo Assim
+                  Prosseguir
                 </button>
               </div>
             </div>

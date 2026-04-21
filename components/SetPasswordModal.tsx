@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useSchedule } from '../context/ScheduleContext';
-import { Loader2, Lock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { userService } from '../services';
 
 interface SetPasswordModalProps {
@@ -20,13 +19,10 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
     const [recoveryTokens, setRecoveryTokens] = useState<{ access_token: string, refresh_token: string } | null>(null);
     const { userProfile } = useSchedule();
 
-    // Para recovery, não precisamos esperar sessão - o Supabase usa o token da URL
-    // No entanto, precisamos capturar o token IMEDIATAMENTE antes que o Supabase limpe a URL
     React.useEffect(() => {
         if (!isOpen) return;
 
         const handleAuthCheck = async () => {
-            // 1. Check for PKCE Code first
             const searchParams = new URLSearchParams(window.location.search);
             const code = searchParams.get('code');
 
@@ -44,29 +40,23 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
                 if (data.session) {
                     console.log('Session established via code exchange');
                     setWaitingForSession(false);
-                    // Remove code from URL to clean up
                     window.history.replaceState({}, document.title, window.location.pathname);
                     return;
                 }
             }
 
-            // 2. Fallback: Check for existing session (Implicit flow or already logged in)
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 setWaitingForSession(false);
                 return;
             }
 
-            // 3. Last Resort: Check Hash (Implicit Flow manual parsing)
             if (type === 'recovery') {
                 const hash = window.location.hash;
                 const hashParams = new URLSearchParams(hash.substring(1));
                 const accessToken = hashParams.get('access_token');
 
                 if (accessToken) {
-                    // We found a token in hash, we can try to use it manually
-                    // But ideally we want a session.
-                    // For now, we trust the manual logic in handleSubmit will use it.
                     setRecoveryTokens({
                         access_token: accessToken,
                         refresh_token: hashParams.get('refresh_token') || ''
@@ -77,7 +67,6 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
                 }
             }
 
-            // If we got here, we have no session and no valid tokens
             setWaitingForSession(false);
             if (type === 'invite' || type === 'recovery') {
                 setError('Sessão não encontrada ou expirada. Use o link do e-mail novamente.');
@@ -106,8 +95,6 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
         try {
             setLoading(true);
 
-            // 1. Tentativa com Sessão Ativa (Standard & Recommended)
-            // Se já temos sessão (via code exchange), updateUser funciona direto.
             const { data: { session } } = await supabase.auth.getSession();
 
             if (session) {
@@ -117,17 +104,14 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
                 setSuccess(true);
                 setTimeout(() => {
                     onClose();
-                    window.location.hash = ''; // Clean hash
-                    // Reload if it was recovery to ensure fresh state
+                    window.location.hash = '';
                     if (type === 'recovery') window.location.reload();
                 }, 2000);
                 return;
             }
 
-            // 2. Fallback: Edge Function com token do hash (Legado/Implicit)
             let accessToken = recoveryTokens?.access_token;
 
-            // Tentar ler da URL se não capturou antes
             if (!accessToken) {
                 const hash = window.location.hash;
                 const hashParams = new URLSearchParams(hash.substring(1));
@@ -156,30 +140,6 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
             }, 2000);
             return;
 
-            // 2. Se for Invite ou outro caso, usar client normal
-            const { error: updateError } = await supabase.auth.updateUser({ password: password });
-
-            if (updateError) throw updateError;
-
-            // 3. Invite activation logic
-            if (type === 'invite') {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    // Tenta ativar usuario se necessario
-                    const { error: statusError } = await supabase
-                        .from('users')
-                        .update({ status: 'active' })
-                        .eq('id', user.id);
-                    if (statusError) console.error('Failed to activate status:', statusError);
-                }
-            }
-
-            setSuccess(true);
-            setTimeout(() => {
-                onClose();
-                window.location.hash = '';
-            }, 2000);
-
         } catch (err: any) {
             console.error(err);
             setError(err.message || 'Erro ao definir senha.');
@@ -190,76 +150,76 @@ export const SetPasswordModal: React.FC<SetPasswordModalProps> = ({ isOpen, onCl
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                <div className="p-6">
-                    <div className="flex justify-center mb-4">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400">
-                            <Lock size={24} />
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border border-gray-100 dark:border-slate-700">
+                <div className="p-8">
+                    <div className="flex justify-center mb-6">
+                        <div className="px-3 py-1 bg-black text-white text-[10px] font-black uppercase tracking-[0.3em] rounded">
+                            [ SECURITY ]
                         </div>
                     </div>
 
-                    <h2 className="text-xl font-bold text-center text-gray-800 dark:text-white mb-2">
-                        {type === 'invite' ? 'Bem-vindo ao EduPlanner!' : 'Redefinir Senha'}
+                    <h2 className="text-xl font-black text-center text-gray-800 dark:text-white mb-2 uppercase tracking-tighter">
+                        {type === 'invite' ? 'Bem-vindo ao EduPlanner' : 'Redefinir Senha'}
                     </h2>
-                    <p className="text-center text-gray-500 dark:text-gray-400 text-sm mb-6">
+                    <p className="text-center text-gray-400 dark:text-gray-400 text-[10px] font-black uppercase tracking-widest mb-8">
                         {type === 'invite'
-                            ? 'Para ativar sua conta, por favor defina uma senha segura.'
-                            : 'Crie uma nova senha para acessar sua conta.'}
+                            ? 'DEFINA SUA SENHA DE ACESSO PARA CONTINUAR'
+                            : 'CRIE UMA NOVA SENHA PARA SUA CONTA'}
                     </p>
 
                     {waitingForSession ? (
-                        <div className="flex flex-col items-center justify-center py-6 text-gray-500 dark:text-gray-400">
-                            <Loader2 size={48} className="mb-3 animate-spin" />
-                            <p className="font-medium">Verificando autenticação...</p>
+                        <div className="flex flex-col items-center justify-center py-6">
+                            <div className="text-[10px] font-black text-indigo-600 animate-pulse uppercase tracking-[0.3em]">
+                                [ AGUARDE... VERIFICANDO ]
+                            </div>
                         </div>
                     ) : success ? (
-                        <div className="flex flex-col items-center justify-center py-6 text-green-600 dark:text-green-400 animate-in fade-in">
-                            <CheckCircle size={48} className="mb-3" />
-                            <p className="font-semibold">Senha definida com sucesso!</p>
-                            <p className="text-sm mt-1">
-                                {type === 'recovery' ? 'Redirecionando para login...' : 'Entrando no sistema...'}
+                        <div className="flex flex-col items-center justify-center py-6 text-emerald-600 animate-in fade-in">
+                            <div className="text-sm font-black uppercase tracking-widest border-2 border-emerald-600 px-4 py-2 rounded-lg mb-2">
+                                [ SENHA DEFINIDA ]
+                            </div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60">
+                                {type === 'recovery' ? 'REDIRECIONANDO LOGIN' : 'ENTRANDO NO SISTEMA'}
                             </p>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova Senha</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nova Senha</label>
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-indigo-600 outline-none transition font-black text-[12px] dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                                     placeholder="••••••••"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar Senha</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Confirmar Senha</label>
                                 <input
                                     type="password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-indigo-600 outline-none transition font-black text-[12px] dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                                     placeholder="••••••••"
                                     required
                                 />
                             </div>
 
                             {error && (
-                                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md flex items-center gap-2 dark:bg-red-900/20 dark:text-red-300">
-                                    <AlertTriangle size={16} />
-                                    <span>{error}</span>
+                                <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest rounded flex items-center justify-center gap-2">
+                                    [ ERR: {error} ]
                                 </div>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                className="w-full bg-black hover:bg-gray-900 text-white font-black py-4 rounded-lg transition-all uppercase tracking-[0.2em] text-[11px] shadow-lg disabled:opacity-50"
                             >
-                                {loading && <Loader2 size={18} className="animate-spin" />}
-                                {loading ? 'Salvando...' : 'Definir Senha'}
+                                {loading ? '[ PROCESSANDO... ]' : '[ DEFINIR SENHA ]'}
                             </button>
                         </form>
                     )}

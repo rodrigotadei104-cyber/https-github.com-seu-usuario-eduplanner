@@ -1,0 +1,108 @@
+﻿Inspecting data for 2026-02-07...
+
+Found 15 records for 2026-02-07
+ID: dbc4e18f-5eb1-4ec4-b60d-a52bc01fbdf3
+  instrutor: undefined
+  instrutor_id: e1a49268-eda0-4b33-8303-8226c7046a0c
+  materia: undefined
+  materia_id: e5ec8d7f-cc8f-4dfb-855c-7ffe8c51234f
+  status: concluida
+---
+ID: 06a46eb7-2cd1-4a64-b479-859c487fee00
+  instrutor: undefined
+  instrutor_id: e1a49268-eda0-4b33-8303-8226c7046a0c
+  materia: undefined
+  materia_id: 680113c0-b83f-4321-b0a5-7bb614f264bd
+  status: concluida
+---
+ID: c9433468-faee-4164-ac57-e7f58d351907
+  instrutor: undefined
+  instrutor_id: e1a49268-eda0-4b33-8303-8226c7046a0c
+  materia: undefined
+  materia_id: 816b7626-7154-4b45-8ef2-f8354e4791ae
+  status: concluida
+---
+ID: a47ef1e3-c2d4-4d05-bc50-79fad4131b71
+  instrutor: undefined
+  instrutor_id: 516ff473-4a89-4d2f-a6a0-affeb8e39a12
+  materia: undefined
+  materia_id: 8b31e701-efd4-47b0-8d04-0625ee0db6bc
+  status: concluida
+---
+ID: 03a686c0-68dd-45d3-a855-dcef702fb09b
+  instrutor: undefined
+  instrutor_id: 516ff473-4a89-4d2f-a6a0-affeb8e39a12
+  materia: undefined
+  materia_id: 24f11432-a449-4fd2-8637-9171d6ecb221
+  status: concluida
+---
+ID: 23f71721-f86c-40b0-977a-0610cdaa202e
+  instrutor: undefined
+  instrutor_id: 6a20e000-ce5f-428a-8875-4c2bae802fa7
+  materia: undefined
+  materia_id: 497e6ae3-9063-4f49-a2d8-a46e9cb0e8cf
+  status: concluida
+---
+ID: 74e23f6f-8a63-467e-b664-49a50a3d9705
+  instrutor: undefined
+  instrutor_id: cda79d01-95ff-43a5-8aad-6c72e76e8fed
+  materia: undefined
+  materia_id: 3558edf8-a657-457e-8d00-9f73000b4eda
+  status: concluida
+---
+ID: 98c73b5e-0dc7-4bd7-a22e-3dae7257af7f
+  instrutor: undefined
+  instrutor_id: null
+  materia: undefined
+  materia_id: 497e6ae3-9063-4f49-a2d8-a46e9cb0e8cf
+  status: concluida
+---
+ID: 8f608395-5112-43aa-98fe-c0773fded84d
+  instrutor: undefined
+  instrutor_id: cda79d01-95ff-43a5-8aad-6c72e76e8fed
+  materia: undefined
+  materia_id: 3861ba3c-a01b-42a5-aa53-e3a29fe1b198
+  status: concluida
+---
+ID: 24b66a87-31b5-4cb9-be14-751697012661
+  instrutor: undefined
+  instrutor_id: cda79d01-95ff-43a5-8aad-6c72e76e8fed
+  materia: undefined
+  materia_id: 22d0a64c-8a3d-4356-aaf4-a22576ee82be
+  status: concluida
+---
+ID: 42c4f16a-89ab-464c-a72f-44bd67107297
+  instrutor: undefined
+  instrutor_id: 6a20e000-ce5f-428a-8875-4c2bae802fa7
+  materia: undefined
+  materia_id: e9a1dc80-0b67-4b9e-9b49-325dd92a0abf
+  status: concluida
+---
+ID: d0124787-0ece-4a05-8769-c9967fcba5ba
+  instrutor: undefined
+  instrutor_id: 6a20e000-ce5f-428a-8875-4c2bae802fa7
+  materia: undefined
+  materia_id: ca63d3be-91a8-4291-a536-8f1ec8cc55a2
+  status: concluida
+---
+ID: c00a677a-5db1-41aa-877b-c58bcff811d3
+  instrutor: undefined
+  instrutor_id: cda79d01-95ff-43a5-8aad-6c72e76e8fed
+  materia: undefined
+  materia_id: 5b24cc65-4e4e-406b-b52e-84b2d2b68107
+  status: concluida
+---
+ID: b24aae08-9712-4677-ba83-f24bf607b618
+  instrutor: undefined
+  instrutor_id: null
+  materia: undefined
+  materia_id: 7b2cbe0c-d2a4-41cd-b781-25a4712865fc
+  status: concluida
+---
+ID: 397e5eb0-7149-44ea-986b-696f6c472a12
+  instrutor: undefined
+  instrutor_id: null
+  materia: undefined
+  materia_id: 497e6ae3-9063-4f49-a2d8-a46e9cb0e8cf
+  status: concluida
+---

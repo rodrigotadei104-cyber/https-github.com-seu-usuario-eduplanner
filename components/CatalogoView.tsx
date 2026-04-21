@@ -1,5 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit2, Trash2, ChevronDown, ChevronRight, Upload, BookOpen, AlertTriangle, Search, X, ArrowDownToLine, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { CatalogoCurso, DisciplinaCurso } from '../types';
 import { catalogoService } from '../services/catalogo.service';
 import { useSchedule } from '../context/ScheduleContext';
@@ -363,9 +362,8 @@ export const CatalogoView: React.FC = () => {
             {/* Header */}
             <header className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-gray-200 bg-white dark:bg-slate-800 dark:border-slate-700">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <BookOpen className="text-blue-600" />
-                        Catálogo de Cursos Base
+                    <h1 className="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter border-b-2 border-blue-600 inline-block">
+                        Catálogo de Cursos
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         Defina matrizes curriculares padrão para geração massiva de turmas.
@@ -382,26 +380,26 @@ export const CatalogoView: React.FC = () => {
                     <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isImporting}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${isImporting
+                        className={`px-4 py-2 rounded-lg text-[10px] font-black transition uppercase tracking-widest border ${isImporting
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-slate-800'
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200'
+                            : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200 shadow-sm'
                             }`}
                         title="Importar catálogo em lote via XLS"
                     >
-                        <Upload size={16} /> {isImporting ? 'Lendo Excel...' : 'Importar Excel Curricular'}
+                        {isImporting ? 'Lendo Excel...' : 'Importar Excel'}
                     </button>
                     <button
                         onClick={() => handleOpenCursoModal()}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition shadow-sm"
                     >
-                        <Plus size={16} /> Novo Curso Base
+                        Novo Curso
                     </button>
                     <button
                         onClick={handleAbrirMigracao}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
-                        title="Importar cursos cadastrados no sistema legado evitando duplicatas"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-100 transition shadow-sm"
+                        title="Importar de legado"
                     >
-                        <ArrowDownToLine size={16} /> Migrar Legado
+                        Migrar Legado
                     </button>
                 </div>
             </header>
@@ -409,17 +407,17 @@ export const CatalogoView: React.FC = () => {
             {/* Search toolbar */}
             <div className="px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 flex items-center gap-3">
                 <div className="flex items-center gap-2 flex-1 max-w-sm bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2">
-                    <Search size={14} className="text-slate-400 shrink-0" />
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Busca</span>
                     <input
                         type="text"
-                        placeholder="Buscar por nome do curso ou carga horária..."
+                        placeholder="Nome do curso ou horas..."
                         value={searchQuery}
                         onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                        className="flex-1 bg-transparent text-sm outline-none dark:text-white placeholder-slate-400"
+                        className="flex-1 bg-transparent text-sm outline-none dark:text-white placeholder-slate-400 font-bold"
                     />
                     {searchQuery && (
-                        <button onClick={() => { setSearchQuery(''); setCurrentPage(1); }} className="text-slate-400 hover:text-red-500">
-                            <X size={13} />
+                        <button onClick={() => { setSearchQuery(''); setCurrentPage(1); }} className="text-[10px] font-black text-rose-500 hover:text-rose-700">
+                            LIMPAR
                         </button>
                     )}
                 </div>
@@ -438,7 +436,7 @@ export const CatalogoView: React.FC = () => {
                     <div className="max-w-4xl mx-auto space-y-4">
                         {cursosFiltrados.length === 0 ? (
                             <div className="bg-white p-10 rounded-xl border border-dashed border-gray-300 text-center dark:bg-slate-800 dark:border-slate-700">
-                                <Search className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" />
+                                <div className="mx-auto text-3xl font-black text-gray-200 dark:text-gray-600 mb-3 uppercase tracking-tighter">Vazio</div>
                                 {searchQuery ? (
                                     <>
                                         <h3 className="text-lg font-medium text-gray-900 dark:text-white">Nenhum resultado para "{searchQuery}"</h3>
@@ -459,30 +457,32 @@ export const CatalogoView: React.FC = () => {
                                         onClick={() => toggleCursoExpanded(curso.id)}
                                     >
                                         <div className="flex items-center gap-3">
-                                            {expandedCursoId === curso.id ? <ChevronDown className="text-gray-400" /> : <ChevronRight className="text-gray-400" />}
+                                            <span className="w-6 text-center font-black text-gray-400">
+                                                {expandedCursoId === curso.id ? '[-]' : '[+]'}
+                                            </span>
                                             <div>
                                                 <h3 className="font-bold text-gray-800 dark:text-gray-100 text-lg flex items-center gap-2">
                                                     {curso.nomeCurso}
                                                     {!curso.ativo && <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded uppercase font-bold tracking-wider">Inativo</span>}
                                                 </h3>
-                                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                    Carga Prevista: {curso.cargaTotalHoras} horas ({curso.tipoHoraMin} min/h)
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                                    Carga: {curso.cargaTotalHoras}h | base: {curso.tipoHoraMin}min
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                                            <button onClick={() => handleOpenCursoModal(curso)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded dark:hover:bg-slate-700">
-                                                <Edit2 size={16} />
+                                            <button onClick={() => handleOpenCursoModal(curso)} className="px-3 py-1 text-[10px] font-black text-blue-600 hover:bg-blue-50 rounded border border-blue-100 uppercase tracking-widest">
+                                                Editar
                                             </button>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setDeleteModal({ isOpen: true, type: 'curso', id: curso.id });
                                                 }}
-                                                className="p-1.5 text-gray-400 hover:text-red-500 rounded transition"
+                                                className="px-3 py-1 text-[10px] font-black text-rose-600 hover:bg-rose-50 rounded border border-rose-100 uppercase tracking-widest"
                                                 title="Excluir Curso"
                                             >
-                                                <Trash2 size={16} />
+                                                Excluir
                                             </button>
                                         </div>
                                     </div>
@@ -530,9 +530,8 @@ export const CatalogoView: React.FC = () => {
                                                         const delta = curso.cargaTotalHoras - loadMateria;
                                                         if (delta !== 0) {
                                                             return (
-                                                                <div className="mt-3 text-xs flex items-center gap-2 justify-end text-amber-600 font-bold bg-amber-50 p-2 rounded dark:bg-amber-900/20">
-                                                                    <AlertTriangle size={14} />
-                                                                    Atenção matemática: A soma das disciplinas ({loadMateria}h) diverge da carga total do curso ({curso.cargaTotalHoras}h). Faltam {delta}h.
+                                                                <div className="mt-3 text-[10px] flex items-center gap-2 justify-end text-amber-700 font-black bg-amber-50 p-2 rounded border border-amber-200 uppercase tracking-tighter">
+                                                                    ! DIVERGÊNCIA: Soma das disciplinas ({loadMateria}h) / {curso.cargaTotalHoras}h. Faltam {delta}h.
                                                                 </div>
                                                             );
                                                         }
@@ -718,13 +717,14 @@ export const CatalogoView: React.FC = () => {
                         {/* Header */}
                         <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20">
                             <div className="flex items-center gap-3">
-                                <ArrowDownToLine className="text-emerald-600" size={22} />
+                                <div className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-black rounded uppercase tracking-widest">
+                                    Migração Legado
+                                </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">Migração do Sistema Legado</h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Importar cursos cadastrados anteriormente, evitando duplicatas</p>
+                                    <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter">Importação Legada</h3>
                                 </div>
                             </div>
-                            <button onClick={() => setIsMigModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700"><X size={18} /></button>
+                            <button onClick={() => setIsMigModalOpen(false)} className="text-gray-400 hover:text-black font-black text-xl">FECHAR</button>
                         </div>
 
                         {/* Body */}
@@ -772,8 +772,8 @@ export const CatalogoView: React.FC = () => {
                                     {/* Novos cursos */}
                                     {migData.novos.length > 0 && (
                                         <div>
-                                            <h4 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-1.5">
-                                                <CheckCircle2 size={15} /> Cursos a serem importados ({migData.novos.length})
+                                            <h4 className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 mb-2 uppercase tracking-widest">
+                                                OK - Cursos a Importar ({migData.novos.length})
                                             </h4>
                                             <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                                                 {migData.novos.map((item, i) => (
@@ -797,12 +797,12 @@ export const CatalogoView: React.FC = () => {
                                     {migData.duplicatas.length > 0 && (
                                         <div>
                                             <h4 className="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-1.5">
-                                                <AlertTriangle size={14} /> Já existem no Catálogo — ignorados ({migData.duplicatas.length})
+                                                [!] Já existem no Catálogo — ignorados ({migData.duplicatas.length})
                                             </h4>
                                             <div className="space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
                                                 {migData.duplicatas.map((d, i) => (
                                                     <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-100 dark:border-amber-800/30 text-xs text-amber-800 dark:text-amber-400">
-                                                        <X size={11} className="shrink-0" /> <span className="truncate">{d.nomeLegado}</span>
+                                                        <span className="font-black text-amber-600 shrink-0">-</span> <span className="truncate">{d.nomeLegado}</span>
                                                         <span className="text-amber-400 shrink-0">→ já existe como</span>
                                                         <span className="font-semibold truncate">{d.nomeCatalogo}</span>
                                                     </div>
@@ -815,12 +815,12 @@ export const CatalogoView: React.FC = () => {
                                     {migData.duplicatasInternas.length > 0 && (
                                         <div>
                                             <h4 className="text-sm font-semibold text-rose-600 dark:text-rose-400 mb-2 flex items-center gap-1.5">
-                                                <AlertTriangle size={14} /> Repetidos dentro do próprio legado — descartados ({migData.duplicatasInternas.length})
+                                                [!] Repetidos dentro do próprio legado — descartados ({migData.duplicatasInternas.length})
                                             </h4>
                                             <div className="space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
                                                 {migData.duplicatasInternas.map((d, i) => (
                                                     <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 dark:bg-rose-900/10 rounded-lg border border-rose-100 dark:border-rose-800/30 text-xs text-rose-700 dark:text-rose-400">
-                                                        <X size={11} className="shrink-0" /> <span className="truncate">{d.nomeLegado}</span>
+                                                        <span className="font-black text-rose-600 shrink-0">-</span> <span className="truncate">{d.nomeLegado}</span>
                                                         <span className="text-rose-400 shrink-0 truncate">({d.motivo})</span>
                                                     </div>
                                                 ))}
@@ -830,7 +830,7 @@ export const CatalogoView: React.FC = () => {
 
                                     {migData.novos.length === 0 && (
                                         <div className="text-center py-6 text-gray-500">
-                                            <CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={32} />
+                                            <span className="text-4xl font-black text-emerald-400 mb-2">OK</span>
                                             <p className="font-medium">Todos os cursos legados já estão no Catálogo!</p>
                                             <p className="text-sm text-gray-400">Nenhum novo curso a importar.</p>
                                         </div>
@@ -841,7 +841,7 @@ export const CatalogoView: React.FC = () => {
                             {/* Done state */}
                             {migStatus === 'done' && migResult && (
                                 <div className="text-center py-6 space-y-4">
-                                    <CheckCircle2 className="mx-auto text-emerald-500" size={48} />
+                                    <span className="text-5xl font-black text-emerald-400 mx-auto mb-2">OK</span>
                                     <h4 className="text-lg font-bold text-gray-800 dark:text-white">Migração Concluída!</h4>
                                     <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
                                         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center">
@@ -876,7 +876,7 @@ export const CatalogoView: React.FC = () => {
                                     onClick={handleConfirmarMigracao}
                                     className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition"
                                 >
-                                    <ArrowDownToLine size={15} /> Confirmar Migração de {migData.novos.length} curso{migData.novos.length !== 1 ? 's' : ''}
+                                    Confirmar Migração de {migData.novos.length} curso{migData.novos.length !== 1 ? 's' : ''}
                                 </button>
                             )}
                         </div>

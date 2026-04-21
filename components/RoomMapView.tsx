@@ -1,7 +1,4 @@
-﻿'use client';
-
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Download, Printer, LayoutGrid, List, AlertTriangle, Clock, Building2, BookOpen, Loader2, Info, CalendarDays, User } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useSchedule } from '../context/ScheduleContext';
@@ -12,6 +9,23 @@ import * as XLSX from 'xlsx';
 // ============================================
 // HELPERS
 // ============================================
+
+const DARK_COLORS = [
+    '#059669', // Emerald 600
+    '#7C3AED', // Violet 600
+    '#DC2626', // Red 600
+    '#D97706', // Amber 600
+    '#2563EB', // Blue 600
+    '#0891b2', // Cyan 600
+    '#4F46E5', // Indigo 600
+    '#be185d', // Pink 700
+];
+
+const getCourseColor = (name: string): string => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return DARK_COLORS[Math.abs(hash) % DARK_COLORS.length];
+};
 
 const toMinutes = (time: string): number => {
     const [h, m] = time.split(':').map(Number);
@@ -98,25 +112,29 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
 
         return (aulasGlobais as Aula[])
             .filter(a => {
-                const dataAulaStr = a.data instanceof Date
-                    ? format(a.data, 'yyyy-MM-dd')
-                    : String(a.data);
-                return dataAulaStr >= diaInicioStr && dataAulaStr <= diaFimStr;
+                const dataStr = String(a.data).split('T')[0];
+                const realData = a.data instanceof Date ? format(a.data, 'yyyy-MM-dd') : dataStr;
+                return realData >= diaInicioStr && realData <= diaFimStr;
             })
-            .map(a => ({
-                id: a.id,
-                data: a.data instanceof Date ? format(a.data, 'yyyy-MM-dd') : String(a.data),
-                horarioInicio: a.horarioInicio,
-                horarioFim: a.horarioFim,
-                salaId: a.sala || 'sem-sala',
+            .map(a => {
+                const pureDateStr = String(a.data).split('T')[0];
+                return {
+                    id: a.id,
+                    data: a.data instanceof Date ? format(a.data, 'yyyy-MM-dd') : pureDateStr,
+                    horarioInicio: a.horarioInicio,
+                    horarioFim: a.horarioFim,
+                    salaId: a.sala || 'sem-sala',
                 sala: a.sala || 'Sem sala definida',
                 curso: a.curso,
                 materia: a.materia,
                 instrutor: a.instrutor,
                 cor: a.cor,
                 status: a.status,
-                minutosPorHora: a.minutosPorHora
-            }));
+                minutosPorHora: a.minutosPorHora,
+                tipoAula: a.tipoAula,
+                origem: a.origem
+                };
+            });
     }, [aulasGlobais, inicioSemana, fimSemana]);
 
     const conflitantes = useMemo(() => detectarConflitos(aulas), [aulas]);
@@ -346,13 +364,13 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
 </head>
 <body>
   <div class="topbar">
-    <button class="btn" onclick="window.print()">ðŸ–¨ Imprimir / Salvar PDF</button>
-    <button class="btn sec" onclick="window.close()">âœ• Fechar</button>
+    <button class="btn" onclick="window.print()">Imprimir / Salvar PDF</button>
+    <button class="btn sec" onclick="window.close()">Fechar</button>
   </div>
   <div class="card">
     <div class="hdr">
       <div>
-        <div class="title">ðŸ“… Mapa de Salas</div>
+        <div class="title">Mapa de Salas</div>
         <div class="sub">${labelS} &nbsp;Â·&nbsp; Gerado em ${format(new Date(), "dd/MM/yyyy 'Ã s' HH:mm")}</div>
       </div>
       <div class="stats">
@@ -404,7 +422,8 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
             <div
                 id="rmap-root"
                 style={{
-                    height: '100%',
+                    height: 'calc(100vh - 150px)',
+                    minHeight: '600px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px'
@@ -415,18 +434,18 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => setSemanaBase(p => subWeeks(p, 1))}
-                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 transition-colors font-black"
                         >
-                            <ChevronLeft size={16} />
+                            &lt;
                         </button>
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm min-w-[162px] text-center">
+                        <span className="font-bold text-gray-800 dark:text-gray-100 text-[11px] min-w-[162px] text-center uppercase tracking-widest">
                             {labelSemana}
                         </span>
                         <button
                             onClick={() => setSemanaBase(p => addWeeks(p, 1))}
-                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 transition-colors font-black"
                         >
-                            <ChevronRight size={16} />
+                            &gt;
                         </button>
                         <button
                             onClick={() => setSemanaBase(new Date())}
@@ -445,13 +464,12 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                         setAba(t);
                                         if (t === 'dia') setDiaSelecionado(inicioSemana);
                                     }}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all
                                         ${aba === t
-                                            ? 'bg-white shadow text-gray-800 dark:bg-slate-600 dark:text-white'
+                                            ? 'bg-blue-600 shadow text-white'
                                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                         }`}
                                 >
-                                    {t === 'grade' ? <LayoutGrid size={13} /> : t === 'lista' ? <List size={13} /> : <CalendarDays size={13} />}
                                     {t === 'grade' ? 'Grade' : t === 'lista' ? 'Lista' : 'Dia'}
                                 </button>
                             ))}
@@ -474,16 +492,16 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                         <button
                             onClick={exportarExcel}
                             disabled={isLoading || aulas.length === 0}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition disabled:opacity-40 disabled:cursor-not-allowed dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+                            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                            <Download size={13} /> Excel
+                            Excel
                         </button>
                         <button
                             onClick={exportarPDF}
                             disabled={isLoading || aulas.length === 0}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 rounded-lg hover:bg-rose-100 transition disabled:opacity-40 disabled:cursor-not-allowed dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800"
+                            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                            <Printer size={13} /> PDF
+                            PDF
                         </button>
                     </div>
                 </div>
@@ -491,21 +509,19 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                 {/* â”€â”€ INDICADORES â”€â”€ */}
                 <div className="no-print flex items-center gap-4 px-3 py-2 bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm flex-wrap" style={{ flexShrink: 0 }}>
                     {[
-                        { Icon: BookOpen, label: 'Aulas', value: aulasAtivas.length, color: 'text-blue-500' },
-                        { Icon: Clock, label: 'Horas', value: `${totalHoras.toFixed(1)}h`, color: 'text-indigo-500' },
-                        { Icon: Building2, label: 'Salas', value: salasUnicas.length, color: 'text-teal-500' },
+                        { label: 'Aulas', value: aulasAtivas.length, color: 'text-blue-600' },
+                        { label: 'Horas', value: `${totalHoras.toFixed(1)}h`, color: 'text-indigo-600' },
+                        { label: 'Salas', value: salasUnicas.length, color: 'text-emerald-600' },
                         {
-                            Icon: AlertTriangle,
                             label: 'Conflitos',
                             value: numConflitos,
-                            color: numConflitos > 0 ? 'text-rose-500' : 'text-gray-300 dark:text-slate-600'
+                            color: numConflitos > 0 ? 'text-rose-600' : 'text-gray-400'
                         },
-                    ].map(({ Icon, label, value, color }, i, arr) => (
+                    ].map(({ label, value, color }, i, arr) => (
                         <React.Fragment key={label}>
-                            <div className="flex items-center gap-2">
-                                <Icon size={15} className={color} />
-                                <span className="text-xs text-gray-400 dark:text-gray-500">{label}</span>
-                                <span className={`text-sm font-bold ${numConflitos > 0 && label === 'Conflitos' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-800 dark:text-gray-100'}`}>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-gray-400 uppercase font-black tracking-widest">{label}</span>
+                                <span className={`text-xs font-black ${color}`}>
                                     {value}
                                 </span>
                             </div>
@@ -514,7 +530,7 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                             )}
                         </React.Fragment>
                     ))}
-                    {isLoading && <Loader2 size={14} className="animate-spin text-blue-400 ml-auto" />}
+                    {isLoading && <span className="text-[10px] font-black text-blue-500 animate-pulse ml-auto uppercase tracking-tighter">Carregando...</span>}
                 </div>
 
                 {/* â”€â”€ CONTEUDO â”€â”€
@@ -529,9 +545,9 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                         {aba === 'grade' && (
                             salasUnicas.length === 0 ? (
                                 <div style={{ position: 'absolute', inset: 0 }} className="flex flex-col items-center justify-center text-gray-400 gap-3">
-                                    <LayoutGrid size={40} strokeWidth={1} />
-                                    <p className="text-sm font-medium">Nenhuma aula neste periodo</p>
-                                    <p className="text-xs">Navegue para outra semana</p>
+                                    <span className="text-4xl font-black opacity-20">MAPA</span>
+                                    <p className="text-sm font-bold uppercase tracking-widest">Nenhuma aula neste período</p>
+                                    <p className="text-[10px] uppercase font-bold text-gray-400">Navegue para outra semana</p>
                                 </div>
                             ) : (
                                 <div
@@ -613,8 +629,7 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                         }}
                                                     >
                                                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                                                            <Building2 size={12} style={{ color: '#9ca3af', flexShrink: 0, marginTop: '2px' }} />
-                                                            <span style={{ fontWeight: 600, fontSize: '12px', color: '#374151', wordBreak: 'break-word', lineHeight: '1.3' }}>
+                                                            <span style={{ fontWeight: 800, fontSize: '12px', color: '#374151', wordBreak: 'break-word', lineHeight: '1.3', textTransform: 'uppercase' }}>
                                                                 {salaNome}
                                                             </span>
                                                         </div>
@@ -644,11 +659,17 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                                         {aulasNaCelula.map(aula => {
                                                                             const isConflito = conflitantes.has(aula.id);
                                                                             const isCancelada = aula.status === 'cancelada';
+                                                                            const isProgram = aula.tipoAula === 'PROGRAMA';
+                                                                            
+                                                                            // Usa a cor hash sólida ou a cor do evento caso programa, se cancelada usa cinza.
+                                                                            const baseColor = isProgram ? '#c2410c' : getCourseColor(aula.curso);
+                                                                            const aulaCor = isConflito ? '#dc2626' : isCancelada ? '#f3f4f6' : baseColor;
+
                                                                             return (
                                                                                 <button
                                                                                     key={aula.id}
                                                                                     onClick={() => handleClickAula(aula)}
-                                                                                    title={`${aula.curso}\n${aula.instrutor}\n${aula.horarioInicio}-${aula.horarioFim}`}
+                                                                                    title={`${isProgram ? 'Programa' : aula.curso}\n${aula.instrutor}\n${aula.horarioInicio}-${aula.horarioFim}`}
                                                                                     style={{
                                                                                         width: '100%',
                                                                                         textAlign: 'left',
@@ -657,38 +678,46 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                                                         cursor: 'pointer',
                                                                                         border: 'none',
                                                                                         padding: 0,
-                                                                                        opacity: isCancelada ? 0.5 : (filtroInstrutor && aula.instrutor !== filtroInstrutor ? 0.3 : 1),
-                                                                                        outline: isConflito ? '1px solid #f87171' : 'none',
-                                                                                        backgroundColor: isConflito ? '#fef2f2' : isCancelada ? '#f9fafb' : `${aula.cor}11`,
-                                                                                        borderLeft: `3px solid ${isConflito ? '#f87171' : isCancelada ? '#d1d5db' : aula.cor}`
+                                                                                        opacity: isCancelada ? 0.6 : (filtroInstrutor && aula.instrutor !== filtroInstrutor ? 0.3 : 1),
+                                                                                        outline: isConflito ? '2px solid #ef4444' : 'none',
+                                                                                        outlineOffset: '[-1px]',
+                                                                                        backgroundColor: aulaCor,
+                                                                                        color: isCancelada ? '#9ca3af' : '#ffffff',
+                                                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                                                                                     }}
                                                                                 >
-                                                                                    <div style={{ padding: '4px 6px' }}>
-                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
-                                                                                            {isConflito && <AlertTriangle size={9} style={{ color: '#ef4444', flexShrink: 0 }} />}
+                                                                                    <div style={{ padding: '6px 8px' }}>
+                                                                                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                                                                                            {isConflito && <span style={{ color: '#ffffff', fontSize: '9px', fontWeight: '900', backgroundColor: '#991b1b', padding: '1px 3px', borderRadius: '3px' }}>!</span>}
                                                                                             <span style={{
-                                                                                                fontSize: '10px', fontWeight: 700,
-                                                                                                color: isConflito ? '#b91c1c' : isCancelada ? '#9ca3af' : '#374151',
+                                                                                                fontSize: '11px', fontWeight: 800,
+                                                                                                color: isCancelada ? '#9ca3af' : '#ffffff',
                                                                                                 fontVariantNumeric: 'tabular-nums',
-                                                                                                lineHeight: 1
+                                                                                                lineHeight: 1, 
+                                                                                                textShadow: isCancelada ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+                                                                                                opacity: 0.95
                                                                                             }}>
                                                                                                 {aula.horarioInicio}-{aula.horarioFim}
                                                                                             </span>
                                                                                         </div>
                                                                                         <span style={{
-                                                                                            display: 'block', fontSize: '11px', fontWeight: 500,
-                                                                                            color: isCancelada ? '#9ca3af' : '#111827',
+                                                                                            display: 'block', fontSize: '11px', fontWeight: 700,
+                                                                                            color: isCancelada ? '#9ca3af' : '#ffffff',
                                                                                             textDecoration: isCancelada ? 'line-through' : 'none',
                                                                                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                                                                            lineHeight: 1.3
+                                                                                            lineHeight: 1.3,
+                                                                                            textShadow: isCancelada ? 'none' : '0 1px 2px rgba(0,0,0,0.3)'
                                                                                         }}>
                                                                                             {aula.curso}
                                                                                         </span>
                                                                                         <span style={{
                                                                                             display: 'block', fontSize: '10px',
-                                                                                            color: '#9ca3af',
+                                                                                            color: isCancelada ? '#d1d5db' : '#f3f4f6',
+                                                                                            fontWeight: 600,
                                                                                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                                                                            lineHeight: 1.3
+                                                                                            lineHeight: 1.3,
+                                                                                            marginTop: '2px',
+                                                                                            opacity: 0.8
                                                                                         }}>
                                                                                             {aula.instrutor.split(' ')[0]}
                                                                                         </span>
@@ -717,19 +746,19 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                     <button
                                         onClick={() => setDiaSelecionado(p => addDays(p, -1))}
                                         disabled={diaSelecionado <= inicioSemana}
-                                        className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 transition-colors disabled:opacity-30"
+                                        className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 transition-colors disabled:opacity-30 font-black"
                                     >
-                                        <ChevronLeft size={16} />
+                                        &lt;
                                     </button>
-                                    <span className="font-semibold text-sm text-gray-800 dark:text-gray-100 min-w-[200px] text-center capitalize">
+                                    <span className="font-bold text-[11px] text-gray-800 dark:text-gray-100 min-w-[200px] text-center uppercase tracking-widest">
                                         {format(diaSelecionado, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                                     </span>
                                     <button
                                         onClick={() => setDiaSelecionado(p => addDays(p, 1))}
                                         disabled={diaSelecionado >= fimSemana}
-                                        className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 transition-colors disabled:opacity-30"
+                                        className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 transition-colors disabled:opacity-30 font-black"
                                     >
-                                        <ChevronRight size={16} />
+                                        &gt;
                                     </button>
                                     <span className="text-xs text-gray-400 ml-2">
                                         {aulasFiltradasDia.length} aula{aulasFiltradasDia.length !== 1 ? 's' : ''}
@@ -746,9 +775,9 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
 
                                 {aulasFiltradasDia.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center flex-1 text-gray-400 gap-3">
-                                        <CalendarDays size={40} strokeWidth={1} />
-                                        <p className="text-sm font-medium">Nenhuma aula neste dia</p>
-                                        {filtroInstrutor && <p className="text-xs">Filtrando por: {filtroInstrutor}</p>}
+                                        <span className="text-4xl font-black opacity-20">SALA</span>
+                                        <p className="text-sm font-bold uppercase tracking-widest">Nenhuma aula neste dia</p>
+                                        {filtroInstrutor && <p className="text-[10px] uppercase font-bold">Filtrando por: {filtroInstrutor}</p>}
                                     </div>
                                 ) : (
                                     <div style={{
@@ -764,34 +793,33 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                             return (
                                                 <div key={salaId} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                                                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-slate-700/60 border-b border-gray-100 dark:border-slate-700 shrink-0">
-                                                        <Building2 size={13} className="text-gray-400 shrink-0" />
-                                                        <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate flex-1">{salaNome}</span>
-                                                        <span className="text-[10px] text-gray-400 shrink-0">{ac.length} aula{ac.length !== 1 ? 's' : ''}</span>
+                                                        <span className="text-xs font-black text-gray-700 dark:text-gray-200 truncate flex-1 uppercase tracking-wider">{salaNome}</span>
+                                                        <span className="text-[10px] font-bold text-gray-400 shrink-0 uppercase tracking-tighter">{ac.length} Aulas</span>
                                                     </div>
                                                     <div className="p-2 flex flex-col gap-2 overflow-y-auto">
                                                         {ac.map(aula => {
                                                             const isC = conflitantes.has(aula.id);
+                                                            const isProgram = aula.tipoAula === 'PROGRAMA';
+                                                            const aulaCor = isProgram ? '#D97706' : aula.cor;
                                                             return (
                                                                 <button
                                                                     key={aula.id}
                                                                     onClick={() => handleClickAula(aula)}
                                                                     className="w-full text-left rounded-lg p-3 transition-all hover:brightness-95 active:scale-[0.99]"
                                                                     style={{
-                                                                        background: isC ? '#fef2f2' : `${aula.cor}14`,
-                                                                        borderLeft: `4px solid ${isC ? '#f87171' : aula.cor}`
+                                                                        background: isC ? '#fef2f2' : `${aulaCor}14`,
+                                                                        borderLeft: `4px solid ${isC ? '#f87171' : aulaCor}`
                                                                     }}
                                                                 >
                                                                     <div className="flex items-center gap-1.5 mb-1">
-                                                                        <Clock size={10} className="text-gray-400" />
-                                                                        <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 font-mono">
-                                                                            {aula.horarioInicio} - {aula.horarioFim}
+                                                                        <span className={`text-[11px] font-black font-mono uppercase tracking-tighter ${isProgram ? 'text-amber-700 dark:text-amber-500' : 'text-gray-700 dark:text-gray-200'}`}>
+                                                                             {aula.horarioInicio} - {aula.horarioFim}
                                                                         </span>
-                                                                        {isC && <AlertTriangle size={10} className="text-red-500 ml-auto" />}
+                                                                        {isC && <span className="text-red-600 font-black text-[10px] ml-auto uppercase tracking-widest">! Conflito</span>}
                                                                     </div>
-                                                                    <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">{aula.curso}</p>
-                                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{aula.materia}</p>
+                                                                    <p className={`text-xs font-semibold truncate ${isProgram ? 'text-amber-800 dark:text-amber-400' : 'text-gray-800 dark:text-gray-100'}`}>{isProgram ? `Programa: ${aula.origem}` : aula.curso}</p>
+                                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{isProgram ? 'Institucional' : aula.materia}</p>
                                                                     <div className="flex items-center gap-1 mt-1.5">
-                                                                        <User size={9} className="text-gray-400" />
                                                                         <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{aula.instrutor}</span>
                                                                     </div>
                                                                     <span className={`mt-1.5 inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold ${statusBadge(aula.status)}`}>
@@ -844,7 +872,7 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
 
                                 {aulasFiltradas.length === 0 ? (
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} className="text-gray-400 gap-3">
-                                        <Info size={36} strokeWidth={1} />
+                                        <span className="text-3xl font-black opacity-10 uppercase tracking-tighter">Vazio</span>
                                         <p className="text-sm">Nenhuma aula encontrada</p>
                                     </div>
                                 ) : (
@@ -870,7 +898,7 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                         >
                                                             <td className="px-3 py-2 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
                                                                 <div className="flex items-center gap-1">
-                                                                    {isConflito && <AlertTriangle size={11} className="text-red-500 flex-shrink-0" />}
+                                                                    {isConflito && <span className="text-red-500 font-black text-[10px]">!</span>}
                                                                     <span className="inline-block w-1.5 h-3.5 rounded-full mr-1 flex-shrink-0" style={{ backgroundColor: aula.cor }} />
                                                                     {aula.sala}
                                                                 </div>
@@ -898,7 +926,7 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                             <span>{aulasFiltradas.length} aula{aulasFiltradas.length !== 1 ? 's' : ''} encontrada{aulasFiltradas.length !== 1 ? 's' : ''}</span>
                                             {numConflitos > 0 && (
                                                 <span className="text-red-500 flex items-center gap-1">
-                                                    <AlertTriangle size={11} />
+                                                    <span className="font-black text-[10px]">!</span>
                                                     {numConflitos} conflito{numConflitos !== 1 ? 's' : ''} detectado{numConflitos !== 1 ? 's' : ''}
                                                 </span>
                                             )}

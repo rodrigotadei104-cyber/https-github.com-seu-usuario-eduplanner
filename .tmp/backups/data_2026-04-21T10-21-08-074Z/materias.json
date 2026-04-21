@@ -1,0 +1,3386 @@
+[
+  {
+    "id": "2bb567bb-5197-49d5-a48e-fd55eb925c1e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "3e4ba77a-7c05-4092-a5a4-de5825c5c934",
+    "nome": "Atendimento ao Cliente e Como Lidar com Pessoas com Deficiência e Mobilidade Reduzida",
+    "carga_horaria": 4,
+    "created_at": "2026-01-27T14:32:17.719477+00:00"
+  },
+  {
+    "id": "2847579b-b279-40a4-b04d-650582f3fc93",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "02f72b93-b6ab-4d1f-bdef-d7f9d9069fb1",
+    "nome": "Atendimento ao Cliente e Como Lidar com Pessoas com Deficiência e Mobilidade Reduzida",
+    "carga_horaria": 4,
+    "created_at": "2026-01-27T14:32:20.398595+00:00"
+  },
+  {
+    "id": "497e6ae3-9063-4f49-a2d8-a46e9cb0e8cf",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "dd4d80ab-16ee-4be2-92fb-4fc63b15c561",
+    "nome": "CONSCIENTIZAÇÃO, USO ADEQUADO, GUARDA E CONSERVAÇÃO DE EPI'S",
+    "carga_horaria": 4,
+    "created_at": "2026-02-05T15:22:26.993309+00:00"
+  },
+  {
+    "id": "24f11432-a449-4fd2-8637-9171d6ecb221",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "0aa32b09-6d2e-4ea2-88e4-7db0ea9ba66b",
+    "nome": "Conteúdo Prático: Conhecimentos e Utilização dos Sistemas de Segurança contra Incêndio com Inflamáveis.",
+    "carga_horaria": 1,
+    "created_at": "2026-02-05T15:28:51.142745+00:00"
+  },
+  {
+    "id": "31980a95-84d7-40a9-a920-9b7a51ba68fc",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "34c3117d-27cb-4bd9-a433-e21a55322ca7",
+    "nome": "Domine a arte da comunicação",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:13:12.482098+00:00"
+  },
+  {
+    "id": "6146b3db-8acb-41d0-928a-30aa67a27606",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "34c3117d-27cb-4bd9-a433-e21a55322ca7",
+    "nome": "Domine a arte da comunicação",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:13:15.604195+00:00"
+  },
+  {
+    "id": "7217b0bb-20e9-47ab-b116-5ba394435362",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "caa9015e-ca3d-4f95-923c-a7fb63ab0f5f",
+    "nome": "Atendimento Eficaz – Transitando entre as vias da Gentileza e da Inclusão",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:13:19.018817+00:00"
+  },
+  {
+    "id": "0727ff16-7ed0-4990-b042-1f5e10c1c594",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8309abd1-e622-426e-b173-f071c44165ea",
+    "nome": "Prática",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:13:22.869679+00:00"
+  },
+  {
+    "id": "e104228b-7a68-4924-9173-ddf29b5cff6d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8309abd1-e622-426e-b173-f071c44165ea",
+    "nome": "Introdução ao 5 S",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:13:26.099158+00:00"
+  },
+  {
+    "id": "6ba56a3f-8b38-49da-a330-ce9a64515d16",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f3b6909-5a40-4f0d-99f2-2ea6db5a5487",
+    "nome": "Conceituando a Inteligência Emocional",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:13:29.63999+00:00"
+  },
+  {
+    "id": "677b4df8-cd6a-4910-b9c6-b0236acfc9e2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f3b6909-5a40-4f0d-99f2-2ea6db5a5487",
+    "nome": "A Inteligência Emocional e o Gerenciamento das Emoções",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:13:32.978666+00:00"
+  },
+  {
+    "id": "816b7626-7154-4b45-8ef2-f8354e4791ae",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 1,
+    "created_at": "2026-01-21T14:36:59.82259+00:00"
+  },
+  {
+    "id": "e5ec8d7f-cc8f-4dfb-855c-7ffe8c51234f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 1,
+    "created_at": "2026-01-21T14:37:20.616554+00:00"
+  },
+  {
+    "id": "680113c0-b83f-4321-b0a5-7bb614f264bd",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 2,
+    "created_at": "2026-01-21T14:37:44.640853+00:00"
+  },
+  {
+    "id": "dd728ad3-f316-480b-bfa8-ad8027904cb1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 1,
+    "created_at": "2026-01-21T14:38:03.407575+00:00"
+  },
+  {
+    "id": "5b3e48e9-d655-4042-b119-c726dade9f0b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 1,
+    "created_at": "2026-01-21T14:38:21.627206+00:00"
+  },
+  {
+    "id": "e4cc23c9-1fa9-49ec-88c8-5fcee5b21957",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Procedimentos em situação de emergência e noções sobre prestação de primeiros socorros",
+    "carga_horaria": 2,
+    "created_at": "2026-01-21T14:38:36.27127+00:00"
+  },
+  {
+    "id": "bff1303f-16dd-467f-8851-0c4ec345fbdf",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 1,
+    "created_at": "2026-01-21T14:38:49.430687+00:00"
+  },
+  {
+    "id": "3b41ac57-cf95-46af-90a6-c4ff2ed65627",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 1,
+    "created_at": "2026-01-21T14:39:05.308761+00:00"
+  },
+  {
+    "id": "b455a904-8994-4172-a7e5-11d79fc53970",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53ed317e-1a10-4d94-a8c5-0d210a22a439",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 6,
+    "created_at": "2026-01-21T14:39:28.38084+00:00"
+  },
+  {
+    "id": "1560b7ce-c9e6-4f96-9801-bca6c3d993fa",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "3a79ca72-8399-4b7d-b402-93c75430a7e5",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 6,
+    "created_at": "2026-01-21T14:42:09.144572+00:00"
+  },
+  {
+    "id": "c9bcc365-1c7d-4074-9dbd-4e6c7149c35d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "3a79ca72-8399-4b7d-b402-93c75430a7e5",
+    "nome": "Atividades desenvolvidas pelo Monitor de Transporte Escolar ",
+    "carga_horaria": 4,
+    "created_at": "2026-01-21T14:42:30.846331+00:00"
+  },
+  {
+    "id": "b5bbc85e-429a-4bad-9df9-2e390037b64e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f3b6909-5a40-4f0d-99f2-2ea6db5a5487",
+    "nome": "A importância da Inteligência Emocional no Trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:13:35.992697+00:00"
+  },
+  {
+    "id": "2faa760d-391b-4e91-83ec-4ad5d72e49e2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f3b6909-5a40-4f0d-99f2-2ea6db5a5487",
+    "nome": "Usando a Inteligência Emocional em momentos de Crise",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:13:38.896971+00:00"
+  },
+  {
+    "id": "91a445a6-676e-4e7f-81f4-bcd0da38a26c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:13:43.791715+00:00"
+  },
+  {
+    "id": "9a673e6f-1a03-4298-9165-9f02ef5608f2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:13:45.994352+00:00"
+  },
+  {
+    "id": "c467ad3d-b6b4-49be-9ef7-d1fcbee4ca22",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:13:48.120848+00:00"
+  },
+  {
+    "id": "2429119d-d64b-411c-a518-a5faa8416d2a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:13:51.254106+00:00"
+  },
+  {
+    "id": "a3bef92d-3df1-494f-a5c2-d499d40f301c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:13:53.34745+00:00"
+  },
+  {
+    "id": "a13ecf11-25ce-4e45-bd11-e2294d84765b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Procedimentos em situação de emergência e noções sobre prestação de primeiros socorros",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:13:55.628768+00:00"
+  },
+  {
+    "id": "4ae6b476-4398-47b6-a9d9-5e8bb4a8f25a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "3299d14a-5c67-4c71-90ee-d35832acc208",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:13:57.734113+00:00"
+  },
+  {
+    "id": "83053055-7d34-47e8-aa12-5052909bfbbf",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "0f4d91c6-fe32-4ba2-80f8-dcea8cf98c53",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:14:00.736202+00:00"
+  },
+  {
+    "id": "66e0f3ee-8a02-4c59-8c59-45b2eae25e31",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "0f4d91c6-fe32-4ba2-80f8-dcea8cf98c53",
+    "nome": "Atividades desenvolvidas pelo Monitor de Transporte Escolar",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:14:19.441843+00:00"
+  },
+  {
+    "id": "8baae265-838a-4c38-86b3-23a9e9661d23",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:14:35.452458+00:00"
+  },
+  {
+    "id": "2bb3e5e6-7f5f-45a8-b570-2bba5027324c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4aed29a5-4c56-401a-bf72-fe2bbac0010f",
+    "nome": "Noções de Primeiros Socorros",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:14:38.43916+00:00"
+  },
+  {
+    "id": "36d87c3d-a4db-4e4d-bbe5-1b15455509b8",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:14:46.310799+00:00"
+  },
+  {
+    "id": "ad99d268-61d1-4c4f-8e09-dd4de4377fe9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:14:54.465462+00:00"
+  },
+  {
+    "id": "e4e46b06-16bf-4eed-9321-85dc8731fbbd",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "defc4e54-1e7c-4d88-9cf6-c6574a98c09b",
+    "nome": "A arte da escuta ativa",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:15:04.194395+00:00"
+  },
+  {
+    "id": "38fd0f37-8d32-4630-97ec-a9235c64ec30",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "42b7c506-72e1-4a69-b004-a2303beedbdd",
+    "nome": "CONSCIENTIZAÇÃO, USO ADEQUADO, GUARDA E CONSERVAÇÃO DE EPI'S",
+    "carga_horaria": 4,
+    "created_at": "2026-01-21T14:59:15.691222+00:00"
+  },
+  {
+    "id": "bf0a09ca-f489-4fbb-afa0-10c736b75948",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Introdução à segurança com eletricidade",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:15.405699+00:00"
+  },
+  {
+    "id": "6c54f0a3-934e-47c7-85fd-8e7f36f7f799",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "defc4e54-1e7c-4d88-9cf6-c6574a98c09b",
+    "nome": "A arte da escuta ativa",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:15:18.433966+00:00"
+  },
+  {
+    "id": "95a84793-6a7c-46fd-8725-8ac540cc28ec",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "76981b60-eabf-4a2d-9e39-a6e1aefeff87",
+    "nome": "Acidentes Típicos em Trabalhos em Altura",
+    "carga_horaria": 1,
+    "created_at": "2026-01-28T22:12:24.768881+00:00"
+  },
+  {
+    "id": "bec66afe-7622-46ca-8b5b-ee1bc8f1c326",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "76981b60-eabf-4a2d-9e39-a6e1aefeff87",
+    "nome": "Sistemas, Equipamentos e Procedimentos de Proteção Coletiva",
+    "carga_horaria": 1,
+    "created_at": "2026-01-28T22:12:28.434561+00:00"
+  },
+  {
+    "id": "5c1b4444-fe4c-49c7-b2b2-92de568eb47b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "76981b60-eabf-4a2d-9e39-a6e1aefeff87",
+    "nome": "Normas e Regulamentos Aplicáveis ao Trabalho em Altura",
+    "carga_horaria": 1,
+    "created_at": "2026-01-28T22:12:34.05126+00:00"
+  },
+  {
+    "id": "8b31e701-efd4-47b0-8d04-0625ee0db6bc",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "0aa32b09-6d2e-4ea2-88e4-7db0ea9ba66b",
+    "nome": "Inflamáveis: Características, Propriedades, Perigos e Riscos",
+    "carga_horaria": 1,
+    "created_at": "2026-02-05T15:28:45.64908+00:00"
+  },
+  {
+    "id": "ff00c4c3-8282-40ea-9640-f0080de7eafa",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "f4a577b0-2990-4d45-a688-3b09bec81e27",
+    "nome": "Segurança na Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:04.162281+00:00"
+  },
+  {
+    "id": "67554848-d2d1-49ee-a5cd-76211bfe9dcc",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "f4a577b0-2990-4d45-a688-3b09bec81e27",
+    "nome": "Segurança na Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:06.386626+00:00"
+  },
+  {
+    "id": "9bab2c40-3c99-4ca8-9476-dec2b6dc86f7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "f4a577b0-2990-4d45-a688-3b09bec81e27",
+    "nome": "Movimentação de Comandos da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:08.562978+00:00"
+  },
+  {
+    "id": "127964d7-f526-41c7-8d45-2d443b28aabf",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "f4a577b0-2990-4d45-a688-3b09bec81e27",
+    "nome": "Prática de Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:10.771044+00:00"
+  },
+  {
+    "id": "4ff52303-8646-4ceb-b971-9bf9b780a09c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "f4a577b0-2990-4d45-a688-3b09bec81e27",
+    "nome": "Prática de Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:12.73503+00:00"
+  },
+  {
+    "id": "096e2e38-7552-42b0-9e1b-8b94c0310450",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "f4a577b0-2990-4d45-a688-3b09bec81e27",
+    "nome": "Prática de Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:14.767033+00:00"
+  },
+  {
+    "id": "f4eb36a9-d027-4d77-b6fe-c4155baa0909",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4e6a96ce-e73f-4195-9f66-237e67d5dc25",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 5,
+    "created_at": "2026-01-27T19:26:26.794266+00:00"
+  },
+  {
+    "id": "8d492af4-0b5f-4fbe-ae46-2752c582a61b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4e6a96ce-e73f-4195-9f66-237e67d5dc25",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 1,
+    "created_at": "2026-01-27T19:26:29.296111+00:00"
+  },
+  {
+    "id": "bf03e40a-5e3a-4a41-9a42-416d0840ac95",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4e6a96ce-e73f-4195-9f66-237e67d5dc25",
+    "nome": "Atividades desenvolvidas pelo Monitor de Transporte Escolar",
+    "carga_horaria": 4,
+    "created_at": "2026-01-27T19:26:31.512623+00:00"
+  },
+  {
+    "id": "f934e57c-3801-4f7c-8254-ad4da003dd5a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6686a465-0a07-43bd-aee7-b2ced8fd08a3",
+    "nome": "NPS",
+    "carga_horaria": 4,
+    "created_at": "2026-01-28T15:10:17.373013+00:00"
+  },
+  {
+    "id": "d0b854da-25d5-4cc4-b995-c6f253ead3d9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-01-28T16:23:25.991396+00:00"
+  },
+  {
+    "id": "5f131510-e544-41f3-abed-6180cdce88fd",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-01-28T16:23:28.89304+00:00"
+  },
+  {
+    "id": "9c5871fe-9a2f-4c71-b4e9-e94f11511c9d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-01-28T16:23:31.590141+00:00"
+  },
+  {
+    "id": "56c81d0a-5d66-4169-b871-a1151acb1c00",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-01-28T16:23:34.641901+00:00"
+  },
+  {
+    "id": "bc5ea158-831b-4f21-b21f-c7af87e1d8ae",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 2,
+    "created_at": "2026-01-28T16:23:37.948134+00:00"
+  },
+  {
+    "id": "bb5d130f-3bd5-4a7f-b3da-61e02fc74882",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Procedimentos em situação de emergência e noções sobre prestação de primeiros socorros",
+    "carga_horaria": 2,
+    "created_at": "2026-01-28T16:23:40.867931+00:00"
+  },
+  {
+    "id": "4f5778fa-32dc-4a2a-9275-fbb7411cee03",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 2,
+    "created_at": "2026-01-28T16:23:43.704166+00:00"
+  },
+  {
+    "id": "0023b18a-f66d-4849-b784-6456ba08e22d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-01-28T16:23:46.441944+00:00"
+  },
+  {
+    "id": "990c5fe1-d325-4f7a-84c8-bba8b152454e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-01-28T16:23:49.179658+00:00"
+  },
+  {
+    "id": "ca63d3be-91a8-4291-a536-8f1ec8cc55a2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 2,
+    "created_at": "2026-01-28T16:23:52.01606+00:00"
+  },
+  {
+    "id": "e9a1dc80-0b67-4b9e-9b49-325dd92a0abf",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1befeed-a837-4024-a90f-8efb3451c5f3",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 2,
+    "created_at": "2026-01-28T16:23:54.857696+00:00"
+  },
+  {
+    "id": "9b7b2b93-257a-4f53-bc04-e2645e24f6d6",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "856ace32-74ed-4659-9fe2-6d9ba5c01714",
+    "nome": "Segurança na Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:16.727983+00:00"
+  },
+  {
+    "id": "b23d6f58-ffbc-444d-b848-780589f0515c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "856ace32-74ed-4659-9fe2-6d9ba5c01714",
+    "nome": "Segurança na Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:18.817368+00:00"
+  },
+  {
+    "id": "2602304c-d506-48de-ae15-cfab5b4d234d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "856ace32-74ed-4659-9fe2-6d9ba5c01714",
+    "nome": "Movimentação de Comandos da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:20.79724+00:00"
+  },
+  {
+    "id": "8c0ff6c4-f91e-48c5-a8ce-befcca36c81b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "856ace32-74ed-4659-9fe2-6d9ba5c01714",
+    "nome": "Prática de Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:22.825122+00:00"
+  },
+  {
+    "id": "13a4055d-a933-41bb-9d7f-efd97e42d8e4",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "856ace32-74ed-4659-9fe2-6d9ba5c01714",
+    "nome": "Prática de Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:24.853358+00:00"
+  },
+  {
+    "id": "ea8c652a-eaf4-4e9b-b168-4490c7825eb7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "856ace32-74ed-4659-9fe2-6d9ba5c01714",
+    "nome": "Prática de Operação da Escavadeira Hidráulica",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T14:24:26.769529+00:00"
+  },
+  {
+    "id": "aa2a4c2d-0bd6-45ab-839e-abf52110ddf8",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:14:04.808142+00:00"
+  },
+  {
+    "id": "464810cd-df8d-4d7f-84c9-be444ad85503",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:14:06.937569+00:00"
+  },
+  {
+    "id": "f8317c78-4261-415e-81a2-741b8c848ea2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "76981b60-eabf-4a2d-9e39-a6e1aefeff87",
+    "nome": "Condutas em Situações de Emergência, Incluindo Noções de Técnicas de Resgate e de Primeiros Socorros",
+    "carga_horaria": 1,
+    "created_at": "2026-01-28T22:12:22.743196+00:00"
+  },
+  {
+    "id": "0b83cc21-54b5-4d3e-ade5-1a0614a518bb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "76981b60-eabf-4a2d-9e39-a6e1aefeff87",
+    "nome": "Equipamentos de Proteção Individual para Trabalho em Altura: Seleção, Inspeção, Conservação e Limitação de Uso",
+    "carga_horaria": 1,
+    "created_at": "2026-01-28T22:12:26.608391+00:00"
+  },
+  {
+    "id": "01356491-a4c3-43a8-abd2-317c688c078d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "76981b60-eabf-4a2d-9e39-a6e1aefeff87",
+    "nome": "Riscos Potenciais Inerentes ao Trabalho em Altura e Medidas de Prevenção e Controle",
+    "carga_horaria": 2,
+    "created_at": "2026-01-28T22:12:30.293071+00:00"
+  },
+  {
+    "id": "db79a9f9-c50f-40a8-b1e4-5552a9cb34de",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "76981b60-eabf-4a2d-9e39-a6e1aefeff87",
+    "nome": "Análise de Risco e Condições Impeditivas",
+    "carga_horaria": 1,
+    "created_at": "2026-01-28T22:12:32.125526+00:00"
+  },
+  {
+    "id": "67db5b3c-beab-4fe2-8e43-b8e39b6d4aee",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:14:08.927955+00:00"
+  },
+  {
+    "id": "92bc08b1-1a22-42c7-8820-eff841e0b629",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b71561f6-abc5-4a46-989e-a2719b901d37",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:14:10.967278+00:00"
+  },
+  {
+    "id": "1749a1f7-2df5-4d61-b5d9-3919be9e43b9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "3299d14a-5c67-4c71-90ee-d35832acc208",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:14:14.04373+00:00"
+  },
+  {
+    "id": "4b7d8dc4-e7a4-4e1b-84c3-e6e36b9cd44d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "0f4d91c6-fe32-4ba2-80f8-dcea8cf98c53",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:14:16.827419+00:00"
+  },
+  {
+    "id": "6c21e575-aa32-4af6-a3a9-89b9306ed3eb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "3299d14a-5c67-4c71-90ee-d35832acc208",
+    "nome": "Atividades desenvolvidas pelo Monitor de Transporte Escolar",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:14:22.791261+00:00"
+  },
+  {
+    "id": "25fc17be-9c3a-4fdc-b2fe-e98c57f96cf1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "defc4e54-1e7c-4d88-9cf6-c6574a98c09b",
+    "nome": "Comunicação e Relacionamento Interpessoal",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:15:01.093598+00:00"
+  },
+  {
+    "id": "044dfcea-94f2-4348-920b-c2d9da83d64e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:07.28792+00:00"
+  },
+  {
+    "id": "0f190ca4-39d3-4e77-849d-bfd4f4573a7b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:10.472632+00:00"
+  },
+  {
+    "id": "f9203a99-5bcf-4aff-854f-7ded3b4192a1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Fundamentos de Segurança do Trabalho",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:15:12.5611+00:00"
+  },
+  {
+    "id": "16a0feb8-dd04-4f06-bc4e-651b51fbb670",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Normas Técnicas Brasileiras - NBR da ABNT: NBR-5410, NBR 14039 e outras",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:21.136773+00:00"
+  },
+  {
+    "id": "6621e43e-67c7-46e0-941a-7765e76c96d4",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "defc4e54-1e7c-4d88-9cf6-c6574a98c09b",
+    "nome": "Comunicação Assertiva e Empatia",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:15:24.124522+00:00"
+  },
+  {
+    "id": "20eb064a-4c72-428c-b6de-e00699c2771f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:26.873814+00:00"
+  },
+  {
+    "id": "f1a744ce-0fcd-4e0d-90a9-cbec8865bb0a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:29.777128+00:00"
+  },
+  {
+    "id": "53ab5f13-c4d3-4045-948a-91583b5b8563",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Fundamentos de Segurança do Trabalho",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:15:31.908158+00:00"
+  },
+  {
+    "id": "23ece35b-6014-4c00-bb4b-d27b5f7e7bac",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Acidentes de origem elétrica e riscos adicionais",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:40.450444+00:00"
+  },
+  {
+    "id": "a2efd10e-7f70-45f0-9e72-fab1116e6c95",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Regulamentações do MTE - a. NRs; b. NR-10 (Segurança em Instalações e Serviços com Eletricidade); c. qualificação; habilitação; capacitação e autorização.",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:34.562129+00:00"
+  },
+  {
+    "id": "794da57a-33eb-49da-9e78-50a5ece0c8dc",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "defc4e54-1e7c-4d88-9cf6-c6574a98c09b",
+    "nome": "Comunicação Assertiva e Empatia",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:15:37.62769+00:00"
+  },
+  {
+    "id": "5e54adca-1fb6-4df5-96bd-61f5a566a03b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:46.753338+00:00"
+  },
+  {
+    "id": "80bf3ce2-c398-400c-b455-7d7ba6721c19",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Técnicas de análise de risco e medidas de controle do risco elétrico",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:55.576023+00:00"
+  },
+  {
+    "id": "6f193f13-6ca4-4f9f-be79-b73128373e38",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Riscos em instalações e serviços com eletricidade",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:58.548988+00:00"
+  },
+  {
+    "id": "a6e191d3-2437-4c7b-b774-ca3743b11185",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:01.522955+00:00"
+  },
+  {
+    "id": "239aba01-2dde-4f55-be80-3501a0ba734d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Documentação de instalações elétricas, rotinas de trabalho e procedimentos",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:09.694423+00:00"
+  },
+  {
+    "id": "3cb05e89-b605-4fc7-b2eb-0c10e99d6f71",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Responsabilidades",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:16:12.558244+00:00"
+  },
+  {
+    "id": "d6b70979-8e36-4570-9f4b-f0f914da6879",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Equipamentos de proteção coletiva e individual",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:16:15.271056+00:00"
+  },
+  {
+    "id": "e708b774-e3e4-476a-8acd-ff86e52647bb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:17.975893+00:00"
+  },
+  {
+    "id": "e93212cc-e9f2-4253-9bb8-5216c18ece43",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:20.946553+00:00"
+  },
+  {
+    "id": "5b24cc65-4e4e-406b-b52e-84b2d2b68107",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:16:27.053843+00:00"
+  },
+  {
+    "id": "b8adda01-1079-421a-8827-894e59ae2a5f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "defc4e54-1e7c-4d88-9cf6-c6574a98c09b",
+    "nome": "Construindo Relacionamentos Positivos",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:15:43.304026+00:00"
+  },
+  {
+    "id": "a8aa798b-00ba-4632-884b-123a72ae8a6d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:15:49.532109+00:00"
+  },
+  {
+    "id": "5e510450-3c50-481e-9166-d83d786a25fe",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Legislação, Normas e Equipamentos de Segurança I",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:15:52.507988+00:00"
+  },
+  {
+    "id": "7a034907-ccdf-4318-af15-222f7d8287d5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:04.186192+00:00"
+  },
+  {
+    "id": "842f1155-b87e-4e2a-a5f4-7291b6ba779e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Legislação, Normas e Equipamentos de Segurança I",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:16:06.949512+00:00"
+  },
+  {
+    "id": "13a36243-076b-4e52-b263-ef9270168d7d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Comunicação Empresarial",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:16:23.43408+00:00"
+  },
+  {
+    "id": "3558edf8-a657-457e-8d00-9f73000b4eda",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Procedimentos em situação de emergência e noções sobre  prestação de primeiros socorros",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:16:31.519509+00:00"
+  },
+  {
+    "id": "3861ba3c-a01b-42a5-aa53-e3a29fe1b198",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Procedimentos em situação de emergência e noções sobre  prestação de primeiros socorros",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:16:34.232592+00:00"
+  },
+  {
+    "id": "22d0a64c-8a3d-4356-aaf4-a22576ee82be",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:16:41.093255+00:00"
+  },
+  {
+    "id": "7b2cbe0c-d2a4-41cd-b781-25a4712865fc",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Fundamentos de Segurança do Trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:44.315868+00:00"
+  },
+  {
+    "id": "63aa4239-4463-43a8-9677-45901af4edee",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Primeiros Socorros",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:47.629887+00:00"
+  },
+  {
+    "id": "090f2985-ffff-4033-810b-18ca6a1d84a9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "663f6add-4f88-4e09-b9c1-98d76831f652",
+    "nome": "Ser Ético: Valores Humanos e Relações no Trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:50.775688+00:00"
+  },
+  {
+    "id": "cf2a93ad-3b62-47f7-a776-ce4ae6ebbd1e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "008a90be-f816-4f39-9994-c9f926a2672d",
+    "nome": "Proteção e combate a incêndios",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:54.231204+00:00"
+  },
+  {
+    "id": "d898fecc-ad1b-401e-ac80-d325796f2000",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:16:59.104199+00:00"
+  },
+  {
+    "id": "2c9386ca-bf50-4e1e-a1c2-a4300c1130c2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:03.713594+00:00"
+  },
+  {
+    "id": "1c6153d5-c807-4813-8a0c-bc6abd7bbdca",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Fundamentos de Segurança do Trabalho",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:17:07.983974+00:00"
+  },
+  {
+    "id": "b9ea3d7f-cb87-4d6d-b8bb-5d87fc26fefd",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Introdução à segurança com eletricidade",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:11.097391+00:00"
+  },
+  {
+    "id": "ec570b4a-7410-4449-b6be-20c818c93b47",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Normas Técnicas Brasileiras - NBR da ABNT: NBR-5410, NBR 14039 e outras",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:14.477387+00:00"
+  },
+  {
+    "id": "6b92550a-0597-497e-b434-420379fbb36e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "e63dd9f5-b32d-4b24-9549-53919d1a2bcd",
+    "nome": "Domine a arte da comunicação",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:17.51371+00:00"
+  },
+  {
+    "id": "f9c06f51-258b-4fa6-8ad1-577600589f6c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:20.722029+00:00"
+  },
+  {
+    "id": "8f6a70da-bd86-4947-886a-b2b226aad42c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:24.065001+00:00"
+  },
+  {
+    "id": "f617093e-bf29-4b2c-b34d-d2ee0125f16f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Fundamentos de Segurança do Trabalho",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:17:26.765882+00:00"
+  },
+  {
+    "id": "42e6afc3-78af-45e8-a3f5-66187a7ba3c4",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Regulamentações do MTE - a. NRs; b. NR-10 (Segurança em Instalações e Serviços com Eletricidade); c. qualificação; habilitação; capacitação e autorização.",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:28.988813+00:00"
+  },
+  {
+    "id": "e81680dd-57b1-49e6-b0da-9eaf6c8a3f5d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "e63dd9f5-b32d-4b24-9549-53919d1a2bcd",
+    "nome": "Domine a arte da comunicação",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:32.403032+00:00"
+  },
+  {
+    "id": "84f56419-a4eb-4de5-9321-bf9bd4f818f3",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Acidentes de origem elétrica e riscos adicionais",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:35.92016+00:00"
+  },
+  {
+    "id": "896eb6bd-6057-471b-ae2a-005d546facef",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:39.131435+00:00"
+  },
+  {
+    "id": "dbc0be66-103b-4397-9724-1261425f6912",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:42.247872+00:00"
+  },
+  {
+    "id": "6fd5bb93-19e1-462f-a1b2-2f40b22e3604",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:45.656533+00:00"
+  },
+  {
+    "id": "275a0f96-758a-4190-a3b2-3e13f6f32b25",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Legislação, Normas e Equipamentos de Segurança I",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:17:47.920113+00:00"
+  },
+  {
+    "id": "f6324836-c4ab-4b06-8c5d-7e659a15a043",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Técnicas de análise de risco e medidas de controle do risco elétrico",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:50.795691+00:00"
+  },
+  {
+    "id": "dfe52eef-3e19-4282-9f1f-31381d5a1a3b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Riscos em instalações e serviços com eletricidade",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:53.924739+00:00"
+  },
+  {
+    "id": "f604caf8-d720-4823-8b46-892296ca3953",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "67701271-cd51-4313-9a5e-206e7d41b110",
+    "nome": "Introdução a Metodologia Smart",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:17:57.100018+00:00"
+  },
+  {
+    "id": "bf5a5a85-b84d-44d4-82aa-31b38cb1fe65",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:00.967445+00:00"
+  },
+  {
+    "id": "90b6e3f0-d5d0-4f7b-a9d6-09c6b5758995",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:03.74666+00:00"
+  },
+  {
+    "id": "a46eca1e-0053-477c-95dc-b4e83a29c278",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:06.498752+00:00"
+  },
+  {
+    "id": "eda9e620-989c-4467-aaf8-406568b30255",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Legislação, Normas e Equipamentos de Segurança I",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:18:08.609777+00:00"
+  },
+  {
+    "id": "2f490097-ed49-4699-bbc0-a5e42fb962d1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Documentação de instalações elétricas, rotinas de trabalho e procedimentos",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:11.158442+00:00"
+  },
+  {
+    "id": "a08b7ce8-1fb7-47c7-85eb-b9a864a6281c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Responsabilidades",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:18:14.12603+00:00"
+  },
+  {
+    "id": "00121829-bace-4231-92f1-82bd315c43b0",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1b6f16b8-0f2b-47d8-93d4-1eddbeff3e51",
+    "nome": "Equipamentos de proteção coletiva e individual",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:18:16.95963+00:00"
+  },
+  {
+    "id": "bd300d5a-8d8a-4ac7-8a88-033e47974cd2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:19.846034+00:00"
+  },
+  {
+    "id": "4906c384-b0d8-465d-8e45-e17901d3fc4d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:22.911878+00:00"
+  },
+  {
+    "id": "e9a4e071-8de1-40e4-8328-7a1e9a6c62a1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Comunicação Empresarial",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:18:25.696959+00:00"
+  },
+  {
+    "id": "e735d1c1-a0d3-4b17-9bfc-38038de30dc5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:18:31.257086+00:00"
+  },
+  {
+    "id": "6ca08d92-0585-432c-a3bb-d543557af3ab",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:18:34.181589+00:00"
+  },
+  {
+    "id": "f96967d4-b62a-442f-8321-e7ac3a30ee1b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:36.917592+00:00"
+  },
+  {
+    "id": "2d8de66c-3c15-44fb-b95a-ebe17359fb53",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Legislação, Normas e Equipamentos de Segurança I",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:18:45.497551+00:00"
+  },
+  {
+    "id": "cadb1e23-6fcd-4101-8158-0697cec056bb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "706e5977-135f-43c1-a8a5-e36475051d8d",
+    "nome": "Introdução a Metodologia Lean",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:48.186918+00:00"
+  },
+  {
+    "id": "f54aa34e-8d0a-4a56-a087-d8432725cfd8",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Conceitos Gerais sobre Pilotagem",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:51.500629+00:00"
+  },
+  {
+    "id": "e5614502-43d8-4cfa-88fc-6794a20cf2eb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "311a1dc8-2e76-43b1-b08d-fe7ea18264cc",
+    "nome": "Princípios, Conceitos, Aplicação e Medidas de Proteção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:54.580866+00:00"
+  },
+  {
+    "id": "2415574a-5933-4b00-a733-8a578f02ff9a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:18:57.6218+00:00"
+  },
+  {
+    "id": "5a2b28f8-6bf9-4d22-9761-cf4c22a52bd2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Conhecimentos Técnicos sobre Drones",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:19:00.649705+00:00"
+  },
+  {
+    "id": "51906cd6-111f-4396-b658-a2bfd5ffa0b5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eb1dfae5-3a33-4057-8410-91f3dd1e0994",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:03.507188+00:00"
+  },
+  {
+    "id": "458ab0e1-3a5b-48d5-a187-bd599c3c545c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "311a1dc8-2e76-43b1-b08d-fe7ea18264cc",
+    "nome": "Princípios, Conceitos, Aplicação e Medidas de Proteção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:06.845035+00:00"
+  },
+  {
+    "id": "4a52bf48-6328-4e71-8ca7-39fb1d801b61",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Conhecimentos Técnicos sobre Drones",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:19:10.267479+00:00"
+  },
+  {
+    "id": "8c1165db-d0eb-4e1f-a4d9-a9e595f3be6e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Fundamentos de Segurança do Trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:13.144342+00:00"
+  },
+  {
+    "id": "a9f5c098-d606-4be9-916f-a1225ee57b43",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Módulo II – Procedimentos Aduaneiros",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:19.224968+00:00"
+  },
+  {
+    "id": "2f10125f-f038-4dc7-ad80-464e176bc1ec",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:22.144062+00:00"
+  },
+  {
+    "id": "d72e959f-5167-42c1-be22-b21b91c6c6b7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e24eeb5-d32b-4b02-983e-0dc6a7db1003",
+    "nome": "Treinamento em técnicas de remoção, atendimento, transporte de acidentados; Acidentes típicos (Análise, discussão, medidas de proteção), e Responsabilidades",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:41.118965+00:00"
+  },
+  {
+    "id": "452c07b8-216b-4542-afc3-bef51127a188",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e24eeb5-d32b-4b02-983e-0dc6a7db1003",
+    "nome": "Liberação de instalação para serviço e para operação e uso",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:43.855493+00:00"
+  },
+  {
+    "id": "a3778a5b-3837-4621-9af9-740e47d918f1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Evolução dos negócios",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:46.637628+00:00"
+  },
+  {
+    "id": "4c78a1c1-a868-41f9-8525-ac6bd192a388",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:49.502683+00:00"
+  },
+  {
+    "id": "04c6c9bd-887a-422f-8e9b-35f8e6e75c64",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:52.172417+00:00"
+  },
+  {
+    "id": "973f52c4-e284-4ee7-a598-0d176af2025f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:05.758703+00:00"
+  },
+  {
+    "id": "b9ec6b97-b2a8-44ff-9bf7-937e62a6ae70",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e24eeb5-d32b-4b02-983e-0dc6a7db1003",
+    "nome": "Riscos típicos no SEP e sua prevenção,  e  Técnicas de análise de Risco no SEP",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:08.498119+00:00"
+  },
+  {
+    "id": "09d3074c-b3d2-4608-aec3-d7fce586529a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e24eeb5-d32b-4b02-983e-0dc6a7db1003",
+    "nome": "Condições impeditivas para serviços",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:11.361593+00:00"
+  },
+  {
+    "id": "29fbd6c2-d389-4d5e-9d28-e1d5e5346966",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Rotinas financeiras",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:14.248709+00:00"
+  },
+  {
+    "id": "f3c8f1e1-c98e-4cac-8246-c0ed66541da6",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:17.149261+00:00"
+  },
+  {
+    "id": "6ceded03-1268-4c91-8072-b9fa42b29084",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:19.92692+00:00"
+  },
+  {
+    "id": "03f43817-d72a-40ef-b886-45cab3dc56b7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d9a5010-015b-4e27-894a-5434f4cb4a87",
+    "nome": "Legislação, Normas e Equipamentos de Segurança I",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:20:21.923046+00:00"
+  },
+  {
+    "id": "15c1a98e-6e09-47be-bceb-b20e654e54c6",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Organização do trabalho e Aspectos comportamentais.",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:39.134282+00:00"
+  },
+  {
+    "id": "8c8663e3-d554-47c5-ae1f-0a15c3cd1da5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Organização do Sistema Elétrico de Potência - SEP",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:42.09273+00:00"
+  },
+  {
+    "id": "b10324d5-01ee-4aeb-86a8-1422c63443c8",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Riscos na operação de carregamento e descarregamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:44.932903+00:00"
+  },
+  {
+    "id": "58d21075-f800-4869-b407-835f59379f77",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "a025d1a8-f0d8-4139-98c1-2a31828c40f5",
+    "nome": "Mindset Ágil",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:19:15.848481+00:00"
+  },
+  {
+    "id": "fabb9514-89e7-4763-a7bd-e2ba4fa4bc2e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:24.701095+00:00"
+  },
+  {
+    "id": "f0860f86-f628-4fd1-8105-3d5f5d3a4dc5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e24eeb5-d32b-4b02-983e-0dc6a7db1003",
+    "nome": "Organização do trabalho e Aspectos comportamentais.",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:27.532085+00:00"
+  },
+  {
+    "id": "32e2df13-a747-4c91-a815-c7dd8cfb09ec",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e24eeb5-d32b-4b02-983e-0dc6a7db1003",
+    "nome": "Organização do Sistema Elétrico de Potência - SEP",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:30.447455+00:00"
+  },
+  {
+    "id": "8eb23c24-13d6-4b6d-b2b7-f2f5923126a1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Módulo I – Logística Internacional",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:33.127428+00:00"
+  },
+  {
+    "id": "be5eafb3-d1d2-4d1a-b229-212dd29dff6f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:35.89486+00:00"
+  },
+  {
+    "id": "838d7e2c-e444-4b2e-868f-517a81ffec7f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:38.619681+00:00"
+  },
+  {
+    "id": "a7e7f9d1-fd64-486c-aa0d-bd109e130f5c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e24eeb5-d32b-4b02-983e-0dc6a7db1003",
+    "nome": "Liberação de instalação para serviço e para operação e uso",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:54.69853+00:00"
+  },
+  {
+    "id": "0333700f-9b9a-4e1c-90be-7c4434a1bde3",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e24eeb5-d32b-4b02-983e-0dc6a7db1003",
+    "nome": "Liberação de instalação para serviço e para operação e uso",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:19:57.503362+00:00"
+  },
+  {
+    "id": "5030231e-bc87-4438-8201-8251c74ca5ce",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Rotinas administrativas",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:00.159805+00:00"
+  },
+  {
+    "id": "7bf20a93-3560-42f3-bc24-845e3969f757",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:03.243391+00:00"
+  },
+  {
+    "id": "c0f00aec-5f16-4766-9c2b-7be75160dfe9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Riscos típicos no SEP e sua prevenção,  e  Técnicas de análise de Risco no SEP",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:24.498438+00:00"
+  },
+  {
+    "id": "cde144ea-1802-4660-afe2-63e9606ff095",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Condições impeditivas para serviços",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:27.269549+00:00"
+  },
+  {
+    "id": "6dd25591-c4c8-46b8-b64a-5db2e58a8521",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Documentação do setor de Transporte",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:30.206462+00:00"
+  },
+  {
+    "id": "62031651-2966-45dc-8f16-3b30bd2e0e27",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:33.063558+00:00"
+  },
+  {
+    "id": "d681c269-923e-4fd6-9373-4f7ea5847953",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:36.05281+00:00"
+  },
+  {
+    "id": "2199bd41-3fea-4880-8118-29b7a46d905e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:47.731563+00:00"
+  },
+  {
+    "id": "a4d83074-40c7-4cb9-9f69-88fac8093465",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:50.402739+00:00"
+  },
+  {
+    "id": "575e4b41-24e5-4f0e-a127-1b6b4134a01d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Treinamento em técnicas de remoção, atendimento, transporte de acidentados; Acidentes típicos (Análise, discussão, medidas de proteção), e Responsabilidades",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:53.334056+00:00"
+  },
+  {
+    "id": "358bb694-e59f-4d42-a416-600db2ded4ab",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Liberação de instalação para serviço e para operação e uso",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:56.78558+00:00"
+  },
+  {
+    "id": "a027ff46-e9f5-4c38-a199-b5152aa87f2d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Logística - Conceitos e Aplicações",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:20:59.48773+00:00"
+  },
+  {
+    "id": "5907054c-5795-4df2-9e50-c11fbf2ee04c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:02.339577+00:00"
+  },
+  {
+    "id": "4a72bf8f-5075-4364-8e68-cd67195c6659",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:05.27527+00:00"
+  },
+  {
+    "id": "53c2fa75-8489-4010-8cbe-02c3dcbb0819",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Liberação de instalação para serviço e para operação e uso",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:07.829319+00:00"
+  },
+  {
+    "id": "4ab1a40f-9fdb-4dcf-a920-d0127e1cb316",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Liberação de instalação para serviço e para operação e uso",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:11.003908+00:00"
+  },
+  {
+    "id": "258bea57-a996-4124-8443-4085b2f6c04b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Logística Integrada - Suprimentos, Distribuição e Supply Chain",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:13.72987+00:00"
+  },
+  {
+    "id": "7f649e6a-8605-46a8-8c89-a3aa1fae0668",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:16.570336+00:00"
+  },
+  {
+    "id": "74daed52-3925-489a-b7c3-d7cd156dd65b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:19.314995+00:00"
+  },
+  {
+    "id": "e29f6011-159a-44f8-8883-8b90c0ab8456",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Segurança com veículos e transporte de pessoas, materiais e equipamentos; e  Sinalização e isolamento de áreas de trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:22.237794+00:00"
+  },
+  {
+    "id": "1720f815-2bcb-491f-97c6-1a8c11770c3c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "4a2b4601-2c70-4fac-b2b9-bc47c6b139b1",
+    "nome": "Equipamentos e ferramentas de trabalho;  Sistemas de proteção coletiva, e Equipamentos de proteção individual, e Posturas e vestuários de trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:25.013071+00:00"
+  },
+  {
+    "id": "cbe2eaa9-c02e-4ab8-a2b6-a49f304ccca0",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Logística Integrada - Suprimentos, Distribuição e Supply Chain",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:28.250024+00:00"
+  },
+  {
+    "id": "02598a34-3f76-41c4-8f17-a55433718440",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:31.058786+00:00"
+  },
+  {
+    "id": "76f84d3e-5b69-42d9-b0c4-5e501e7544d3",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:33.751939+00:00"
+  },
+  {
+    "id": "34a5a23f-4018-4cdb-b8ee-1f49d31e6bd0",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Conhecimentos Técnicos sobre Drones",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:21:36.606947+00:00"
+  },
+  {
+    "id": "d691ff6f-8002-4a31-b101-dc2314b5e973",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Componentes e Funcionalidades do Drone",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:21:39.301185+00:00"
+  },
+  {
+    "id": "bcae4751-4f7c-42ae-8b62-918b37f99f4d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Componentes e Funcionalidades do Drone",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:21:42.064734+00:00"
+  },
+  {
+    "id": "1346827c-c163-44b2-83f5-15f31bb8b86f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Modais de transporte",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:45.052157+00:00"
+  },
+  {
+    "id": "5eb79e4a-0233-40e4-9621-d16fdeeb79c7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:47.841728+00:00"
+  },
+  {
+    "id": "498ccc60-1b02-4d69-b45a-bfa22d2635ea",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:50.419768+00:00"
+  },
+  {
+    "id": "b9ad0f0a-7298-4130-90d3-921f1cf3c9ad",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Modais de transporte",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:53.244932+00:00"
+  },
+  {
+    "id": "8dd66a81-70b9-40f8-8a21-29b594bb0f4f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:56.110024+00:00"
+  },
+  {
+    "id": "7b814804-27b4-4ae6-a289-d726cebc0670",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão de Equipes",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:21:58.846183+00:00"
+  },
+  {
+    "id": "01e9c64d-ea90-4140-a9d3-831abc091d95",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Modais de transporte",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:22:01.435493+00:00"
+  },
+  {
+    "id": "5e30f960-3e8b-4cf8-a0f0-15f296cc6194",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Custos de Transporte",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:22:04.215541+00:00"
+  },
+  {
+    "id": "deefdb08-7895-42ab-833b-77f06de19590",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:06.887153+00:00"
+  },
+  {
+    "id": "0fd64a77-5976-4d0e-a863-6e3202cc1aa6",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:09.476849+00:00"
+  },
+  {
+    "id": "e42abcf9-46e6-4888-9e84-333a73c1bc11",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Custos de Transporte",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:12.455157+00:00"
+  },
+  {
+    "id": "4da94eb2-9223-4d37-b6d7-2fb65b881834",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:15.404938+00:00"
+  },
+  {
+    "id": "a77653f5-5323-4a1f-82c6-fb222fa53568",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:18.71511+00:00"
+  },
+  {
+    "id": "35ec7c80-16e5-4550-b1e7-20c2e5ad535e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Custos de Transporte",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:21.37183+00:00"
+  },
+  {
+    "id": "2fb4dd54-70e1-489a-9837-223a439bf97f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:24.250537+00:00"
+  },
+  {
+    "id": "4cf403dc-fb0d-4151-90f4-786144f924c2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão Integrada",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:27.171395+00:00"
+  },
+  {
+    "id": "056a3ca0-6f86-473c-a7c2-337e867cbe50",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Prática de Pilotagem de Drones",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:29.74283+00:00"
+  },
+  {
+    "id": "4136bef9-be96-4ec8-af49-ea99462ce470",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:22:32.70377+00:00"
+  },
+  {
+    "id": "a9d1a3f2-c272-4cea-b38e-102c4628a824",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:22:35.546383+00:00"
+  },
+  {
+    "id": "eea95259-3735-4302-9628-f1e337f00bba",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:22:38.208963+00:00"
+  },
+  {
+    "id": "afc181a7-2ceb-40a0-a76a-3346d5429f69",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Prática de Pilotagem de Drones",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:22:40.931502+00:00"
+  },
+  {
+    "id": "1c226673-c2f0-4e3f-b126-4a47a898a0f6",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:22:43.56107+00:00"
+  },
+  {
+    "id": "baaf6e60-5969-4f94-87d2-968105c6d5f9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:22:46.364777+00:00"
+  },
+  {
+    "id": "717510a9-70c1-4243-8605-3eda72574d0d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Procedimentos em situação de emergência e noções sobre prestação de primeiros socorros",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:22:49.123344+00:00"
+  },
+  {
+    "id": "32c32ea8-8a37-4351-9b2c-3a0b6e2fc51f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Soft Skills",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:52.036718+00:00"
+  },
+  {
+    "id": "d37c1aba-6542-493e-a6d7-db5515b3cd4c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:54.865186+00:00"
+  },
+  {
+    "id": "36e2fc98-94ba-40da-94a3-5a8bfa619c05",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Soft Skills",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:22:57.610576+00:00"
+  },
+  {
+    "id": "6a2a5fb7-cf68-4e0c-87f7-8bfc6a386ea7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Planejamento e Controle de Produção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:00.396568+00:00"
+  },
+  {
+    "id": "08bf1858-3a61-449c-8cbe-940b391e690c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "5496784b-67cb-4261-b2aa-c6dbf6aee252",
+    "nome": "Soft Skills",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:23:03.208804+00:00"
+  },
+  {
+    "id": "effd86f6-5a77-44ed-bc5f-ec116baec93c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Gestão Integrada",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:06.487705+00:00"
+  },
+  {
+    "id": "ff64be09-48c0-41c3-87d1-b642a621545d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:09.128627+00:00"
+  },
+  {
+    "id": "4f995b30-0eb3-4363-83dd-a8557014b5e7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Inspeções de Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:14.151457+00:00"
+  },
+  {
+    "id": "104a485e-9e7f-4ac4-b75d-e5ab692b0db1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:17.036161+00:00"
+  },
+  {
+    "id": "2b5ee4e4-f980-4dae-9568-a2c1105aa067",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Transporte e Distribuição de Materiais",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:42.953825+00:00"
+  },
+  {
+    "id": "6fd247ae-c6d2-4a39-baf3-c9a386d94554",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Saúde e Segurança do Trabalho e Meio Ambiente",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:11.680103+00:00"
+  },
+  {
+    "id": "2aef7c79-86cb-45e4-8b23-824e62718100",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Prática de Pilotagem de Drones",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:19.731851+00:00"
+  },
+  {
+    "id": "e04c8f34-1035-4c33-80d1-8566b961d376",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:23:22.581447+00:00"
+  },
+  {
+    "id": "3dcf38bd-c7b2-4127-a0e2-ba492ce5015f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:23:25.316948+00:00"
+  },
+  {
+    "id": "64d8837a-b1e6-4f66-8881-316508e87450",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:23:27.968632+00:00"
+  },
+  {
+    "id": "b9cb507f-7c93-4a01-9fb0-7fd77cf631c7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "eea8e56b-d9ab-424e-8465-ad2dca531567",
+    "nome": "Prática de Pilotagem de Drones",
+    "carga_horaria": 5,
+    "created_at": "2026-02-12T17:23:30.530206+00:00"
+  },
+  {
+    "id": "543f02a5-c4d7-469a-892f-1c8b14ad478a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6f42a282-221d-4f48-81ed-552065686b59",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:33.777596+00:00"
+  },
+  {
+    "id": "a925876a-c849-40a5-a4fb-34e31ad46843",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:37.330496+00:00"
+  },
+  {
+    "id": "ece263d7-3404-427b-b979-cf20a3f2d461",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9ae02a0f-47db-40fc-adb5-274578cec298",
+    "nome": "Transporte e Distribuição de Materiais",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:40.114094+00:00"
+  },
+  {
+    "id": "096e25e6-d044-4473-9d62-6b4fba74df04",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:45.632042+00:00"
+  },
+  {
+    "id": "421718cc-e49e-4580-b058-101faeddbae5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:48.455191+00:00"
+  },
+  {
+    "id": "1cc06501-b64d-4b29-b8d8-b81b9bc86597",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Introdução à segurança com eletricidade",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:51.412805+00:00"
+  },
+  {
+    "id": "08a7cad6-9e66-464f-847b-f4c974669fa4",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1e30584-f5fe-47a0-b9cd-8000c55f6837",
+    "nome": "Princípios, Conceitos, Aplicação e Medidas de Proteção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:54.386569+00:00"
+  },
+  {
+    "id": "7ca0d1cb-ab0f-4f67-8058-6500d4c4b776",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:57.221209+00:00"
+  },
+  {
+    "id": "3cd95737-065d-4a97-8866-cb5d5cb65aea",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Normas Técnicas Brasileiras - NBR da ABNT: NBR-5410, NBR 14039 e outras",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:23:59.886032+00:00"
+  },
+  {
+    "id": "09f98c2a-c92d-4ac8-9aec-8100c72634e9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "b1e30584-f5fe-47a0-b9cd-8000c55f6837",
+    "nome": "Princípios, Conceitos, Aplicação e Medidas de Proteção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:02.756631+00:00"
+  },
+  {
+    "id": "d4049b98-3a46-4023-a806-96518fbdb8b1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:06.258599+00:00"
+  },
+  {
+    "id": "63b4e938-acba-4898-93a4-7a45f6c17d73",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:08.993392+00:00"
+  },
+  {
+    "id": "355efabd-b7df-4e89-995a-79a8bc1ee9c7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Regulamentações do MTE - a. NRs; b. NR-10 (Segurança em Instalações e Serviços com Eletricidade); c. qualificação; habilitação; capacitação e autorização.",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:11.826808+00:00"
+  },
+  {
+    "id": "c7c02b14-ad5a-4a1a-8662-a31fe3757005",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7a2ca3b0-11b0-49f3-95ae-0c237a4a3a65",
+    "nome": "Condutas em Situações de Emergência, Incluindo Noções de Técnicas de Resgate e de Primeiros Socorros",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:24:14.815527+00:00"
+  },
+  {
+    "id": "5527d0fa-5575-4b58-a0d4-7d72fd2eac90",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:16.922133+00:00"
+  },
+  {
+    "id": "afaef2fa-eefa-4c50-9207-b9810fbf5176",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7a2ca3b0-11b0-49f3-95ae-0c237a4a3a65",
+    "nome": "Acidentes Típicos em Trabalhos em Altura",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:24:19.863612+00:00"
+  },
+  {
+    "id": "ab5d4c07-1d12-4cfc-905d-ec4330aac857",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7a2ca3b0-11b0-49f3-95ae-0c237a4a3a65",
+    "nome": "Equipamentos de Proteção Individual para Trabalho em Altura: Seleção, Inspeção, Conservação e Limitação de Uso",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:24:22.02607+00:00"
+  },
+  {
+    "id": "05e0417c-4c00-4215-a385-11eff4b8e045",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7a2ca3b0-11b0-49f3-95ae-0c237a4a3a65",
+    "nome": "Sistemas, Equipamentos e Procedimentos de Proteção Coletiva",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:24:24.060322+00:00"
+  },
+  {
+    "id": "f6659474-6017-45b2-9c6f-7ab08499511e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Acidentes de origem elétrica e riscos adicionais",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:25.995393+00:00"
+  },
+  {
+    "id": "39161101-3af1-44b8-ad10-1b0f1461e463",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:24:28.718717+00:00"
+  },
+  {
+    "id": "60bc568a-983a-4adf-98ca-b84474c3aee7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7a2ca3b0-11b0-49f3-95ae-0c237a4a3a65",
+    "nome": "Riscos Potenciais Inerentes ao Trabalho em Altura e Medidas de Prevenção e Controle",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:24:31.550983+00:00"
+  },
+  {
+    "id": "a7e1cf34-0fd8-4a5d-983b-5bd0b72d27a1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7a2ca3b0-11b0-49f3-95ae-0c237a4a3a65",
+    "nome": "Análise de Risco e Condições Impeditivas",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:24:33.638188+00:00"
+  },
+  {
+    "id": "8cefee92-d4c8-45b4-b005-5caed010d392",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:24:35.658826+00:00"
+  },
+  {
+    "id": "068e99ca-324e-4ae8-9b2b-1d1104bdf1b5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7a2ca3b0-11b0-49f3-95ae-0c237a4a3a65",
+    "nome": "Normas e Regulamentos Aplicáveis ao Trabalho em Altura",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:24:38.355664+00:00"
+  },
+  {
+    "id": "bc899dbb-6284-45dc-b516-434618563196",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:40.59629+00:00"
+  },
+  {
+    "id": "a9fdac4b-30de-4d28-bd92-59b942e7a63e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:43.317991+00:00"
+  },
+  {
+    "id": "8cb6f31d-b837-44aa-a0b9-b4a4a29b0667",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:46.007817+00:00"
+  },
+  {
+    "id": "3491ce0c-233e-40c1-808d-d6ef5998fe3a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cbead490-36f4-447a-b59a-94fb34ae1f6f",
+    "nome": "CONSCIENTIZAÇÃO, USO ADEQUADO, GUARDA E CONSERVAÇÃO DE EPI'S",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:48.925966+00:00"
+  },
+  {
+    "id": "f5d6ea59-3615-4e78-909b-881d7cee5685",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Procedimentos em situação de emergência e noções sobre  prestação de primeiros socorros",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:52.419263+00:00"
+  },
+  {
+    "id": "803e9989-e243-45e5-9a91-d3d256a8f1ec",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Técnicas de análise de risco e medidas de controle do risco elétrico",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:24:55.191585+00:00"
+  },
+  {
+    "id": "8ca8aca3-11cb-4d99-9353-8be66a87263e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:24:57.860999+00:00"
+  },
+  {
+    "id": "bae89dc2-de7b-41e9-a37c-6df86ea87ea2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Riscos em instalações e serviços com eletricidade",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:00.513694+00:00"
+  },
+  {
+    "id": "08489c8c-2004-4bfa-a756-c488d411215f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 3,
+    "created_at": "2026-02-12T17:25:03.24886+00:00"
+  },
+  {
+    "id": "ae67cb78-4ff8-4f5e-9365-c49acbf13974",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:06.020194+00:00"
+  },
+  {
+    "id": "d0e34898-e524-4328-b90c-664517b8b47c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:08.785197+00:00"
+  },
+  {
+    "id": "9a25bc26-eb5a-4e8d-93e6-eda5526ed11f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:11.626916+00:00"
+  },
+  {
+    "id": "0c2efed3-b731-477d-8b6c-055639470904",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Documentação de instalações elétricas, rotinas de trabalho e procedimentos",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:14.401572+00:00"
+  },
+  {
+    "id": "4d3801b5-fdde-4037-ad77-85afab696cd0",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:17.105393+00:00"
+  },
+  {
+    "id": "def41af8-5cd4-4377-b50d-719b3c4d337f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:20.207754+00:00"
+  },
+  {
+    "id": "bff342af-6155-4488-bef8-f3758b8b73b3",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2745258f-5835-403a-b877-b1e69873bbc1",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:22.997239+00:00"
+  },
+  {
+    "id": "04fa3609-67e7-4527-aeb5-2444c2d5ded5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:25.607656+00:00"
+  },
+  {
+    "id": "ea58b92b-618b-43c4-b9f8-be473d5573e6",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Responsabilidades",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:28.235465+00:00"
+  },
+  {
+    "id": "1a3e505a-58a4-4d63-9579-b091c670e320",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:31.85718+00:00"
+  },
+  {
+    "id": "12dfbecb-8ee9-4ac2-8644-3522dfbbb061",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Equipamentos de proteção coletiva e individual",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:34.666062+00:00"
+  },
+  {
+    "id": "5522c44d-43f8-4807-80b8-e45945708200",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:37.525107+00:00"
+  },
+  {
+    "id": "eae74157-ca89-4da7-9285-ae137a7a2ec8",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:40.457667+00:00"
+  },
+  {
+    "id": "b4b9d526-531b-4f26-8fb1-c904783235aa",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:43.281334+00:00"
+  },
+  {
+    "id": "5f8ce3d8-76a4-4f43-b022-5ec2e7dc3f53",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:46.180331+00:00"
+  },
+  {
+    "id": "0fa09a7c-0f6b-4465-9aeb-661f657ed561",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Primeiros Socorros",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:48.911847+00:00"
+  },
+  {
+    "id": "79b6cd5a-59ea-4333-ab9c-794fff8635c2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Procedimentos em situação de emergência e noções sobre  prestação de primeiros socorros",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:51.871269+00:00"
+  },
+  {
+    "id": "3ee7f5cc-13c7-4a2e-89a2-c163d692f92e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "9df54ae8-ff00-4dbb-a6ec-f6ae5eaa82f0",
+    "nome": "Proteção e combate a incêndios",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:25:54.640682+00:00"
+  },
+  {
+    "id": "08f56efb-6edb-44fe-b867-f0fdb49940eb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Procedimentos em situação de emergência e noções sobre  prestação de primeiros socorros",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:25:58.016468+00:00"
+  },
+  {
+    "id": "fa50453f-a674-452c-9140-b32087607b44",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:26:00.802509+00:00"
+  },
+  {
+    "id": "a50848b6-71e6-4a74-a015-bb3e414408d2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:03.65456+00:00"
+  },
+  {
+    "id": "e94caf45-85eb-47e4-876c-78b04db84b2d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Auditoria em Saúde e Segurança",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:06.591755+00:00"
+  },
+  {
+    "id": "e07ee06b-758f-428e-9823-f4c651c2f792",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:26:09.341738+00:00"
+  },
+  {
+    "id": "2d45def9-d5a6-471b-a8b6-76280ce467d3",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6078c386-c9c3-4439-b146-d3411c63b3da",
+    "nome": "Condutas em Situações de Emergência, Incluindo Noções de Técnicas de Resgate e de Primeiros Socorros",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:26:12.28578+00:00"
+  },
+  {
+    "id": "8af20411-f0de-4c56-96cd-9129728fc637",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6078c386-c9c3-4439-b146-d3411c63b3da",
+    "nome": "Acidentes Típicos em Trabalhos em Altura",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:26:15.14128+00:00"
+  },
+  {
+    "id": "5364f2a8-d436-43ff-a7e1-8705d98df564",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6078c386-c9c3-4439-b146-d3411c63b3da",
+    "nome": "Equipamentos de Proteção Individual para Trabalho em Altura: Seleção, Inspeção, Conservação e Limitação de Uso",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:26:18.024397+00:00"
+  },
+  {
+    "id": "b2be8567-5dbb-4b74-96d1-eb3b1459d160",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:26:20.872157+00:00"
+  },
+  {
+    "id": "c6968ca7-90f8-492b-88ee-63617cba387b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6078c386-c9c3-4439-b146-d3411c63b3da",
+    "nome": "Sistemas, Equipamentos e Procedimentos de Proteção Coletiva",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:26:23.628118+00:00"
+  },
+  {
+    "id": "413c9cbc-45fc-43b0-b068-3ed49b339469",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:26.290153+00:00"
+  },
+  {
+    "id": "f7e54f27-4bcc-4126-b555-07a87663d395",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6078c386-c9c3-4439-b146-d3411c63b3da",
+    "nome": "Riscos Potenciais Inerentes ao Trabalho em Altura e Medidas de Prevenção e Controle",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:26:28.922028+00:00"
+  },
+  {
+    "id": "eb19bfa7-5867-461a-adb8-f65c83235f3d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6078c386-c9c3-4439-b146-d3411c63b3da",
+    "nome": "Análise de Risco e Condições Impeditivas",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:26:31.60266+00:00"
+  },
+  {
+    "id": "f1a40a8b-5197-4c98-88f4-6405e3eb5a33",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "6078c386-c9c3-4439-b146-d3411c63b3da",
+    "nome": "Normas e Regulamentos Aplicáveis ao Trabalho em Altura",
+    "carga_horaria": 1,
+    "created_at": "2026-02-12T17:26:34.195452+00:00"
+  },
+  {
+    "id": "377d1c4e-f58f-457f-a929-3a5f444e1630",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:37.367824+00:00"
+  },
+  {
+    "id": "ccb71b9c-1c0a-4a45-83df-d09d72a0e36c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:40.019763+00:00"
+  },
+  {
+    "id": "b8adfab1-8509-4033-bbe5-f290a8f2537f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "20873c71-2ecf-4aac-9046-0779fbe8b347",
+    "nome": "Princípios, Conceitos, Aplicação e Medidas de Proteção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:42.975317+00:00"
+  },
+  {
+    "id": "03fd52d9-00fb-4b94-82bc-671404a98158",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:45.752529+00:00"
+  },
+  {
+    "id": "98237081-7148-4b91-aaac-4ac9e7f0a100",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "20873c71-2ecf-4aac-9046-0779fbe8b347",
+    "nome": "Princípios, Conceitos, Aplicação e Medidas de Proteção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:48.507881+00:00"
+  },
+  {
+    "id": "6aeafff9-8896-4b63-982a-70e9e26e4ed7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cec6e539-b65d-472b-b8ee-0057719cedf0",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:51.749645+00:00"
+  },
+  {
+    "id": "d4ff7b85-e97c-4e39-8684-0b1c2d29728c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:55.020669+00:00"
+  },
+  {
+    "id": "328460c0-10e1-4bcb-821f-3dd321937f02",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:26:57.736609+00:00"
+  },
+  {
+    "id": "cb74e9bc-9cbf-4bde-8df7-7b3b8a8c05d9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:00.51268+00:00"
+  },
+  {
+    "id": "d556f1e0-c2c7-4040-898b-e72236bb7310",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:03.415777+00:00"
+  },
+  {
+    "id": "75db9a44-83b2-451c-b3a8-9500567676da",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:06.372181+00:00"
+  },
+  {
+    "id": "ccd9d938-462e-47b6-95ea-0d20a732ff8d",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:09.151563+00:00"
+  },
+  {
+    "id": "baeb75fd-d3f9-40b6-a19b-c86b4076b943",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:11.84088+00:00"
+  },
+  {
+    "id": "6dc8d6a0-e2d0-4173-b9b3-69a49b3c82ac",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:14.515951+00:00"
+  },
+  {
+    "id": "dc0756ec-8fc4-4f4a-b7d2-dd40b3a1948c",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:17.232847+00:00"
+  },
+  {
+    "id": "5e72e39b-ecb7-4930-ac77-092cfced82f2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:20.053306+00:00"
+  },
+  {
+    "id": "6985e3c7-2b4e-42c2-b34d-36a9c9816d77",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:22.87657+00:00"
+  },
+  {
+    "id": "17692006-17a4-4644-b71b-7cf05faaba17",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:27:25.753456+00:00"
+  },
+  {
+    "id": "c2e2ad5b-81a8-432a-8ae5-531ce215f2da",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:27:28.561349+00:00"
+  },
+  {
+    "id": "35a4aa79-ff74-4bd1-b0da-6567a8cf78c1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:31.529995+00:00"
+  },
+  {
+    "id": "8f707325-ca3e-4d46-90db-38584bb44be6",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:34.614706+00:00"
+  },
+  {
+    "id": "2eac65f7-d785-45e1-9d0e-cdcd72170874",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Procedimentos em situação de emergência e noções sobre  prestação de primeiros socorros",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:37.515709+00:00"
+  },
+  {
+    "id": "5bf8d246-151d-4de5-b9f2-3e7573bbf564",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53636f0c-2dbd-4dd7-a495-19d2c75aca26",
+    "nome": "Princípios, Conceitos, Aplicação e Medidas de Proteção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:40.442354+00:00"
+  },
+  {
+    "id": "36c32384-f9b8-47db-b373-f6ffad3dc2a2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:27:43.284601+00:00"
+  },
+  {
+    "id": "b6c5b6b5-3596-4301-a313-35486f6324f9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "53636f0c-2dbd-4dd7-a495-19d2c75aca26",
+    "nome": "Princípios, Conceitos, Aplicação e Medidas de Proteção",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:46.007197+00:00"
+  },
+  {
+    "id": "6e06b755-1483-47e0-b524-bf87b81dfaff",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:27:49.307523+00:00"
+  },
+  {
+    "id": "9198c0ba-b557-4666-bc86-6694c4bbc443",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:52.162729+00:00"
+  },
+  {
+    "id": "3880c47a-6e07-4418-bd8f-0e6b0a721119",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:54.957914+00:00"
+  },
+  {
+    "id": "62e3f0ef-ac81-4025-aeef-870a71e9fd65",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Introdução à segurança com eletricidade",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:27:57.88527+00:00"
+  },
+  {
+    "id": "011a8049-6bd8-41c6-a3a4-ee58e3396474",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:00.935526+00:00"
+  },
+  {
+    "id": "e109b54a-623c-4741-bb52-8741a1f56ef1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:28:03.937379+00:00"
+  },
+  {
+    "id": "d6feac9b-85b7-4300-9415-d3cadc688907",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Normas Técnicas Brasileiras - NBR da ABNT: NBR-5410, NBR 14039 e outras",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:06.702684+00:00"
+  },
+  {
+    "id": "d4483da3-c996-4f1b-a35a-cbd8cc111fc0",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c497a067-d8c9-45f6-a234-53295445bc07",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:28:09.370429+00:00"
+  },
+  {
+    "id": "69fcbcdb-c45e-40c6-933d-fac727424c49",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "98686e1e-78b4-4c33-9a58-633c8e8e5b75",
+    "nome": "Projetos Aplicados",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:12.663935+00:00"
+  },
+  {
+    "id": "280fc33c-9f72-4ba0-b3bc-993a32b633e3",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Regulamentações do MTE - a. NRs; b. NR-10 (Segurança em Instalações e Serviços com Eletricidade); c. qualificação; habilitação; capacitação e autorização.",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:15.482498+00:00"
+  },
+  {
+    "id": "d5e8d967-404c-48fd-878d-d33239d73292",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Acidentes de origem elétrica e riscos adicionais",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:18.43125+00:00"
+  },
+  {
+    "id": "ec493d3c-1262-4fa5-bbb6-202c101aef19",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Técnicas de análise de risco e medidas de controle do risco elétrico",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:21.449661+00:00"
+  },
+  {
+    "id": "33486095-91f4-4e59-9d9c-608410302432",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Riscos em instalações e serviços com eletricidade",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:24.365419+00:00"
+  },
+  {
+    "id": "b3d7af0a-dcc0-4a13-92ff-bfb853eff2b9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Documentação de instalações elétricas, rotinas de trabalho e procedimentos",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:27.074667+00:00"
+  },
+  {
+    "id": "a105fa0e-e6c6-4d66-bca5-0fb30f4151e4",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Responsabilidades",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:28:29.828314+00:00"
+  },
+  {
+    "id": "5731827e-072c-4835-8ce7-45e83e88a174",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Equipamentos de proteção coletiva e individual",
+    "carga_horaria": 2,
+    "created_at": "2026-02-12T17:28:32.480823+00:00"
+  },
+  {
+    "id": "bd65ddaf-0490-42d5-abc2-47b4df118fab",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Primeiros Socorros",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:35.337703+00:00"
+  },
+  {
+    "id": "e4163bfb-bf1b-4c61-84fa-3bef7547a314",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "665f7fdb-acc1-4478-8beb-43254b059fe0",
+    "nome": "Proteção e combate a incêndios",
+    "carga_horaria": 4,
+    "created_at": "2026-02-12T17:28:38.12226+00:00"
+  },
+  {
+    "id": "1e4dae71-af99-45ce-b3f9-45e404407e36",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "f3d20bd0-4935-4c47-898f-3320d5078d72",
+    "nome": "Postura Profissional no Ambiente de Trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-18T12:46:35.284742+00:00"
+  },
+  {
+    "id": "43d77c52-7359-4794-9e06-8de0b279ec14",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "cccf1ec4-69d4-4be3-ba11-f3c05f8f4d5f",
+    "nome": "Qualidade de vida no ambiente de trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-18T12:46:38.452356+00:00"
+  },
+  {
+    "id": "6a30c82d-e7ce-4129-9432-a66eabc311bc",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "081e889e-1a69-40ac-94a8-165ce0e13e38",
+    "nome": "Noções de Planejamento Estratégico Pessoal",
+    "carga_horaria": 4,
+    "created_at": "2026-02-18T12:46:41.689049+00:00"
+  },
+  {
+    "id": "366fce67-3a12-43dc-a0c0-3168f338cfa9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "0eaa9b4e-97c2-4643-b47c-42d95dfd8e7d",
+    "nome": "Noções de Gestão do Tempo",
+    "carga_horaria": 4,
+    "created_at": "2026-02-18T12:46:44.837102+00:00"
+  },
+  {
+    "id": "77b825f8-6664-4fd1-aaa1-9703bc6bdc24",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7067bbd4-8328-438b-b3b2-d15143e9af18",
+    "nome": "Introdução a Metodologia Scrum",
+    "carga_horaria": 4,
+    "created_at": "2026-02-18T12:46:48.151943+00:00"
+  },
+  {
+    "id": "c7eca59e-b2fd-4ac1-9c7f-55fa84dabe87",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "955deb8e-3808-41e9-b5d9-89b197b3466e",
+    "nome": "Avaliação de desempenho",
+    "carga_horaria": 2,
+    "created_at": "2026-02-18T13:11:07.564924+00:00"
+  },
+  {
+    "id": "103a5bea-f4bc-43e5-aae5-44f0eb5a7280",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "955deb8e-3808-41e9-b5d9-89b197b3466e",
+    "nome": "Negociação e comunicação",
+    "carga_horaria": 2,
+    "created_at": "2026-02-18T13:11:11.478267+00:00"
+  },
+  {
+    "id": "3821f4d1-4c7a-48c5-a62c-5f2c2a744f7b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "955deb8e-3808-41e9-b5d9-89b197b3466e",
+    "nome": "Tipos de remuneração e benefícios",
+    "carga_horaria": 3,
+    "created_at": "2026-02-18T13:11:14.103795+00:00"
+  },
+  {
+    "id": "7b9d2660-2cbc-46e2-9a91-082eace87642",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "955deb8e-3808-41e9-b5d9-89b197b3466e",
+    "nome": "Manutenção de recursos humanos",
+    "carga_horaria": 1,
+    "created_at": "2026-02-18T13:11:16.629494+00:00"
+  },
+  {
+    "id": "5b4911e3-a476-4d9f-82ae-9480860da0a7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "955deb8e-3808-41e9-b5d9-89b197b3466e",
+    "nome": "Manutenção de recursos humanos",
+    "carga_horaria": 2,
+    "created_at": "2026-02-18T13:11:19.214741+00:00"
+  },
+  {
+    "id": "a6bb40b3-5dbb-49d2-ab9d-d31e15dfd237",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "955deb8e-3808-41e9-b5d9-89b197b3466e",
+    "nome": "Provisão e aplicação de recursos humanos",
+    "carga_horaria": 2,
+    "created_at": "2026-02-18T13:11:22.18388+00:00"
+  },
+  {
+    "id": "46de2f9a-36ff-4f27-a49b-910ca51f1a4a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "955deb8e-3808-41e9-b5d9-89b197b3466e",
+    "nome": "Provisão e aplicação de recursos humanos",
+    "carga_horaria": 1,
+    "created_at": "2026-02-18T13:11:24.764722+00:00"
+  },
+  {
+    "id": "bf9831a7-2ccb-46d1-99bf-08d3f0886736",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "955deb8e-3808-41e9-b5d9-89b197b3466e",
+    "nome": "Definição, conceitos e tipos de liderança",
+    "carga_horaria": 3,
+    "created_at": "2026-02-18T13:11:27.22819+00:00"
+  },
+  {
+    "id": "b9350434-8c2c-4c3d-844e-bfb5765b0061",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Autoconhecimento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-18T19:00:16.668359+00:00"
+  },
+  {
+    "id": "ad87d0fd-be51-40b8-91aa-f4796ccb62ef",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Autoconhecimento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-18T19:00:19.858287+00:00"
+  },
+  {
+    "id": "c6b956fd-7069-4047-bb71-d3ab8bdd70e5",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Autoconhecimento",
+    "carga_horaria": 1,
+    "created_at": "2026-02-18T19:00:22.077822+00:00"
+  },
+  {
+    "id": "9a4f7816-3daa-4305-ab02-21a8956da4fe",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Papel e perfil do gestor nas organizações contemporâneas",
+    "carga_horaria": 3,
+    "created_at": "2026-02-18T19:00:24.209883+00:00"
+  },
+  {
+    "id": "03659ce9-0622-40ec-b545-2b92bd7fc0e2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Papel e perfil do gestor nas organizações contemporâneas",
+    "carga_horaria": 4,
+    "created_at": "2026-02-18T19:00:26.654786+00:00"
+  },
+  {
+    "id": "d3fb5539-e0a7-429d-9c59-bb661feeb78f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Papel e perfil do gestor nas organizações contemporâneas",
+    "carga_horaria": 2,
+    "created_at": "2026-02-18T19:00:28.855477+00:00"
+  },
+  {
+    "id": "56308a62-0c70-444f-b788-bf314495d870",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Ética Profissional",
+    "carga_horaria": 2,
+    "created_at": "2026-02-18T19:00:31.199546+00:00"
+  },
+  {
+    "id": "3fb9e923-a350-44fd-bb69-4a4f38641a54",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Ética Profissional",
+    "carga_horaria": 1,
+    "created_at": "2026-02-18T19:00:33.269806+00:00"
+  },
+  {
+    "id": "71f30127-0419-47ae-9da1-913e7b92cdeb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "59a288e5-74f8-45ec-8644-7268dad1a336",
+    "nome": "Comunicação Não Violenta",
+    "carga_horaria": 3,
+    "created_at": "2026-02-18T19:00:35.315383+00:00"
+  },
+  {
+    "id": "e47d3334-a757-4b29-b2c3-3df4a4aae5ee",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T11:54:35.922875+00:00"
+  },
+  {
+    "id": "866cb887-4b13-475b-acf6-03d545bc7395",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T11:54:38.974792+00:00"
+  },
+  {
+    "id": "b757dc49-82d0-47d9-b451-b72c4519c172",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Método de trabalho seguro e operação com segurança da máquina ou equipamento",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T11:54:41.338866+00:00"
+  },
+  {
+    "id": "1d90cd70-c9e8-43e4-bee7-358fac290485",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Funcionamento das proteções: como e por que devem ser usadas; Sistemas de bloqueio de funcionamento da máquina e equipamento durante operações de inspeção, limpeza, regulagem, lubrificação e manutenção com segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-19T11:54:43.808167+00:00"
+  },
+  {
+    "id": "037b7da8-0d5e-42e7-be1f-518b95a32dfa",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Medidas de controle dos riscos: Equipamentos de Proteção Coletiva - EPCs e Equipamentos de Proteção Individual – EPIs",
+    "carga_horaria": 2,
+    "created_at": "2026-02-19T11:54:46.252951+00:00"
+  },
+  {
+    "id": "c1ae7674-260c-41da-b6e5-b62d6d29a890",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Procedimentos em situação de emergência e noções sobre  prestação de primeiros socorros",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T11:54:48.752249+00:00"
+  },
+  {
+    "id": "cb8aa6d6-5ca8-4c72-9b40-4810fadec3b2",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Como, por quem e em que circunstâncias uma proteção pode ser removida. O que fazer se uma proteção foi danificada ou se perdeu sua função deixando de garantir a segurança adequada",
+    "carga_horaria": 2,
+    "created_at": "2026-02-19T11:54:51.245528+00:00"
+  },
+  {
+    "id": "f417ace7-e578-41e9-bc05-439c4dacc19b",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Permissão de trabalho e sinalização de segurança",
+    "carga_horaria": 2,
+    "created_at": "2026-02-19T11:54:53.664682+00:00"
+  },
+  {
+    "id": "fbab4aea-1920-49f4-963b-065595383ecb",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Noções sobre legislação de trânsito e de legislação de segurança e saúde no trabalho",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T11:54:56.07231+00:00"
+  },
+  {
+    "id": "15b7821e-6458-4d05-83a5-fb17b233ce05",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Princípios de segurança, descrição e identificação de riscos associados a utilização da máquina e equipamentos e as proteções específicas contra cada um deles",
+    "carga_horaria": 2,
+    "created_at": "2026-02-19T11:54:58.527259+00:00"
+  },
+  {
+    "id": "a4afecbb-08e5-4871-a521-36a7455d68c8",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "8d5e8f46-b73a-46b2-ba09-44fa9e03c940",
+    "nome": "Noções sobre acidentes e doenças decorrentes da exposição aos riscos existentes nas máquinas, equipamentos e implementos: segurança para riscos mecânicos, elétricos e outros relevantes",
+    "carga_horaria": 2,
+    "created_at": "2026-02-19T11:55:00.937438+00:00"
+  },
+  {
+    "id": "d3ff445f-5cdb-4151-9198-ab7736ec7b81",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2bb55a59-9916-46ca-a066-b11de923f6b0",
+    "nome": "Introdução e Imersão",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:18.220148+00:00"
+  },
+  {
+    "id": "3353b1df-b54b-4725-8fb4-f950d3b5e30f",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2bb55a59-9916-46ca-a066-b11de923f6b0",
+    "nome": "Ideação e Prototipagem",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:21.25286+00:00"
+  },
+  {
+    "id": "e152d976-6d3c-4fa0-9198-71bd14e8bbf7",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2bb55a59-9916-46ca-a066-b11de923f6b0",
+    "nome": "Testes e Iteração",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:24.037143+00:00"
+  },
+  {
+    "id": "51f39d7f-c5b2-48ae-8826-9a4b6d02cb75",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2bb55a59-9916-46ca-a066-b11de923f6b0",
+    "nome": "Apresentação dos Resultados e Discussão de Casos de Estudo",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:26.791168+00:00"
+  },
+  {
+    "id": "ce76e018-8aac-49fa-abbd-e6edd1444b80",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2cc7ce2c-55d5-44b6-a20a-c47740663e90",
+    "nome": "Metodologia Lean e Modelo SMART",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:52.376332+00:00"
+  },
+  {
+    "id": "c66ba64f-ce09-4e94-9101-4a6e128f0ffd",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "e2029416-1a04-4ada-b3a0-5701d15dad26",
+    "nome": "Fundamentos de feedback",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:30.842952+00:00"
+  },
+  {
+    "id": "d6fbdbf8-b50d-40d7-972d-6aad51510020",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2cc7ce2c-55d5-44b6-a20a-c47740663e90",
+    "nome": "Metodologia Scrum",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:43.498071+00:00"
+  },
+  {
+    "id": "6e3493ee-e277-46eb-b282-184e85ba96cc",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "e2029416-1a04-4ada-b3a0-5701d15dad26",
+    "nome": "O que é escuta ativa e sua importância",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:33.758868+00:00"
+  },
+  {
+    "id": "be04f548-9b52-463c-9265-ef51ab665ca9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2cc7ce2c-55d5-44b6-a20a-c47740663e90",
+    "nome": "Stakeholders e Requisitos de Projetos Ágeis",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:46.368899+00:00"
+  },
+  {
+    "id": "a6e8595e-49a6-49f3-91d4-5fadd35ecb2e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "e2029416-1a04-4ada-b3a0-5701d15dad26",
+    "nome": "Feedback no contexto organizacional",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:36.779092+00:00"
+  },
+  {
+    "id": "2c05485b-424b-41fb-8d39-6df5ea046cff",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2cc7ce2c-55d5-44b6-a20a-c47740663e90",
+    "nome": "Métodos ágeis: Introdução à Metodologia e Liderança Ágil",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:40.440007+00:00"
+  },
+  {
+    "id": "28212e74-0197-4b14-876a-43b7fae91907",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "2cc7ce2c-55d5-44b6-a20a-c47740663e90",
+    "nome": "Gestão de Qualidade de Projetos Ágeis",
+    "carga_horaria": 4,
+    "created_at": "2026-02-19T12:43:49.416416+00:00"
+  },
+  {
+    "id": "c90f48f2-fa90-4b8e-81dd-906014fabb02",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "e6d0d530-f782-4433-add9-3c7d87646bca",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 5,
+    "created_at": "2026-02-25T20:12:23.187713+00:00"
+  },
+  {
+    "id": "e9b834d8-9b95-4f7a-a03c-5583d48dcc5e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "083088e8-84c0-400b-9b08-b12e3c2a74d1",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 5,
+    "created_at": "2026-02-25T21:27:01.943303+00:00"
+  },
+  {
+    "id": "77bbf196-7cdb-44fd-a963-cd01a5b524a9",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "a2ac32a3-616c-4a15-9fa2-ca436d7a5a0f",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 5,
+    "created_at": "2026-02-25T21:31:51.078976+00:00"
+  },
+  {
+    "id": "e29d54da-2d55-4a8a-8fbb-aaed7062d433",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "af55eb6e-9246-45ce-9626-1b56df60c208",
+    "nome": "Conhecendo o Transporte Escolar",
+    "carga_horaria": 5,
+    "created_at": "2026-02-25T21:34:17.213127+00:00"
+  },
+  {
+    "id": "86ada67d-a2e3-4bf8-b203-bd3825612b6e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7f4ece94-ea99-4fa3-b8e9-5cc05b2fa3b7",
+    "nome": "Direção e manutenção preventiva",
+    "carga_horaria": 4,
+    "created_at": "2026-02-27T13:19:46.173423+00:00"
+  },
+  {
+    "id": "89f60813-ade4-4af3-a746-7505fabcb0c1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7f4ece94-ea99-4fa3-b8e9-5cc05b2fa3b7",
+    "nome": "Atividade prática de direção defensiva",
+    "carga_horaria": 2,
+    "created_at": "2026-02-27T13:19:46.173423+00:00"
+  },
+  {
+    "id": "a0515ee0-3b95-4b7e-a0c8-d3ffdbd03155",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "230016f0-8fe2-4ae4-b058-49343ecee0a2",
+    "nome": "Inflamáveis: Características, Propriedades, Perigos e Riscos",
+    "carga_horaria": 1,
+    "created_at": "2026-02-27T14:13:01.983979+00:00"
+  },
+  {
+    "id": "5f91d276-61af-45e8-a792-e554ebb18c86",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "230016f0-8fe2-4ae4-b058-49343ecee0a2",
+    "nome": "Controles Coletivo e Individual para Trabalhos com Inflamáveis",
+    "carga_horaria": 30,
+    "created_at": "2026-02-27T14:13:01.983979+00:00"
+  },
+  {
+    "id": "affdc7e0-b2e0-406c-9b93-f26a56427618",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "230016f0-8fe2-4ae4-b058-49343ecee0a2",
+    "nome": "Fontes de Ignição e seu Controle",
+    "carga_horaria": 30,
+    "created_at": "2026-02-27T14:13:01.983979+00:00"
+  },
+  {
+    "id": "b8632c95-468a-474f-ad53-1dbf7e5a4d53",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "230016f0-8fe2-4ae4-b058-49343ecee0a2",
+    "nome": "Proteção Contra Incêndio com Inflamáveis",
+    "carga_horaria": 30,
+    "created_at": "2026-02-27T14:13:01.983979+00:00"
+  },
+  {
+    "id": "2b8de756-2edd-4ade-acf4-e6be243f2715",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "230016f0-8fe2-4ae4-b058-49343ecee0a2",
+    "nome": "Procedimentos básicos em situações de emergência com inflamáveis",
+    "carga_horaria": 30,
+    "created_at": "2026-02-27T14:13:01.983979+00:00"
+  },
+  {
+    "id": "21013523-2e28-4e40-b1c4-ad373b3b097a",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "230016f0-8fe2-4ae4-b058-49343ecee0a2",
+    "nome": "Conteúdo Prático: Conhecimentos e Utilização dos Sistemas de Segurança contra Incêndio com Inflamáveis.",
+    "carga_horaria": 1,
+    "created_at": "2026-02-27T14:13:01.983979+00:00"
+  },
+  {
+    "id": "4157d016-3149-4724-9c65-6efd8c5466be",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e59fa0b-637f-414e-9e9f-f4ccffaf8283",
+    "nome": "A importância da Inteligência Emocional no Trabalho",
+    "carga_horaria": 2,
+    "created_at": "2026-03-04T11:54:14.864078+00:00"
+  },
+  {
+    "id": "27b7fdb6-a788-4b01-92de-c8eb9d19ee36",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e59fa0b-637f-414e-9e9f-f4ccffaf8283",
+    "nome": "A Inteligência Emocional e o Gerenciamento das Emoções",
+    "carga_horaria": 1,
+    "created_at": "2026-03-04T11:54:17.547266+00:00"
+  },
+  {
+    "id": "44a38382-98f6-4b8e-ad4a-34c073144623",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "7e59fa0b-637f-414e-9e9f-f4ccffaf8283",
+    "nome": "Conceituando a Inteligência Emocional",
+    "carga_horaria": 1,
+    "created_at": "2026-03-04T11:54:19.986144+00:00"
+  },
+  {
+    "id": "a9f38eaa-7519-41b4-846e-71d999a31ff1",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "1c3128a1-3f3a-4b12-9044-02ee5c006ecf",
+    "nome": "Atendimento Eficaz – Transitando entre as vias da Gentileza e da Inclusão",
+    "carga_horaria": 1,
+    "created_at": "2026-03-04T11:54:22.964031+00:00"
+  },
+  {
+    "id": "d9c71034-663c-45c2-b496-f593155d189e",
+    "tenant_id": "a0000000-0000-0000-0000-000000000001",
+    "curso_id": "c1953155-be4b-446c-a52e-bd4dcb8f4bc3",
+    "nome": "Comunicação Não Violenta",
+    "carga_horaria": 4,
+    "created_at": "2026-03-31T12:05:22.816942+00:00"
+  }
+]

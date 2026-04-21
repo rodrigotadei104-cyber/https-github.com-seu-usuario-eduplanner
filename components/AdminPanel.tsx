@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { useSchedule } from '../context/ScheduleContext';
-import { Shield, Users, FileText, Search, UserPlus, AlertCircle, Building2, Mail, Send, Clock, XCircle, Ban, CheckCircle, Filter, Trash2 } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { UserRole } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 import { Avatar } from './Avatar';
+import { useSchedule } from '../context/ScheduleContext';
 
 export const AdminPanel: React.FC = () => {
     const {
@@ -88,62 +87,56 @@ export const AdminPanel: React.FC = () => {
 
     return (
         <div className="p-6 h-full overflow-y-auto custom-scrollbar">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                <Shield className="text-blue-600" />
-                Painel Administrativo
+            <h2 className="text-xl font-black text-gray-800 dark:text-white mb-6 uppercase tracking-tighter border-b-2 border-blue-600 inline-block">
+                Controle Administrativo
             </h2>
 
             <div className="flex border-b border-gray-200 dark:border-slate-700 mb-6">
                 <button
                     onClick={() => setActiveTab('users')}
-                    className={`px-6 py-3 font-medium text-sm flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'users'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                    className={`px-6 py-3 font-black text-[10px] uppercase tracking-widest transition-all border-b-2 ${activeTab === 'users'
+                        ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                        : 'border-transparent text-gray-400 hover:text-gray-600'
                         }`}
                 >
-                    <Users size={18} />
-                    Equipe da Unidade
+                    Membros do Time
                 </button>
                 <button
                     onClick={() => setActiveTab('logs')}
-                    className={`px-6 py-3 font-medium text-sm flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'logs'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                    className={`px-6 py-3 font-black text-[10px] uppercase tracking-widest transition-all border-b-2 ${activeTab === 'logs'
+                        ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                        : 'border-transparent text-gray-400 hover:text-gray-600'
                         }`}
                 >
-                    <FileText size={18} />
-                    Logs de Auditoria
+                    Registro de Atividades
                 </button>
             </div>
 
             {activeTab === 'users' && (
                 <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row justify-between gap-4">
-                        <div className="relative flex-1 max-w-md">
-                            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                        <div className="relative flex-1 max-w-md flex items-center">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">Busca</span>
                             <input
                                 type="text"
-                                placeholder="Buscar usuário por nome ou email..."
-                                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                                placeholder="Nome ou email..."
+                                className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold text-sm"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <button
                             onClick={() => setShowAddUser(!showAddUser)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-100"
                         >
-                            <UserPlus size={18} />
-                            <span className="hidden sm:inline">Convidar Membro</span>
-                            <span className="sm:hidden">Convidar</span>
+                            Convidar Membro
                         </button>
                     </div>
 
                     {showAddUser && (
                         <form onSubmit={handleCreateUser} className="bg-gray-50 p-4 rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
-                            <h3 className="font-semibold mb-3 text-gray-800 dark:text-white flex items-center gap-2">
-                                <Mail size={18} className="text-gray-500" />
-                                Convidar Novo Usuário
+                            <h3 className="font-black text-[10px] mb-3 text-gray-800 dark:text-white uppercase tracking-widest pb-1 border-b border-gray-200">
+                                Cadastro de Novo Acesso
                             </h3>
                             <p className="text-xs text-gray-500 mb-4 dark:text-gray-400">
                                 O usuário receberá um link seguro por e-mail para definir sua senha e ativar a conta.
@@ -168,14 +161,9 @@ export const AdminPanel: React.FC = () => {
                                 <button
                                     type="submit"
                                     disabled={isActionLoading}
-                                    className="bg-green-600 text-white p-2 rounded hover:bg-green-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                                    className="bg-green-600 text-white p-2.5 rounded hover:bg-green-700 transition flex items-center justify-center gap-2 disabled:opacity-50 font-black uppercase text-[10px] tracking-widest"
                                 >
-                                    {isActionLoading ? (
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (
-                                        <Send size={16} />
-                                    )}
-                                    {isActionLoading ? 'Enviando...' : 'Enviar Convite'}
+                                    {isActionLoading ? 'ENVIANDO...' : 'ENVIAR CONVITE'}
                                 </button>
                             </div>
                         </form>
@@ -214,8 +202,8 @@ export const AdminPanel: React.FC = () => {
                                                         {u.id === userProfile.id && <span className="ml-2 text-xs text-gray-400">(Você)</span>}
                                                     </div>
                                                     {isPending && (
-                                                        <span className="text-[10px] text-amber-600 flex items-center gap-1">
-                                                            <Clock size={10} /> Aguardando aceite
+                                                        <span className="text-[9px] text-amber-600 font-black uppercase tracking-tight">
+                                                            ! Aguardando aceite
                                                         </span>
                                                     )}
                                                 </div>
@@ -250,18 +238,15 @@ export const AdminPanel: React.FC = () => {
                                                     <div className="flex justify-end gap-2">
                                                         {isPending && (
                                                             <>
-                                                                <button onClick={() => resendInvitation(u.id)} className="text-xs font-medium px-3 py-1 rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20">Reenviar</button>
-                                                                <button onClick={() => acceptInvitation(u.id)} disabled={isActionLoading} className="text-xs font-medium px-3 py-1 rounded-md border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20 flex items-center gap-1 disabled:opacity-50">
-                                                                    {isActionLoading ? <div className="w-3 h-3 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" /> : <CheckCircle size={12} />} Ativar
-                                                                </button>
-                                                                <button onClick={() => { const pwd = prompt('Senha:', '123456'); if (pwd) setTestPassword(u.id, pwd); }} className="text-xs font-medium px-3 py-1 rounded-md border border-amber-200 text-amber-600 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20 flex items-center gap-1"><Shield size={12} /> Senha</button>
-                                                                <button onClick={() => confirmDeactivation(u.id)} className="text-xs font-medium px-2 py-1 text-red-500 hover:bg-red-50 rounded"><XCircle size={14} /></button>
+                                                                <button onClick={() => resendInvitation(u.id)} className="text-[9px] font-black uppercase px-2 py-1 rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50">REENVIAR</button>
+                                                                <button onClick={() => acceptInvitation(u.id)} disabled={isActionLoading} className="text-[9px] font-black uppercase px-2 py-1 rounded-md border border-green-200 text-green-600 hover:bg-green-50">ATIVAR</button>
+                                                                <button onClick={() => confirmDeactivation(u.id)} className="text-[9px] font-black uppercase px-2 py-1 text-red-500 hover:bg-red-50 rounded">X</button>
                                                             </>
                                                         )}
-                                                        {isActive && <button onClick={() => confirmDeactivation(u.id)} className="text-xs font-medium px-3 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 flex items-center gap-1"><Ban size={12} /> Desativar</button>}
-                                                        {isInactive && <button onClick={() => updateUserStatus(u.id, true)} className="text-xs font-medium px-3 py-1 rounded-md border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20 flex items-center gap-1"><CheckCircle size={12} /> Reativar</button>}
+                                                        {isActive && <button onClick={() => confirmDeactivation(u.id)} className="text-[9px] font-black uppercase px-3 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50">DESATIVAR</button>}
+                                                        {isInactive && <button onClick={() => updateUserStatus(u.id, true)} className="text-[9px] font-black uppercase px-3 py-1 rounded-md border border-green-200 text-green-600 hover:bg-green-50">REATIVAR</button>}
                                                         <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div>
-                                                        <button onClick={() => confirmDeletion(u.id, u.name)} className="text-xs font-medium px-2 py-1 text-red-500 hover:bg-red-50 hover:text-red-700 rounded transition-colors"><Trash2 size={16} /></button>
+                                                        <button onClick={() => confirmDeletion(u.id, u.name)} className="text-[9px] font-black uppercase px-2 py-1 text-red-600 hover:bg-red-100 rounded border border-red-200 shadow-sm transition-colors">EXCLUIR</button>
                                                     </div>
                                                 )}
                                             </td>
@@ -272,7 +257,7 @@ export const AdminPanel: React.FC = () => {
                         </table>
                         {filteredUsers.length === 0 && (
                             <div className="p-12 text-center flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
-                                <Users size={48} className="mb-2 opacity-20" />
+                                <span className="text-4xl font-black opacity-20 mb-2 uppercase tracking-tighter">Vazio</span>
                                 <p className="text-lg font-medium">Nenhum membro encontrado</p>
                                 <p className="text-sm">Tente ajustar sua busca ou convide um novo membro.</p>
                             </div>
@@ -285,8 +270,7 @@ export const AdminPanel: React.FC = () => {
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
                         <div className="relative">
-                            <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
-                            <input type="text" placeholder="Buscar por usuário, ação..." className="pl-9 pr-4 py-2 w-full text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-700 dark:border-slate-600 dark:text-white" value={logSearch} onChange={(e) => setLogSearch(e.target.value)} />
+                            <input type="text" placeholder="Buscar por usuário, ação..." className="px-4 py-2 w-full text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-700 dark:border-slate-600 dark:text-white" value={logSearch} onChange={(e) => setLogSearch(e.target.value)} />
                         </div>
                         <div>
                             <select className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-700 dark:border-slate-600 dark:text-white" value={logActionFilter} onChange={(e) => setLogActionFilter(e.target.value)}>
@@ -303,9 +287,8 @@ export const AdminPanel: React.FC = () => {
                         <div>
                             <input type="date" className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-700 dark:border-slate-600 dark:text-white" value={logDateFilter} onChange={(e) => setLogDateFilter(e.target.value)} />
                         </div>
-                        <div className="flex items-center justify-end text-xs text-gray-500 dark:text-gray-400">
-                            <Filter size={14} className="mr-1" />
-                            Mostrando {filteredLogs.length} registros
+                        <div className="flex items-center justify-end text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                            {filteredLogs.length} ITENS ENCONTRADOS
                         </div>
                     </div>
 
@@ -348,20 +331,20 @@ export const AdminPanel: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4 text-gray-700 dark:text-gray-300 text-xs font-mono">{log.target}</td>
                                             <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{log.details}</td>
-                                            <td className="px-6 py-4">
-                                                {log.status === 'success' ? (
-                                                    <span className="flex items-center gap-1 text-green-600 text-xs font-medium"><CheckCircle size={14} /> Sucesso</span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1 text-red-600 text-xs font-medium"><XCircle size={14} /> Falha</span>
-                                                )}
-                                            </td>
+                                             <td className="px-6 py-4">
+                                                 {log.status === 'success' ? (
+                                                     <span className="text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-100">[ OK ]</span>
+                                                 ) : (
+                                                     <span className="text-rose-600 text-[10px] font-black uppercase tracking-widest bg-rose-50 px-2 py-1 rounded border border-rose-100">[ FALHA ]</span>
+                                                 )}
+                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
                                         <td colSpan={6} className="p-12 text-center">
                                             <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
-                                                <FileText size={48} className="mb-2 opacity-20" />
+                                                <span className="text-4xl font-black opacity-20 mb-2 uppercase tracking-tighter">Sem Dados</span>
                                                 <p className="text-lg font-medium">Nenhum registro encontrado</p>
                                                 <p className="text-sm text-gray-400">Não há atividades registradas com os filtros selecionados.</p>
                                             </div>

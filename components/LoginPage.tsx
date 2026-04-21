@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
-import { LogIn, Lock, Mail, Loader2, User, Sparkles, ArrowLeft, CheckCircle } from 'lucide-react';
 import { EduPlannerLogo } from './EduPlannerLogo';
 
 export const LoginPage: React.FC = () => {
@@ -99,11 +98,11 @@ export const LoginPage: React.FC = () => {
                     {authMode !== 'login' && (
                         <button
                             onClick={() => handleToggle('login')}
-                            className="absolute top-6 left-6 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-slate-700"
+                            className="absolute top-6 left-6 px-3 py-1.5 text-[10px] font-black text-gray-400 hover:text-black hover:bg-gray-100 rounded border border-gray-100 transition-all uppercase tracking-widest"
                             type="button"
                             title="Voltar para Login"
                         >
-                            <ArrowLeft size={20} />
+                            &lt; Voltar
                         </button>
                     )}
 
@@ -131,15 +130,12 @@ export const LoginPage: React.FC = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Confirme seu Nome</label>
                                     <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <User size={18} className="text-gray-400" />
-                                        </div>
                                         <input
                                             type="text"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                                            placeholder="Ex: Maria Silva"
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition dark:bg-slate-700 dark:border-slate-600 dark:text-white font-medium"
+                                            placeholder="Nome Completo"
                                         />
                                     </div>
                                 </div>
@@ -149,15 +145,12 @@ export const LoginPage: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Email {authMode === 'activate' ? 'do Convite' : 'Corporativo'}</label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail size={18} className="text-gray-400" />
-                                </div>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                                    placeholder="seu@email.com"
+                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition dark:bg-slate-700 dark:border-slate-600 dark:text-white font-medium"
+                                    placeholder="seu@empresa.com"
                                 />
                             </div>
                         </div>
@@ -179,14 +172,11 @@ export const LoginPage: React.FC = () => {
                                     )}
                                 </div>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <Lock size={18} className="text-gray-400" />
-                                    </div>
                                     <input
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition dark:bg-slate-700 dark:border-slate-600 dark:text-white font-medium"
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -201,31 +191,23 @@ export const LoginPage: React.FC = () => {
                         )}
 
                         {successMsg && (
-                            <div className="p-3 bg-green-50 text-green-600 text-sm rounded-lg flex items-start gap-2 dark:bg-green-900/20 dark:text-green-300 animate-in fade-in duration-200">
-                                <CheckCircle size={16} className="mt-0.5 flex-shrink-0" />
-                                <span className="flex-1 leading-snug">{successMsg}</span>
+                            <div className="p-3 bg-green-50 text-green-700 text-[10px] font-black rounded-lg border border-green-100 uppercase tracking-widest animate-in fade-in duration-200">
+                                [ SUCESSO ] {successMsg}
                             </div>
                         )}
 
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-2 uppercase tracking-widest"
                         >
                             {isLoading ? (
-                                <>
-                                    <Loader2 size={20} className="animate-spin" />
-                                    Processing...
-                                </>
+                                <span className="animate-pulse">PROCESSANDO...</span>
                             ) : (
                                 <>
                                     {authMode === 'login' && 'Entrar'}
-                                    {authMode === 'activate' && 'Ativar Conta'}
-                                    {authMode === 'forgot' && 'Enviar Link'}
-
-                                    {authMode === 'login' && <LogIn size={20} />}
-                                    {authMode === 'activate' && <CheckCircle size={20} />}
-                                    {authMode === 'forgot' && <Mail size={20} />}
+                                    {authMode === 'activate' && 'Confirmar Ativação'}
+                                    {authMode === 'forgot' && 'Enviar Recuperação'}
                                 </>
                             )}
                         </button>
@@ -261,7 +243,7 @@ export const LoginPage: React.FC = () => {
                 </div>
             </div>
 
-            <p className="mt-8 text-gray-400 text-sm">
+            <div className="mt-8 text-gray-400 text-sm">
                 © 2026 EduPlanner. Todos os direitos reservados.
                 <br />
                 <div className="flex justify-center gap-4 mt-2">
@@ -271,7 +253,7 @@ export const LoginPage: React.FC = () => {
                     <span className="text-gray-300">|</span>
                     <a href="/about" className="hover:underline hover:text-gray-600 transition-colors">Sobre o App</a>
                 </div>
-            </p>
+            </div>
         </div>
     );
 };

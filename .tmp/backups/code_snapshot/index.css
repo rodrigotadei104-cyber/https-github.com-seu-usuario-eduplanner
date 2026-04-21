@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2563eb;
+  --color-secondary: #475569;
+  --font-sans: Inter, sans-serif;
+}
+
+/* Custom scrollbar for better aesthetics - GLOBAL & SCREEN */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f1f5f9;
+}
+
+:is(.dark ::-webkit-scrollbar-track) {
+  background-color: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+:is(.dark ::-webkit-scrollbar-thumb) {
+  background-color: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+:is(.dark ::-webkit-scrollbar-thumb:hover) {
+  background-color: #64748b;
+}
+
+/* Specific fix for Daily View scrolling container */
+.custom-scrollbar {
+  overflow: auto;
+  /* Ensure scroll works on screen */
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+:is(.dark .custom-scrollbar) {
+  scrollbar-color: #475569 #1e293b;
+}
+
+/* PRINT STYLES */
+@media print {
+  @page {
+    margin: 1cm;
+    size: portrait;
+  }
+
+  body {
+    background-color: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
+  }
+
+  /* Hide UI elements */
+  aside,
+  header,
+  .no-print,
+  button:not(.print-visible) {
+    display: none !important;
+  }
+
+  /* Reset layout for print */
+  #root,
+  .flex-1,
+  main {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Specific fix for Daily View scrolling container */
+  .custom-scrollbar {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Hide borders and shadows for cleaner look */
+  .shadow-sm,
+  .shadow-md,
+  .shadow-xl {
+    box-shadow: none !important;
+  }
+
+  .border,
+  .border-l-4 {
+    border-color: #e2e8f0 !important;
+    /* Force light gray borders */
+  }
+}

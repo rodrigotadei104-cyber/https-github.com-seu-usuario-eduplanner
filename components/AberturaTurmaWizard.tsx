@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Clock, Sparkles, CheckCircle, Trash2, Loader2, AlertTriangle, ArrowLeft, Database, Search, ChevronDown } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
 import { aulaService } from '../services/aula.service';
 import { catalogoService } from '../services/catalogo.service';
@@ -211,6 +210,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
 
             console.log('[Wizard] Criando registro da Turma...', nomeTurma);
             const novaTurma = await turmaService.create({
+                tenantId,
                 numeroTurma: nomeTurma,
                 cursoId: selectedCursoId,
                 instrutorId: selectedInstructorId || undefined,
@@ -260,15 +260,15 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                 {/* Header */}
                 <div className="p-6 border-b flex justify-between items-center bg-indigo-600 dark:bg-indigo-900 border-indigo-700">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/20 text-white rounded-lg backdrop-blur shadow-sm">
-                            <Sparkles size={24} />
+                        <div className="px-3 py-1 bg-white/20 text-white rounded text-[10px] font-black uppercase tracking-widest backdrop-blur shadow-sm">
+                            Motor
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white">Motor de Abertura de Turma</h2>
-                            <p className="text-sm font-medium text-indigo-100 opacity-90">Algoritmo Institucional Rápido (Local Engine)</p>
+                            <h2 className="text-xl font-black text-white uppercase tracking-tighter">Abertura de Turma</h2>
+                            <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest opacity-90">Algoritmo Institucional Rápido (Local Engine)</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-white/70 hover:text-white transition-colors bg-black/10 hover:bg-black/20 p-2 rounded-full"><X size={20} /></button>
+                    <button onClick={onClose} className="text-white font-black hover:text-black transition-colors uppercase tracking-widest text-[10px]">Fechar [X]</button>
                 </div>
 
                 {/* Body */}
@@ -289,10 +289,10 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                     className="w-full flex items-center gap-2 p-2.5 border rounded-lg text-sm bg-white dark:bg-slate-800 dark:border-slate-700 cursor-pointer focus-within:ring-2 focus-within:ring-indigo-500"
                                                     onClick={() => setIsCursoDropdownOpen(true)}
                                                 >
-                                                    <Search size={14} className="text-slate-400 shrink-0" />
+                                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">BUSCA</div>
                                                     <input
                                                         type="text"
-                                                        placeholder="Buscar curso pelo nome..."
+                                                        placeholder="NOME DO CURSO..."
                                                         value={cursoSearchText}
                                                         onChange={e => {
                                                             setCursoSearchText(e.target.value);
@@ -300,16 +300,16 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                             if (!e.target.value) handleCourseChange('');
                                                         }}
                                                         onFocus={() => setIsCursoDropdownOpen(true)}
-                                                        className="flex-1 outline-none bg-transparent text-sm dark:text-white placeholder-slate-400"
+                                                        className="flex-1 outline-none bg-transparent text-sm font-bold dark:text-white placeholder-slate-300 uppercase"
                                                     />
                                                     {selectedCursoId && (
                                                         <button
                                                             type="button"
                                                             onClick={e => { e.stopPropagation(); handleCourseChange(''); setCursoSearchText(''); }}
-                                                            className="text-slate-400 hover:text-red-500 transition-colors text-xs px-1"
-                                                        >✕</button>
+                                                            className="text-red-500 font-black text-xs px-1"
+                                                        >[X]</button>
                                                     )}
-                                                    <ChevronDown size={14} className={`text-slate-400 transition-transform shrink-0 ${isCursoDropdownOpen ? 'rotate-180' : ''}`} />
+                                                    <div className={`text-[10px] font-black text-slate-400 transition-transform ${isCursoDropdownOpen ? 'rotate-180' : ''}`}>MENU</div>
                                                 </div>
 
                                                 {/* Dropdown list */}
@@ -445,8 +445,8 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                         </div>
 
                                         <div className="bg-amber-50 p-4 border border-amber-200 rounded-xl dark:bg-amber-900/10 dark:border-amber-900/30">
-                                            <h4 className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-3 flex items-center gap-2 dark:text-amber-400">
-                                                <AlertTriangle size={14} /> Datas Bloqueadas da Turma (Exceções)
+                                            <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2 dark:text-amber-400">
+                                                [ ATENÇÃO ] Datas Bloqueadas desta Turma
                                             </h4>
                                             <div className="flex gap-2 mb-3">
                                                 <input
@@ -467,7 +467,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                     {datasBloqueadasTurma.map(date => (
                                                         <span key={date} className="inline-flex items-center gap-1.5 bg-white border border-amber-200 px-2 py-1 rounded-md text-xs font-mono font-bold text-amber-800 dark:bg-slate-800 dark:border-amber-900/50 dark:text-amber-400 shadow-sm">
                                                             {format(parseISO(date), 'dd/MM/yy')}
-                                                            <button onClick={() => removeDataBloqueada(date)} className="text-amber-400 hover:text-red-500 transition-colors">✕</button>
+                                                            <button onClick={() => removeDataBloqueada(date)} className="text-amber-400 hover:text-red-500 transition-colors font-bold">[X]</button>
                                                         </span>
                                                     ))}
                                                 </div>
@@ -485,12 +485,12 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                     {step === 'generating' && (
                         <div className="flex flex-col items-center justify-center py-24 text-center">
                             <div className="relative">
-                                <div className="w-20 h-20 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin dark:border-indigo-900/40 dark:border-t-indigo-500"></div>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Clock size={24} className="text-indigo-600 dark:text-indigo-400" />
+                                <div className="w-16 h-16 border-[6px] border-indigo-100 border-t-indigo-600 rounded-full animate-spin dark:border-indigo-900/40 dark:border-t-indigo-500"></div>
+                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-indigo-600 uppercase">
+                                    CPU
                                 </div>
                             </div>
-                            <h3 className="text-2xl font-bold mt-8 dark:text-white">Cálculo Determinístico de Matriz...</h3>
+                            <h3 className="text-xl font-black mt-8 uppercase tracking-tighter dark:text-white">Cálculo de Matriz...</h3>
                             <p className="text-slate-500 mt-3 max-w-sm mx-auto">
                                 Evitando feriados corporativos, preenchendo horários vagos e fatiando restos matemáticos.
                             </p>
@@ -501,13 +501,13 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                         <div className="space-y-4 h-full flex flex-col">
                             <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100 shrink-0 dark:bg-indigo-900/20 dark:border-indigo-800/50">
                                 <div>
-                                    <h3 className="font-bold text-indigo-900 text-lg flex items-center gap-2 dark:text-indigo-200">
-                                        <CheckCircle className="text-emerald-500" /> Previsão Matemática (Sucesso)
+                                    <h3 className="font-black text-indigo-900 text-lg flex items-center gap-2 dark:text-indigo-200 uppercase tracking-tighter">
+                                        [ OK ] Previsão Matemática do Motor
                                     </h3>
                                     <p className="text-sm text-indigo-700 dark:text-indigo-300">Revise a Grade Gerada Perfeitamente</p>
                                     {diasPuladosFeriado.length > 0 && (
                                         <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
-                                            🚫 {diasPuladosFeriado.length} dia{diasPuladosFeriado.length !== 1 ? 's' : ''} pulado{diasPuladosFeriado.length !== 1 ? 's' : ''} por feriado/bloqueio — exibidos em vermelho na grade
+                                            [ BLOQUEADO ] {diasPuladosFeriado.length} dia{diasPuladosFeriado.length !== 1 ? 's' : ''} pulado{diasPuladosFeriado.length !== 1 ? 's' : ''} por feriado/bloqueio — exibidos em vermelho na grade
                                         </p>
                                     )}
                                 </div>
@@ -529,22 +529,15 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                                         {(() => {
-                                            // Montar lista intercalada: aulas + feriados pulados
                                             type Row =
                                                 | { kind: 'aula'; idx: number; cls: Omit<Aula, 'id'> }
                                                 | { kind: 'feriado'; data: string; motivo: string };
 
-                                            const feriadoSet = new Map(
-                                                diasPuladosFeriado.map(f => [f.data, f.motivo])
-                                            );
-
-                                            // Gerar datas de feriados que ficam entre aulas (para intercalar)
                                             const rows: Row[] = [];
                                             let feriadosJaExibidos = new Set<string>();
 
                                             generatedSchedule.forEach((cls, idx) => {
                                                 const dataAula = format(new Date(cls.data), 'yyyy-MM-dd');
-                                                // Exibir feriados que ocorreram antes desta aula (e ainda não exibidos)
                                                 diasPuladosFeriado.forEach(f => {
                                                     if (!feriadosJaExibidos.has(f.data) && f.data < dataAula) {
                                                         rows.push({ kind: 'feriado', data: f.data, motivo: f.motivo });
@@ -563,7 +556,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                             </td>
                                                             <td colSpan={3} className="p-2">
                                                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-full">
-                                                                    🚫 {row.motivo} — Aula não realizada neste dia
+                                                                    [ BLOQUEADO ] {row.motivo} — Aula não realizada neste dia
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -589,9 +582,9 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                         <td className="p-2 text-center">
                                                             <button
                                                                 onClick={() => removeClass(row.idx)}
-                                                                className="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                                                                className="text-[10px] font-black text-rose-600 hover:bg-rose-50 px-2 py-1 border border-rose-100 rounded uppercase tracking-widest transition-colors"
                                                             >
-                                                                <Trash2 size={16} />
+                                                                Apagar
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -605,8 +598,8 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                     )}
 
                     {error && step === 'config' && (
-                        <div className="mt-4 p-4 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm flex items-center gap-3 font-medium dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
-                            <AlertTriangle size={20} className="shrink-0" /> {error}
+                        <div className="mt-4 p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-3 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
+                            [ ! ] ERRO: {error}
                         </div>
                     )}
                 </div>
@@ -617,26 +610,25 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                         <div className="ml-auto w-full md:w-auto">
                             <button
                                 onClick={handleGenerateEngine}
-                                className="w-full md:w-auto px-8 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/30 font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 text-sm uppercase tracking-wider"
+                                className="w-full md:w-auto px-8 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 font-black flex items-center justify-center gap-2 transition-transform active:scale-95 text-[10px] uppercase tracking-widest"
                             >
-                                <Sparkles size={18} /> Projetar Automático
+                                PROJETAR AUTOMÁTICO
                             </button>
                         </div>
                     ) : step === 'preview' ? (
                         <>
                             <button
                                 onClick={() => setStep('config')}
-                                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl flex items-center gap-2 transition dark:text-slate-300 dark:hover:bg-slate-700 uppercase tracking-wider text-xs"
+                                className="px-5 py-2.5 text-slate-800 font-black hover:bg-slate-200 rounded-xl flex items-center gap-2 transition dark:text-slate-300 dark:hover:bg-slate-700 uppercase tracking-widest text-[10px]"
                             >
-                                <ArrowLeft size={16} /> Refazer Contas
+                                [ VOLTAR ]
                             </button>
                             <button
                                 onClick={handleConfirmAndSave}
                                 disabled={isSaving}
-                                className="px-8 py-3 text-sm font-bold uppercase tracking-wider text-white bg-emerald-600 border border-emerald-500 rounded-xl hover:bg-emerald-500 shadow-lg shadow-emerald-500/30 flex items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white bg-emerald-600 border border-emerald-500 rounded-xl hover:bg-emerald-500 shadow-lg shadow-emerald-200 flex items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
-                                {isSaving ? 'Salvando Multidão de Aulas...' : 'Realizar Abertura de Turma (Gravar)'}
+                                {isSaving ? 'SALVANDO MULTIDÃO DE AULAS...' : 'REALIZAR ABERTURA DE TURMA (GRAVAR)'}
                             </button>
                         </>
                     ) : null}

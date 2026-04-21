@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
-import { Trash2, Plus, User, BookOpen, GraduationCap, Lock, Pencil, X, Calendar, Upload } from 'lucide-react';
 import { Instrutor, Curso, Materia, EventType, EventStatus } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 import { ImportModal } from './ImportModal';
@@ -184,10 +183,10 @@ export const RegistrationView: React.FC = () => {
     };
 
     const tabs = [
-        { id: 'instrutores', label: 'Instrutores', icon: User, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-        { id: 'cursos', label: 'Cursos', icon: GraduationCap, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
-        { id: 'materias', label: 'Matérias', icon: BookOpen, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
-        { id: 'eventos', label: 'Eventos', icon: Calendar, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30' },
+        { id: 'instrutores', label: 'Instrutores', color: 'text-blue-700', bg: 'bg-blue-50' },
+        { id: 'cursos', label: 'Cursos', color: 'text-purple-700', bg: 'bg-purple-50' },
+        { id: 'materias', label: 'Matérias', color: 'text-amber-700', bg: 'bg-amber-50' },
+        { id: 'eventos', label: 'Eventos', color: 'text-emerald-700', bg: 'bg-emerald-50' },
     ];
 
     return (
@@ -196,9 +195,8 @@ export const RegistrationView: React.FC = () => {
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Cadastros</h2>
                     {isReadOnly && (
-                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg border border-amber-100">
-                            <Lock size={14} />
-                            Apenas Leitura (Viewer)
+                        <span className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-lg border border-amber-200">
+                            ! Apenas Leitura
                         </span>
                     )}
                 </div>
@@ -206,23 +204,19 @@ export const RegistrationView: React.FC = () => {
                 {/* Tabs */}
                 <div className="flex gap-4 mb-8">
                     {tabs.map((tab) => {
-                        const Icon = tab.icon;
                         const isActive = activeTab === tab.id;
                         return (
                             <button
                                 key={tab.id}
                                 onClick={() => { setActiveTab(tab.id as Tab); resetForm(); }}
                                 className={`
-                        flex items-center gap-3 px-6 py-4 rounded-xl border transition-all duration-200
+                        flex flex-col items-center justify-center min-w-[140px] px-4 py-3 rounded-xl border transition-all duration-200
                         ${isActive
-                                        ? 'bg-white border-blue-200 shadow-md transform scale-105 dark:bg-slate-800 dark:border-blue-700'
-                                        : 'bg-gray-50 border-transparent hover:bg-white hover:shadow-sm text-gray-500 dark:bg-slate-800/50 dark:text-gray-400 dark:hover:bg-slate-800'}
+                                        ? `bg-white dark:bg-slate-800 ${tab.bg} border-current shadow-md transform scale-105`
+                                        : 'bg-gray-50 border-transparent hover:bg-white text-gray-400 dark:bg-slate-900/50'}
                     `}
                             >
-                                <div className={`p-2 rounded-lg ${tab.bg} ${tab.color}`}>
-                                    <Icon size={24} />
-                                </div>
-                                <span className={`font-semibold ${isActive ? 'text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'}`}>
+                                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isActive ? tab.color : 'text-gray-400'}`}>
                                     {tab.label}
                                 </span>
                             </button>
@@ -240,7 +234,6 @@ export const RegistrationView: React.FC = () => {
                                         onClick={() => setIsImportModalOpen(true)}
                                         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
                                     >
-                                        <Upload size={16} />
                                         Importar Excel / CSV
                                     </button>
                                 </div>
@@ -249,11 +242,11 @@ export const RegistrationView: React.FC = () => {
                             <form onSubmit={handleSave} className={`p-6 rounded-lg border ${editingItem ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20' : 'bg-gray-50 border-gray-100 dark:bg-slate-900/50 dark:border-slate-700'}`}>
                                 {editingItem && (
                                     <div className="mb-4 flex justify-between items-center text-blue-700 dark:text-blue-300">
-                                        <span className="text-sm font-semibold flex items-center gap-2">
-                                            <Pencil size={16} /> Editando {activeTab === 'cursos' ? 'Curso' : 'Item'}
+                                        <span className="text-sm font-semibold flex items-center gap-2 uppercase tracking-widest">
+                                            MODO EDIÇÃO: {activeTab === 'cursos' ? 'CURSO' : 'REGISTRO'}
                                         </span>
-                                        <button type="button" onClick={cancelEdit} className="text-xs hover:underline flex items-center gap-1">
-                                            <X size={14} /> Cancelar
+                                        <button type="button" onClick={cancelEdit} className="text-[10px] font-black uppercase hover:underline flex items-center gap-1">
+                                            Cancelar
                                         </button>
                                     </div>
                                 )}
@@ -495,13 +488,11 @@ export const RegistrationView: React.FC = () => {
                                     >
                                         {isActionLoading ? (
                                             <>
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                Salvando...
+                                                Carregando...
                                             </>
                                         ) : (
                                             <>
-                                                {editingItem ? <Pencil size={20} /> : <Plus size={20} />}
-                                                {editingItem ? 'Atualizar' : 'Adicionar'}
+                                                <span className="font-black">{editingItem ? 'ATUALIZAR' : 'ADICIONAR NOVO'}</span>
                                             </>
                                         )}
                                     </button>
@@ -554,13 +545,13 @@ export const RegistrationView: React.FC = () => {
 
                                         {canManage && (
                                             <td className="px-6 py-4 text-right">
-                                                <button
-                                                    onClick={() => handleDelete(item.id, 'instrutor')}
-                                                    disabled={isActionLoading}
-                                                    className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-30"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
+                                                    <button
+                                                        onClick={() => handleDelete(item.id, 'instrutor')}
+                                                        disabled={isActionLoading}
+                                                        className="text-red-600 hover:text-red-800 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded hover:bg-red-50 transition-colors disabled:opacity-30"
+                                                    >
+                                                        Excluir
+                                                    </button>
                                             </td>
                                         )}
                                     </tr>
@@ -595,12 +586,15 @@ export const RegistrationView: React.FC = () => {
                                                     <button
                                                         onClick={() => handleEdit(item, 'cursos')}
                                                         disabled={isActionLoading}
-                                                        className="text-blue-500 hover:text-blue-700 p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors disabled:opacity-30"
+                                                        className="text-blue-600 hover:text-blue-800 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded hover:bg-blue-50 transition-colors disabled:opacity-30"
                                                     >
-                                                        <Pencil size={18} />
+                                                        Editar
                                                     </button>
-                                                    <button onClick={() => handleDelete(item.id, 'curso')} className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
-                                                        <Trash2 size={18} />
+                                                    <button 
+                                                        onClick={() => handleDelete(item.id, 'curso')}
+                                                        className="text-red-600 hover:text-red-800 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                                    >
+                                                        Excluir
                                                     </button>
                                                 </div>
                                             </td>
@@ -625,8 +619,11 @@ export const RegistrationView: React.FC = () => {
 
                                             {canManage && (
                                                 <td className="px-6 py-4 text-right">
-                                                    <button onClick={() => handleDelete(item.id, 'materia')} className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
-                                                        <Trash2 size={18} />
+                                                    <button 
+                                                        onClick={() => handleDelete(item.id, 'materia')}
+                                                        className="text-red-600 hover:text-red-800 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                                    >
+                                                        Excluir
                                                     </button>
                                                 </td>
                                             )}
@@ -667,16 +664,16 @@ export const RegistrationView: React.FC = () => {
                                                     <button
                                                         onClick={() => handleEdit(item, 'eventos')}
                                                         disabled={isActionLoading}
-                                                        className="text-blue-500 hover:text-blue-700 p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors disabled:opacity-30"
+                                                        className="text-blue-600 hover:text-blue-800 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded hover:bg-blue-50 transition-colors disabled:opacity-30"
                                                     >
-                                                        <Pencil size={18} />
+                                                        Editar
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(item.id, 'evento')}
                                                         disabled={isActionLoading}
-                                                        className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-30"
+                                                        className="text-red-600 hover:text-red-800 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded hover:bg-red-50 transition-colors disabled:opacity-30"
                                                     >
-                                                        <Trash2 size={18} />
+                                                        Excluir
                                                     </button>
                                                 </div>
                                             </td>
@@ -691,9 +688,9 @@ export const RegistrationView: React.FC = () => {
                                         <tr>
                                             <td colSpan={canManage ? 5 : 4} className="px-6 py-12 text-center">
                                                 <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
-                                                    <Plus size={48} className="mb-2 opacity-20" />
-                                                    <p className="text-lg font-medium">Nenhum registro encontrado</p>
-                                                    <p className="text-sm">Comece adicionando um novo item acima.</p>
+                                                    <span className="text-4xl font-black opacity-10 mb-4 tracking-tighter uppercase">Vazio</span>
+                                                    <p className="text-lg font-bold uppercase tracking-widest">Nenhum registro encontrado</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest mt-2">{canManage ? 'ADICIONE UM NOVO ITEM NO FORMULÁRIO ACIMA' : 'SEM PERMISSÃO PARA CRIAR REGISTROS'}</p>
                                                 </div>
                                             </td>
                                         </tr>

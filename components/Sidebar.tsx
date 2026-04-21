@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Calendar, CalendarDays, BarChart3, Plus, Settings, LogOut, Database, Shield, Building2, BookOpen, FileText, Info, LayoutGrid, Library, CalendarOff } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useSchedule } from '../context/ScheduleContext';
-import { EduPlannerLogo } from './EduPlannerLogo';
 import { ConfirmationModal } from './ConfirmationModal';
-import { Avatar } from './Avatar';
 
 interface SidebarProps {
     currentView: ViewMode;
@@ -15,231 +12,141 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onNewClass, onOpenSettings, isOpen }) => {
-    const { logout, setFilters, userProfile, users } = useSchedule();
+    const { logout, userProfile, users } = useSchedule();
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-    // Find Tenant Name either from user profile or from the active user list if stored there
     const tenantName = users.find(u => u.id === userProfile.id)?.tenantName || 'Araraquara - SP';
-
-    const isViewer = userProfile.role === 'viewer';
     const isAdmin = userProfile.role === 'admin';
     const isEditor = userProfile.role === 'editor';
-
-    // Rule 2: "Criar aula": Admin ✅, Editor ✅
     const canCreateClass = isAdmin || isEditor;
-    // Rule 6: "Acessar configurações": Todos podem acessar (mas com restrições dentro do modal)
-    const canAccessSettings = true;
 
-    const handleLogoutClick = () => {
-        setShowLogoutConfirm(true);
-    };
-
+    const handleLogoutClick = () => setShowLogoutConfirm(true);
     const confirmLogout = () => {
         logout();
         setShowLogoutConfirm(false);
     };
 
-    const getRoleLabel = () => {
-        switch (userProfile.role) {
-            case 'admin': return 'Administrador';
-            case 'editor': return 'Editor';
-            case 'viewer': return 'Visualizador';
-            default: return 'Visitante';
-        }
+    const NavItem = ({ view, label }: { view: ViewMode, label: string }) => {
+        const isActive = currentView === view;
+        return (
+            <button
+                onClick={() => onChangeView(view)}
+                className={`
+                    w-full flex items-center px-4 py-2 rounded-xl text-[13px] transition-all duration-200 font-medium
+                    ${isActive 
+                        ? 'bg-[#222222] text-white shadow-sm' 
+                        : 'text-zinc-500 hover:bg-[#1a1a1a] hover:text-zinc-200'}
+                `}
+            >
+                <span className="flex-1 text-left">{label}</span>
+            </button>
+        );
     };
+
+    const SectionTitle = ({ label }: { label: string }) => (
+        <p className="px-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-5 mb-2">
+            {label}
+        </p>
+    );
 
     return (
         <>
             <aside
+                style={{ backgroundColor: '#121212' }}
                 className={`
-            fixed md:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out flex flex-col h-full
-            ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-            dark:bg-slate-800 dark:border-slate-700
-        `}
+                    fixed md:static inset-y-0 left-0 z-40 w-[280px] border-r border-[#1a1a1a] transform transition-transform duration-300 ease-in-out flex flex-col h-full
+                    ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                `}
             >
-                <div className="flex flex-col h-full p-4">
-                    {/* Branding */}
-                    <div className="flex items-center gap-3 px-2 mb-2">
-                        <EduPlannerLogo className="w-10 h-10 shadow-sm flex-shrink-0" />
-                        <div className="overflow-hidden">
-                            <span className="text-xl font-bold text-gray-800 tracking-tight dark:text-white block leading-tight">EduPlanner</span>
-                        </div>
+                <div className="flex flex-col h-full p-6 overflow-hidden">
+                    
+                    {/* Logo EduPlanner */}
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-[#2563eb] rounded-xl flex items-center justify-center text-white font-black text-xl tracking-tighter">E</div>
+                        <span className="text-xl font-bold text-white tracking-tight">EduPlanner</span>
                     </div>
 
-                    {/* Tenant Context Display */}
-                    <div className="px-2 mb-4 mt-2">
-                        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 mb-1">
-                            <Building2 size={10} />
-                            <span className="text-[10px] uppercase font-bold tracking-wider">Unidade</span>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate" title={tenantName}>
-                            {tenantName}
-                        </p>
+                    {/* Unidade Info */}
+                    <div className="mb-5 px-2">
+                         <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Unidade</span>
+                         <p className="text-[14px] font-medium text-zinc-200">{tenantName}</p>
                     </div>
 
-                    {/* User Profile Section with Avatar */}
-                    <div className="px-2 mb-6 flex items-center gap-3 bg-gray-50/50 p-2 rounded-xl border border-gray-100 dark:bg-slate-800/50 dark:border-slate-700">
-                        <Avatar
-                            name={userProfile.name}
-                            url={userProfile.avatarUrl}
-                            size="lg"
-                            className="shadow-sm border-2 border-white dark:border-slate-600 flex-shrink-0"
-                        />
-                        <div className="overflow-hidden flex flex-col justify-center min-w-0">
-                            <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate leading-snug" title={userProfile.name || userProfile.email}>
-                                {userProfile.name || userProfile.email?.split('@')[0] || 'Usuário'}
-                            </p>
-                            <div className="flex items-center gap-1 mt-0.5">
-                                <span className={`
-                                    inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider
-                                    ${isAdmin ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''}
-                                    ${isEditor ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : ''}
-                                    ${isViewer ? 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400' : ''}
-                                `}>
-                                    {getRoleLabel()}
+                    {/* Card de Usuário Puro */}
+                    <div className="mb-6 px-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-full overflow-hidden bg-indigo-500 flex items-center justify-center text-white font-black text-[13px] uppercase shrink-0">
+                                {userProfile.avatarUrl ? (
+                                    <img 
+                                        src={userProfile.avatarUrl} 
+                                        alt={userProfile.name} 
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`;
+                                        }}
+                                    />
+                                ) : (
+                                    userProfile.avatarInitials
+                                )}
+                            </div>
+                            <div className="flex flex-col min-w-0 justify-center">
+                                <p className="text-[14px] font-medium text-zinc-100 truncate" title={userProfile.name}>
+                                    {userProfile.name}
+                                </p>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#2563eb] mt-0.5">
+                                    {userProfile.role === 'admin' ? 'ADMINISTRADOR' : userProfile.role.toUpperCase()}
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Action Button */}
+                    {/* Botão + Nova Aula Azul Clássico */}
                     {canCreateClass && (
                         <button
                             onClick={onNewClass}
-                            className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors shadow-sm mb-6"
+                            className="w-full bg-[#2563eb] hover:bg-blue-600 text-white py-3.5 rounded-xl font-bold text-[14px] transition-colors mb-6 active:scale-95"
                         >
-                            <Plus size={20} />
-                            <span>Nova Aula</span>
+                            + Nova Aula
                         </button>
                     )}
 
-                    {!canCreateClass && (
-                        <div className="mb-6 px-2 py-3 bg-gray-50 rounded-lg text-center border border-dashed border-gray-200 dark:bg-slate-700 dark:border-slate-600">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Modo de visualização apenas.</p>
-                        </div>
-                    )}
+                    {/* Navegação Completa - Sem Ícones */}
+                    <nav className="flex-1 overflow-y-auto space-y-0.5 custom-scrollbar pr-2">
+                        <SectionTitle label="Agenda" />
+                        <NavItem view="dashboard" label="Dashboard" />
+                        <NavItem view="daily" label="Diário" />
+                        <NavItem view="monthly" label="Mensal" />
+                        <NavItem view="annual" label="Anual" />
+                        <NavItem view="room-map" label="Mapa de Salas" />
 
-                    <nav className="space-y-1 flex-1 overflow-y-auto custom-scrollbar">
-                        {/* 3. Agenda / Cronograma */}
-                        <div className="px-2 mb-2 mt-2">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Agenda</p>
-                            <div className="space-y-1">
-                                <button
-                                    onClick={() => { onChangeView('dashboard'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'dashboard' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                                >
-                                    <LayoutDashboard size={18} /> Dashboard
-                                </button>
-                                <button
-                                    onClick={() => { onChangeView('daily'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'daily' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                                >
-                                    <Calendar size={18} /> Diário
-                                </button>
-                                <button
-                                    onClick={() => { onChangeView('monthly'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'monthly' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                                >
-                                    <CalendarDays size={18} /> Mensal
-                                </button>
-                                <button
-                                    onClick={() => { onChangeView('annual'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'annual' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                                >
-                                    <BarChart3 size={18} /> Anual
-                                </button>
-                                <button
-                                    onClick={() => { onChangeView('room-map'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'room-map' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                                >
-                                    <LayoutGrid size={18} /> Mapa de Salas
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* 4. Gerenciamento Acadêmico */}
-                        <div className="px-2 mb-2 mt-4">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Acadêmico</p>
-                            {isAdmin && (
-                                <button
-                                    onClick={() => { onChangeView('catalog'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'catalog' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                                >
-                                    <Library size={18} /> Catálogo Base
-                                </button>
-                            )}
-                            {isAdmin && (
-                                <button
-                                    onClick={() => { onChangeView('calendar'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'calendar' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                                >
-                                    <CalendarOff size={18} /> Calendário Instit.
-                                </button>
-                            )}
-                            <button
-                                onClick={() => { onChangeView('registrations'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'registrations' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                            >
-                                <BookOpen size={18} /> Cadastros Rápidos
-                            </button>
-                        </div>
-
-                        {/* 5. Gerenciamento de Usuários (Admin) */}
+                        <SectionTitle label="Acadêmico" />
+                        <NavItem view="jovem-aprendiz" label="Jovem Aprendiz" />
+                        <NavItem view="catalog" label="Catálogo Base" />
+                        <NavItem view="calendar" label="Calendário Institucional" />
+                        <NavItem view="registrations" label="Cadastros Rápidos" />
+                        
                         {isAdmin && (
-                            <div className="px-2 mb-2 mt-4">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Administração</p>
-                                <button
-                                    onClick={() => { onChangeView('admin'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'admin' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
-                                >
-                                    <Shield size={18} /> Usuários & Logs
-                                </button>
-                            </div>
+                            <>
+                                <SectionTitle label="Administração" />
+                                <NavItem view="admin" label="Usuários e Logs" />
+                            </>
                         )}
+
+                        <SectionTitle label="Sistema" />
+                        <NavItem view="settings" label="Configurações" />
+                        <NavItem view="privacy" label="Políticas de Privacidade" />
+                        <NavItem view="terms" label="Termos de Uso" />
+                        <NavItem view="about" label="Sobre o App" />
                     </nav>
 
-                    {/* 8. Configurações & Sair */}
-                    <div className="border-t border-gray-100 pt-4 space-y-1 dark:border-slate-700 mt-2">
-                        {canAccessSettings && (
-                            <button
-                                onClick={onOpenSettings}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200"
-                            >
-                                <Settings size={18} />
-                                Configurações
-                            </button>
-                        )}
+                    {/* Footer Clássico */}
+                    <div className="pt-4 border-t border-[#1a1a1a] mt-2">
                         <button
                             onClick={handleLogoutClick}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                            className="w-full text-left px-4 py-2 text-[12px] font-medium text-zinc-500 hover:text-zinc-300 transition-colors"
                         >
-                            <LogOut size={18} />
                             Sair
                         </button>
-
-                        <div className="pt-2">
-                            <a
-                                href="/privacy"
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-blue-600 transition-colors dark:hover:text-blue-400"
-                            >
-                                <Shield size={14} />
-                                Política de Privacidade
-                            </a>
-                            <a
-                                href="/terms"
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-blue-600 transition-colors dark:hover:text-blue-400"
-                            >
-                                <FileText size={14} />
-                                Termos de Uso
-                            </a>
-                            <a
-                                href="/about"
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-blue-600 transition-colors dark:hover:text-blue-400"
-                            >
-                                <Info size={14} />
-                                Sobre o App
-                            </a>
-                        </div>
                     </div>
                 </div>
             </aside>
@@ -247,10 +154,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
             <ConfirmationModal
                 isOpen={showLogoutConfirm}
                 title="Sair do EduPlanner"
-                description="Tem certeza que deseja sair da sua conta?"
+                description="Tem certeza que deseja encerrar sua sessão?"
                 onClose={() => setShowLogoutConfirm(false)}
                 onConfirm={confirmLogout}
-                confirmLabel="Sair"
+                confirmLabel="SAIR"
                 variant="danger"
             />
         </>

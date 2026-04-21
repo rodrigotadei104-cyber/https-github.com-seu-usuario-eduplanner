@@ -103,3 +103,13 @@
     /* Force light gray borders */
   }
 }
+
+/* UI Animations */
+@keyframes progress-flow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.animate-progress-flow {
+  animation: progress-flow 1.5s ease-in-out infinite;
+}

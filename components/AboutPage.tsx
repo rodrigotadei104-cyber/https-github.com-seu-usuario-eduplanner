@@ -1,45 +1,44 @@
 import React from 'react';
-import { ArrowLeft, Info, CheckCircle, Shield, Play } from 'lucide-react';
+import { useSchedule } from '../context/ScheduleContext';
 import { EduPlannerLogo } from './EduPlannerLogo';
 
 export const AboutPage: React.FC = () => {
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-50 dark:bg-slate-900 font-sans text-gray-800 dark:text-gray-200">
             {/* Header */}
-            <header className="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-10">
+            <header className="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-10 border-b border-gray-100 dark:border-slate-700">
                 <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <EduPlannerLogo className="w-8 h-8" />
-                        <span className="font-bold text-xl tracking-tight text-gray-900 dark:text-white">EduPlanner</span>
+                        <span className="px-2 py-0.5 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded">EDU</span>
+                        <span className="font-black text-xl tracking-tighter text-gray-900 dark:text-white uppercase">EduPlanner</span>
                     </div>
                     <a
                         href="/"
-                        className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                        className="text-[10px] font-black text-indigo-600 hover:text-black dark:text-indigo-400 dark:hover:text-white transition-colors uppercase tracking-widest"
                     >
-                        <ArrowLeft size={16} />
-                        Voltar ao Sistema
+                        [ VOLTAR AO SISTEMA ]
                     </a>
                 </div>
             </header>
 
             <main className="max-w-4xl mx-auto px-6 py-12">
-                <article className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 md:p-12 border border-gray-100 dark:border-slate-700">
+                <article className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 md:p-12 border border-gray-100 dark:border-slate-700">
 
                     {/* Hero Section */}
                     <div className="flex flex-col items-center justify-center text-center mb-12">
-                        <div className="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-full mb-6">
-                            <Info size={40} className="text-blue-600 dark:text-blue-400" />
+                        <div className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 rounded border border-indigo-200 mb-6 font-black text-indigo-600 uppercase tracking-widest text-xs">
+                          [ INSTITUCIONAL ]
                         </div>
-                        <h1 className="text-4xl font-bold mb-3 tracking-tight text-gray-900 dark:text-white">SOBRE O EDUPLANNER</h1>
-                        <p className="text-gray-500 dark:text-gray-400 font-medium text-lg">Versão 1.0 – Janeiro/2026</p>
+                        <h1 className="text-4xl font-black mb-3 tracking-tighter text-gray-900 dark:text-white uppercase">SOBRE O EDUPLANNER</h1>
+                        <p className="text-gray-400 dark:text-gray-400 font-black text-[10px] uppercase tracking-[0.3em]">Versão 1.0 – Janeiro/2026</p>
                     </div>
 
                     <div className="prose prose-slate dark:prose-invert max-w-none space-y-12">
 
                         {/* O que é */}
                         <section>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">O que é o EduPlanner</h2>
-                            <p className="leading-relaxed text-gray-600 dark:text-gray-300 text-lg">
+                            <h2 className="text-sm font-black text-indigo-600 dark:text-white mb-4 uppercase tracking-widest border-b pb-1 inline-block">[ DEFINIÇÃO ]</h2>
+                            <p className="leading-relaxed text-gray-600 dark:text-gray-300 text-lg font-medium">
                                 O EduPlanner é uma plataforma digital desenvolvida para apoiar instituições educacionais na gestão eficiente de agendas, aulas, instrutores e salas, de forma simples, organizada e segura.
                             </p>
                             <p className="mt-4 leading-relaxed text-gray-600 dark:text-gray-300">
@@ -48,134 +47,63 @@ export const AboutPage: React.FC = () => {
                         </section>
 
                         {/* Objetivo */}
-                        <section className="bg-blue-50 dark:bg-slate-700/30 p-8 rounded-2xl border border-blue-100 dark:border-slate-600">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Objetivo da Plataforma</h2>
-                            <p className="mb-4 text-gray-700 dark:text-gray-300">
-                                Centralizar e otimizar a rotina operacional de instituições que oferecem cursos, treinamentos e formações, proporcionando:
+                        <section className="bg-gray-50 dark:bg-slate-700/30 p-8 rounded-2xl border border-gray-100 dark:border-slate-600 text-[11px] uppercase font-black tracking-widest">
+                            <h2 className="text-sm font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter">[ OBJETIVOS ]</h2>
+                            <p className="mb-6 text-gray-500 dark:text-gray-400">
+                                CENTRALIZAR E OTIMIZAR A ROTINA OPERACIONAL:
                             </p>
-                            <ul className="grid sm:grid-cols-2 gap-3">
+                            <ul className="grid sm:grid-cols-2 gap-4">
                                 {[
-                                    'Controle estruturado do calendário de aulas',
-                                    'Visão clara da carga horária e instrutores',
-                                    'Redução de erros e sobreposições de agenda',
-                                    'Autonomia para equipes pedagógicas',
-                                    'Histórico rastreável de todas as ações'
+                                    'CONTROLE ESTRUTURADO DO CALENDÁRIO',
+                                    'VISÃO CLARA DA CARGA HORÁRIA',
+                                    'REDUÇÃO DE ERROS E SOBREPOSIÇÕES',
+                                    'AUTONOMIA PARA EQUIPES PEDAGÓGICAS',
+                                    'HISTÓRICO RASTREÁVEL DE AÇÕES'
                                 ].map((item, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-gray-600 dark:text-gray-300">
-                                        <CheckCircle size={18} className="text-blue-500 mt-1 flex-shrink-0" />
+                                    <li key={i} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                                        <span className="text-indigo-600">•</span>
                                         <span>{item}</span>
                                     </li>
                                 ))}
                             </ul>
                         </section>
 
-                        {/* Funcionalidades */}
-                        <section>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Principais Funcionalidades</h2>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 border-b pb-2 border-gray-200 dark:border-gray-700">Gestão & Agenda</h3>
-                                    <ul className="space-y-2 text-gray-600 dark:text-gray-300 list-disc pl-5">
-                                        <li>Cadastro de cursos, matérias e instrutores</li>
-                                        <li>Agenda diária, semanal e mensal</li>
-                                        <li>Dashboard com indicadores em tempo real</li>
-                                        <li>Multi-tenant (isolamento por unidade)</li>
-                                    </ul>
-                                </div>
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 border-b pb-2 border-gray-200 dark:border-gray-700">Controle & Acesso</h3>
-                                    <ul className="space-y-2 text-gray-600 dark:text-gray-300 list-disc pl-5">
-                                        <li>Convites por e-mail para novos usuários</li>
-                                        <li>Logs de cancelamentos e alterações</li>
-                                        <li>
-                                            Perfis de acesso distintos:
-                                            <span className="block text-sm text-gray-500 mt-1 ml-2">• Administrador, Editor e Visualizador</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Publico Alvo */}
-                        <section>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Para Quem o EduPlanner Foi Criado</h2>
-                            <p className="text-gray-600 dark:text-gray-300 mb-4">O EduPlanner atende especialmente:</p>
-                            <div className="flex flex-wrap gap-2">
-                                {[
-                                    'Institutos de capacitação',
-                                    'Escolas técnicas',
-                                    'Centros educacionais',
-                                    'Empresas com cursos internos',
-                                    'Profissionais de ensino'
-                                ].map((tag, i) => (
-                                    <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium dark:bg-slate-700 dark:text-gray-300">
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        </section>
-
                         {/* Composição Técnica */}
                         <section>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Composição Técnica</h2>
-                            <p className="text-gray-600 dark:text-gray-300 mb-4">O sistema foi desenvolvido seguindo arquitetura moderna e segura:</p>
-                            <ul className="list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-300">
-                                <li>Aplicação web (Next.js)</li>
-                                <li>Autenticação e banco de dados em nuvem (Supabase)</li>
-                                <li>Envio de convites e notificações (Resend)</li>
-                                <li>Hospedagem escalável e confiável (Vercel)</li>
-                                <li>Políticas de segurança com controle por perfil</li>
-                                <li>Isolamento completo de dados entre unidades</li>
-                            </ul>
-                        </section>
-
-                        {/* Compromisso */}
-                        <section className="border-l-4 border-green-500 pl-6 py-2 bg-green-50/50 dark:bg-green-900/10">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Compromisso do EduPlanner</h2>
-                            <p className="text-gray-600 dark:text-gray-300">Nosso compromisso é entregar:</p>
-                            <ul className="mt-3 grid sm:grid-cols-2 gap-2 text-gray-600 dark:text-gray-300">
-                                <li className="flex items-center gap-2"><Shield size={16} className="text-green-600" /> Segurança e proteção</li>
-                                <li className="flex items-center gap-2"><Shield size={16} className="text-green-600" /> Estabilidade operacional</li>
-                                <li className="flex items-center gap-2"><Shield size={16} className="text-green-600" /> Simplicidade de uso</li>
-                                <li className="flex items-center gap-2"><Shield size={16} className="text-green-600" /> Auditoria e transparência</li>
-                                <li className="flex items-center gap-2"><Shield size={16} className="text-green-600" /> Evolução contínua</li>
-                            </ul>
-                        </section>
-
-                        {/* Próximos Passos */}
-                        <section>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Próximos Passos e Evoluções Planejadas</h2>
-                            <ul className="list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-300">
-                                <li>Relatórios exportáveis</li>
-                                <li>Integração com ferramentas de comunicação</li>
-                                <li>Automatização inteligente de status</li>
-                                <li>Multi-unidade ampliado para redes</li>
-                                <li>Recursos de personalização avançada</li>
-                            </ul>
+                            <h2 className="text-sm font-black text-indigo-600 dark:text-white mb-4 uppercase tracking-widest border-b pb-1 inline-block">[ TECNOLOGIA ]</h2>
+                            <p className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-widest">ARQUITETURA MODERNA E SEGURA:</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                              {[
+                                'NEXT.JS', 'SUPABASE', 'RESEND', 'VERCEL', 'AUDIT LOGS', 'MULTI-TENANT'
+                              ].map((tech, i) => (
+                                <div key={i} className="p-4 border border-gray-100 rounded bg-white shadow-sm font-black text-[10px] text-center uppercase tracking-widest">
+                                  {tech}
+                                </div>
+                              ))}
+                            </div>
                         </section>
 
                         {/* Responsável e Agradecimento */}
-                        <section className="bg-gray-900 text-white p-8 rounded-2xl mt-8">
-                            <h2 className="text-xl font-bold text-white mb-4">Responsável pelo Projeto</h2>
-                            <div className="space-y-1 text-gray-300 mb-6">
-                                <p className="font-medium text-white">Rodrigo de Souza Tadei</p>
-                                <p>Analista e desenvolvedor de soluções educacionais</p>
-                                <p>Contato: <a href="mailto:classeestudiodigital@gmail.com" className="text-blue-300 hover:text-white transition-colors">classeestudiodigital@gmail.com</a></p>
+                        <section className="bg-black text-white p-8 rounded-2xl mt-8">
+                            <h2 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em]">[ RESPONSÁVEL ]</h2>
+                            <div className="space-y-1 text-gray-300 mb-6 text-sm uppercase font-black tracking-tighter">
+                                <p className="text-white text-lg">Rodrigo de Souza Tadei</p>
+                                <p className="opacity-60 text-[10px]">Analista e desenvolvedor de soluções educacionais</p>
+                                <p className="pt-2 text-indigo-400">classeestudiodigital@gmail.com</p>
                             </div>
 
-                            <hr className="border-gray-700 my-6" />
+                            <hr className="border-gray-800 my-8" />
 
-                            <h3 className="text-lg font-bold text-white mb-2">Agradecimento</h3>
-                            <p className="text-gray-400 italic">
-                                "Agradecemos cada escola, equipe e instrutor que contribui para que o EduPlanner evolua e entregue valor real no dia a dia acadêmico."
+                            <p className="text-[10px] font-black text-gray-500 italic uppercase tracking-widest text-center">
+                                "Obrigado por utilizar o EduPlanner para gerenciar o conhecimento."
                             </p>
                         </section>
 
                     </div>
                 </article>
 
-                <footer className="text-center mt-12 text-gray-500 text-sm">
-                    <p>© 2026 EduPlanner. Todos os direitos reservados.</p>
+                <footer className="text-center mt-12 text-gray-400 font-black text-[9px] uppercase tracking-widest pb-12">
+                    <p>© 2026 EduPlanner. Protocolo de Direitos Reservados.</p>
                 </footer>
             </main>
         </div>

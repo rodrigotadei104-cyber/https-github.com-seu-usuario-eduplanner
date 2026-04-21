@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, CalendarOff, AlertTriangle, Upload, CheckCircle2, X, FileSpreadsheet } from 'lucide-react';
 import { Feriado, DataBloqueada } from '../types';
 import { calendarioService } from '../services/calendario.service';
 import { useSchedule } from '../context/ScheduleContext';
@@ -272,9 +271,8 @@ export const CalendarioInstitucionalView: React.FC = () => {
             {/* Header */}
             <header className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-gray-200 bg-white dark:bg-slate-800 dark:border-slate-700">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <CalendarOff className="text-red-500" />
-                        Calendário Institucional (Bloqueios)
+                    <h1 className="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter border-b-2 border-red-600 inline-block">
+                        Calendário de Bloqueios
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         Gerencie feriados e datas de recesso. O Motor de Agenda pula estes dias automaticamente.
@@ -291,32 +289,32 @@ export const CalendarioInstitucionalView: React.FC = () => {
                     />
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-100 transition shadow-sm"
                         title="Importar feriados de planilha Excel"
                     >
-                        <FileSpreadsheet size={16} /> Importar Excel
+                         Importar Excel
                     </button>
 
                     <button
                         onClick={() => setIsFeriadoModalOpen(true)}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition shadow-sm"
                     >
-                        <Plus size={16} /> Novo Feriado
+                        Novo Feriado
                     </button>
                     <button
                         onClick={() => setIsBlockModalOpen(true)}
-                        className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+                        className="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-gray-200 transition shadow-sm"
                     >
-                        <Plus size={16} /> Bloqueio Avulso
+                        Bloqueio Avulso
                     </button>
                 </div>
             </header>
 
             {/* Info da planilha modelo */}
-            <div className="px-6 py-2 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-800 text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                <FileSpreadsheet size={13} />
+            <div className="px-6 py-2 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-800 text-[10px] text-emerald-800 dark:text-emerald-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                [ MODELO EXCEL ]
                 <span>
-                    <strong>Modelo mínimo:</strong> <code className="bg-emerald-100 dark:bg-emerald-900/40 px-1 rounded">Data</code> (DD/MM/AAAA) + <code className="bg-emerald-100 dark:bg-emerald-900/40 px-1 rounded">Feriado</code> (nome). Colunas extras opcionais: <code className="bg-emerald-100 dark:bg-emerald-900/40 px-1 rounded">Tipo</code> e <code className="bg-emerald-100 dark:bg-emerald-900/40 px-1 rounded">Recorrente</code>.
+                     Colunas: Data (DD/MM/AAAA) + Feriado (nome).
                 </span>
             </div>
 
@@ -354,8 +352,8 @@ export const CalendarioInstitucionalView: React.FC = () => {
                                                     )}
                                                 </div>
                                             </div>
-                                            <button onClick={() => setDeleteModal({ isOpen: true, type: 'feriado', id: f.id })} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded dark:hover:bg-slate-700">
-                                                <Trash2 size={16} />
+                                            <button onClick={() => setDeleteModal({ isOpen: true, type: 'feriado', id: f.id })} className="px-2 py-1 text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-rose-100 uppercase tracking-widest rounded">
+                                                Apagar
                                             </button>
                                         </div>
                                     ))}
@@ -382,8 +380,8 @@ export const CalendarioInstitucionalView: React.FC = () => {
                                                 <p className="font-medium text-gray-800 dark:text-gray-200">{b.motivo || 'Motivo não especificado'}</p>
                                                 <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded uppercase font-bold tracking-wider dark:bg-amber-900/30 dark:text-amber-400">Bloqueio Manual</span>
                                             </div>
-                                            <button onClick={() => setDeleteModal({ isOpen: true, type: 'block', id: b.id })} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded dark:hover:bg-slate-700">
-                                                <Trash2 size={16} />
+                                            <button onClick={() => setDeleteModal({ isOpen: true, type: 'block', id: b.id })} className="px-2 py-1 text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-rose-100 uppercase tracking-widest rounded">
+                                                Apagar
                                             </button>
                                         </div>
                                     ))}
@@ -400,7 +398,7 @@ export const CalendarioInstitucionalView: React.FC = () => {
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden dark:bg-slate-800">
                         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center dark:border-slate-700">
                             <h3 className="font-bold text-gray-900 dark:text-white text-lg">Registrar Feriado</h3>
-                            <button onClick={() => setIsFeriadoModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                            <button onClick={() => setIsFeriadoModalOpen(false)} className="text-gray-400 hover:text-black font-black">FECHAR</button>
                         </div>
                         <form onSubmit={handleSaveFeriado}>
                             <div className="p-6 space-y-4">
@@ -465,10 +463,11 @@ export const CalendarioInstitucionalView: React.FC = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden dark:bg-slate-800 border border-amber-500/30">
                         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:border-slate-700 dark:text-amber-100">
-                            <h3 className="font-bold text-lg flex items-center gap-2">
-                                <AlertTriangle size={20} /> Inserir Recesso / Bloqueio
-                            </h3>
-                            <button onClick={() => setIsBlockModalOpen(false)} className="text-amber-500 hover:text-amber-700"><X size={18} /></button>
+                            <div className="flex items-center gap-3">
+                                <div className="px-2 py-1 bg-amber-600 text-white text-[10px] font-black rounded uppercase tracking-widest">Atenção</div>
+                                <h3 className="font-black text-lg uppercase tracking-tighter">Inserir Bloqueio</h3>
+                            </div>
+                            <button onClick={() => setIsBlockModalOpen(false)} className="text-amber-500 hover:text-amber-700 font-black">X</button>
                         </div>
                         <form onSubmit={handleSaveBlock}>
                             <div className="p-6 space-y-4">
@@ -510,13 +509,12 @@ export const CalendarioInstitucionalView: React.FC = () => {
                         {/* Header */}
                         <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20">
                             <div className="flex items-center gap-3">
-                                <Upload className="text-emerald-600" size={22} />
+                                <div className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-black rounded uppercase tracking-widest">XLS</div>
                                 <div>
-                                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">Importar Feriados via Excel</h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Pré-visualização antes de confirmar</p>
+                                    <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter">Importar via Excel</h3>
                                 </div>
                             </div>
-                            <button onClick={() => { setIsImportModalOpen(false); setImportStatus('idle'); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700"><X size={18} /></button>
+                            <button onClick={() => { setIsImportModalOpen(false); setImportStatus('idle'); }} className="text-gray-400 hover:text-black font-black">FECHAR</button>
                         </div>
 
                         {/* Body */}
@@ -532,7 +530,7 @@ export const CalendarioInstitucionalView: React.FC = () => {
                             {/* Done */}
                             {importStatus === 'done' && importResult && (
                                 <div className="text-center py-8 space-y-4">
-                                    <CheckCircle2 className="mx-auto text-emerald-500" size={52} />
+                                    <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl font-black mb-4">OK</div>
                                     <h4 className="text-lg font-bold text-gray-800 dark:text-white">Importação Concluída!</h4>
                                     <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
                                         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center">
@@ -620,7 +618,7 @@ export const CalendarioInstitucionalView: React.FC = () => {
                                 onClick={() => fileInputRef.current?.click()}
                                 className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 flex items-center gap-1.5"
                             >
-                                <Upload size={14} /> Escolher outra planilha
+                                <span className="text-[10px] font-black uppercase">Escolher outra planilha</span>
                             </button>
                             <div className="flex gap-2">
                                 <button
@@ -634,7 +632,7 @@ export const CalendarioInstitucionalView: React.FC = () => {
                                         onClick={handleConfirmarImportacao}
                                         className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition"
                                     >
-                                        <Upload size={15} /> Importar {novosCount} feriado{novosCount !== 1 ? 's' : ''}
+                                        Importar {novosCount} feriado{novosCount !== 1 ? 's' : ''}
                                     </button>
                                 )}
                             </div>

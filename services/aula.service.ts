@@ -23,6 +23,9 @@ export interface AulaInput {
     disciplina_id?: string; // Nova Arquitetura
     turma_id?: string; // Nova Arquitetura
     auto_gerada?: boolean; // Nova Arquitetura
+    tipo_aula?: string; // NORMAL ou PROGRAMA
+    origem?: string;
+    contabiliza_carga?: boolean;
 }
 
 export interface AulaUpdateInput extends Partial<AulaInput> {
@@ -67,6 +70,9 @@ export const aulaService = {
                 ? `*, 
                    numero_turma, 
                    carga_horaria_materia, 
+                   tipo_aula,
+                   origem,
+                   contabiliza_carga,
                    instrutor:instrutores(id, nome), 
                    curso:cursos(id, nome, cor, minutos_por_hora, numero_curso), 
                    materia:materias(id, nome, carga_horaria),
@@ -407,6 +413,89 @@ export const aulaService = {
 
         // 6. Check Course Completion
         await this.checkCourseCompletion(input.curso_id);
+
+        return { success: true, data };
+    },
+
+    /**
+     * Criar aula do tipo PROGRAMA (sem validação de integridade acadêmica curso/matéria)
+     */
+    async createPrograma(input: AulaInput, forceCreate: boolean = false): Promise<ServiceResult> {
+        const canCreate = await permissionService.checkPermission('CREATE_CLASS', 'Aula');
+        if (!canCreate) {
+            return { success: false, error: 'Permissão negada.' };
+        }
+
+        const tenantId = tenantService.getCurrentTenantId();
+
+        if (!forceCreate) {
+            const conflictCheck = await this.checkInstructorConflict({
+                instructorId: input.instrutor_id || '',
+                date: input.data,
+                startTime: input.horario_inicio,
+                endTime: input.horario_fim
+            });
+
+            if (conflictCheck.hasConflict) {
+                return {
+                    success: false,
+                    warning: 'INSTRUCTOR_CONFLICT',
+                    conflicts: conflictCheck.conflicts
+                };
+            }
+
+            if (input.sala) {
+                const roomConflict = await this.checkRoomConflict({
+                    sala: input.sala,
+                    date: input.data,
+                    startTime: input.horario_inicio,
+                    endTime: input.horario_fim
+                });
+
+                if (roomConflict.hasConflict) {
+                    return {
+                        success: false,
+                        warning: 'ROOM_CONFLICT',
+                        conflicts: roomConflict.conflicts
+                    };
+                }
+            }
+        }
+
+        const [h1, m1] = input.horario_inicio.split(':').map(Number);
+        const [h2, m2] = input.horario_fim.split(':').map(Number);
+        const totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+        const computedCargaHoraria = totalMinutes > 0 ? Math.round((totalMinutes / 60) * 100) / 100 : 0;
+
+        const { data, error } = await supabase
+            .from('aulas')
+            .insert({
+                ...input,
+                tenant_id: tenantId,
+                status: 'agendada',
+                tipo_aula: 'PROGRAMA',
+                origem: input.origem || 'PROGRAMA_INSTITUCIONAL',
+                contabiliza_carga: input.contabiliza_carga !== false,
+                carga_horaria_materia: (input as any).carga_horaria_materia || computedCargaHoraria,
+            })
+            .select()
+            .single();
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        await auditService.log({
+            action: 'CREATE',
+            entity: 'aula',
+            entityId: data.id,
+            details: {
+                tipo: 'PROGRAMA',
+                origem: input.origem,
+                data: input.data
+            },
+            result: 'success'
+        });
 
         return { success: true, data };
     },
@@ -1179,7 +1268,9 @@ export const aulaService = {
             instrutor: a.instrutor?.nome || '',
             cor: a.curso?.cor || '#3B82F6',
             status: a.status,
-            minutosPorHora: a.curso?.minutos_por_hora || 60
+            minutosPorHora: a.curso?.minutos_por_hora || 60,
+            tipoAula: a.tipo_aula,
+            origem: a.origem
         }));
     }
 };
@@ -1201,4 +1292,6 @@ export interface AulaMapaSala {
     cor: string;           // hex color para identidade visual
     status: string;
     minutosPorHora: number;
+    tipoAula?: string;
+    origem?: string;
 }

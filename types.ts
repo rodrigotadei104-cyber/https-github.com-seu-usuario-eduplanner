@@ -1,4 +1,6 @@
 export type ClassStatus = 'agendada' | 'em-andamento' | 'concluida' | 'cancelada';
+export type TipoAula = 'NORMAL' | 'PROGRAMA';
+export type OrigemPrograma = 'JOVEM_APRENDIZ' | string;
 
 export type DisciplinaTipo = 'teorica' | 'pratica' | 'hibrida' | 'outros';
 export type TurmaStatus = 'planejada' | 'em_andamento' | 'concluida' | 'cancelada';
@@ -88,6 +90,10 @@ export interface Aula {
   disciplinaId?: string; // FK do novo Catálogo de Cursos
   turmaId?: string; // FK da nova entidade Turma
   autoGerada?: boolean; // Flag de imutabilidade parcial
+  tipoAula?: TipoAula; // Tipo de aula (NORMAL ou PROGRAMA)
+  origem?: OrigemPrograma; // Origem do programa (ex: JOVEM_APRENDIZ)
+  contabilizaCarga?: boolean; // Se conta na carga horária (Dashboard)
+  instrutorId?: string; // ID fixo do instrutor para evitar problemas de nome
 }
 export interface Instrutor {
   id: string;
@@ -132,7 +138,7 @@ export interface Evento {
   status: EventStatus;
 }
 
-export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin' | 'room-map' | 'catalog' | 'calendar';
+export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin' | 'room-map' | 'catalog' | 'calendar' | 'jovem-aprendiz' | 'privacy' | 'terms' | 'about' | 'settings';
 
 export interface FilterState {
   search: string;

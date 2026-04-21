@@ -1,6 +1,4 @@
-
 import React, { useState, useMemo } from 'react';
-import { X, Calendar, Clock, Sparkles, CheckCircle, ChevronRight, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useSchedule } from '../context/ScheduleContext';
 import { aulaService } from '../services'; // Import service directly
 import { supabase } from '../lib/supabase'; // FIX: Import supabase for auth token
@@ -370,15 +368,12 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
-                            <Sparkles size={20} />
-                        </div>
                         <div>
-                            <h2 className="text-lg font-bold text-gray-800">Agente Criador (v1.1)</h2>
-                            <p className="text-xs text-gray-500">Geração Automática de Cronograma (Gemini 2.0)</p>
+                            <h2 className="text-lg font-black text-gray-800 uppercase tracking-tighter">Criador de Grade</h2>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Geração Automática</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-black font-black text-xl px-2">FECHAR</button>
                 </div>
 
                 {/* Body */}
@@ -400,9 +395,8 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                         ))}
                                     </select>
                                     {selectedCourseId && activeSubjects.length === 0 && (
-                                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                                            <AlertTriangle size={12} />
-                                            Este curso não possui matérias cadastradas. O Agente precisa de matérias para gerar o cronograma.
+                                        <p className="text-[10px] font-black text-rose-600 mt-1 uppercase tracking-tighter">
+                                            ! Este curso não possui matérias cadastradas.
                                         </p>
                                     )}
                                 </div>
@@ -411,7 +405,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                                        Número da Turma (Ex: T01-2026) <span className="text-red-500">*</span>
+                                        Número da Turma (Ex: T01-2026)
                                     </label>
                                     <input
                                         type="text"
@@ -466,11 +460,6 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Dias da Semana</label>
                                         <div className="flex gap-1 justify-between mt-1">
                                             {[1, 2, 3, 4, 5, 6, 0].map(day => {
-                                                const labels = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // 0=Dom (index 0 for display logic adjustment below)
-                                                // Adjust label index logic: day 0 is 'D', day 1 is 'S' etc.
-                                                // Simplified labels array mapping directly to day integer if ordered 0-6
-                                                // But here we iterate [1,2,3,4,5,6,0]. 
-                                                // 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab, 0=Dom
                                                 const displayLabels: Record<number, string> = {
                                                     1: 'S', 2: 'T', 3: 'Q', 4: 'Q', 5: 'S', 6: 'S', 0: 'D'
                                                 };
@@ -546,9 +535,8 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                                        <Sparkles size={14} className="text-indigo-500" />
-                                        Diretrizes Pedagógicas (IA)
+                                    <label className="block text-sm font-black text-gray-700 mb-1 uppercase tracking-widest flex items-center gap-2">
+                                        Diretrizes Pedagógicas
                                     </label>
                                     <textarea
                                         value={guidelines}
@@ -566,10 +554,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                     {step === 'generating' && (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
                             <div className="relative">
-                                <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin"></div>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Sparkles size={24} className="text-indigo-500 animate-pulse" />
-                                </div>
+                                <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
                             </div>
                             <h3 className="text-xl font-bold text-gray-800 mt-6">Criando a Grade Perfeita...</h3>
                             <p className="text-gray-500 mt-2 max-w-xs mx-auto">
@@ -586,9 +571,8 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                 return (
                                     <div className={`p-4 rounded-lg border text-sm ${hasErrors ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
                                         <div className="flex justify-between items-start mb-2">
-                                            <h3 className={`font-bold flex items-center gap-2 ${hasErrors ? 'text-amber-800' : 'text-blue-800'}`}>
-                                                {hasErrors ? <AlertTriangle size={16} /> : <CheckCircle size={16} />}
-                                                Auditoria de Carga Horária
+                                            <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${hasErrors ? 'text-amber-800' : 'text-blue-800'}`}>
+                                                {hasErrors ? '!' : 'OK'} Auditoria de Carga Horária
                                             </h3>
                                             <span className="text-xs font-mono opacity-80">
                                                 Total Previsto: {auditStats.reduce((a, b) => a + b.planned, 0)}h |
@@ -646,16 +630,13 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {generatedSchedule.map((cls, idx) => {
-                                            // Find Subject Stat for color coding
                                             const stat = auditStats.find(s => s.id === cls.subjectId) ||
                                                 auditStats.find(s => s.name.toLowerCase() === cls.subjectName.toLowerCase());
 
-                                            // Determine row background based on audit status (subtle hint)
                                             const rowBg = stat && stat.status !== 'ok' ? 'bg-yellow-50/30' : '';
 
                                             return (
                                                 <tr key={idx} className={`hover:bg-gray-50 group transition-colors ${rowBg}`}>
-                                                    {/* DATE */}
                                                     <td className="p-2">
                                                         <input
                                                             type="date"
@@ -665,7 +646,6 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                                         />
                                                     </td>
 
-                                                    {/* TIME */}
                                                     <td className="p-2">
                                                         <div className="flex items-center gap-1">
                                                             <input
@@ -684,7 +664,6 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                                         </div>
                                                     </td>
 
-                                                    {/* DURATION (Calculated/Editable) */}
                                                     <td className="p-2">
                                                         {(() => {
                                                             const [h1, m1] = cls.startTime.split(':').map(Number);
@@ -706,7 +685,6 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                                         })()}
                                                     </td>
 
-                                                    {/* SUBJECT */}
                                                     <td className="p-2">
                                                         <select
                                                             value={cls.subjectId || ''}
@@ -722,13 +700,11 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                                                 <option key={s.id} value={s.id}>{s.nome}</option>
                                                             ))}
                                                         </select>
-                                                        {/* Error text below input */}
                                                         {(!cls.subjectId && !activeSubjects.find(s => s.nome === cls.subjectName)) && (
                                                             <div className="text-[10px] text-red-500 font-bold mt-1">Matéria inválida</div>
                                                         )}
                                                     </td>
 
-                                                    {/* INSTRUCTOR */}
                                                     <td className="p-2">
                                                         <select
                                                             value={cls.assignedInstructorId || ''}
@@ -744,14 +720,13 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                                         </select>
                                                     </td>
 
-                                                    {/* ACTIONS */}
                                                     <td className="p-2 text-center">
                                                         <button
                                                             onClick={() => removeClass(idx)}
-                                                            className="text-gray-300 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                                            className="text-gray-300 hover:text-red-600 font-black text-[10px] uppercase p-1 transition-colors"
                                                             title="Remover aula"
                                                         >
-                                                            <X size={14} />
+                                                            EXCLUIR
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -761,19 +736,18 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                 </table>
                             </div>
 
-                            {/* ADD NEW CLASS BUTTON */}
                             <button
                                 onClick={addClass}
                                 className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 font-medium text-sm"
                             >
-                                <Sparkles size={16} /> Adicionar Nova Aula Manualmente
+                                <span className="font-black">ADICIONAR NOVA AULA MANUALMENTE</span>
                             </button>
                         </div>
                     )}
 
                     {error && step === 'config' && (
                         <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center gap-2">
-                            <AlertTriangle size={16} /> {error}
+                             <span className="font-bold">[ ! ]</span> {error}
                         </div>
                     )}
                 </div>
@@ -786,7 +760,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                 onClick={handleGenerate}
                                 className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 font-bold flex items-center justify-center gap-2 transition-transform active:scale-95"
                             >
-                                <Sparkles size={18} /> Gerar Proposta
+                                <span className="font-black uppercase">Gerar Proposta via AI</span>
                             </button>
                         </div>
                     ) : step === 'preview' ? (
@@ -795,14 +769,14 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ isOpen, on
                                 onClick={() => setStep('config')}
                                 className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg flex items-center gap-1"
                             >
-                                <ArrowLeft size={16} /> Voltar e Ajustar
+                                <span className="font-black uppercase tracking-widest">&lt; Voltar</span>
                             </button>
                             <button
                                 onClick={handleConfirm}
                                 disabled={isSaving}
                                 className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-lg shadow-green-200 font-bold flex items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isSaving ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                                {isSaving ? <span className="animate-spin text-lg">/</span> : <span className="text-lg font-bold">OK</span>}
                                 {isSaving ? 'Salvando...' : 'Aprovar e Criar Aulas'}
                             </button>
                         </>
