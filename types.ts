@@ -1,5 +1,71 @@
 export type ClassStatus = 'agendada' | 'em-andamento' | 'concluida' | 'cancelada';
 
+export type DisciplinaTipo = 'teorica' | 'pratica' | 'hibrida' | 'outros';
+export type TurmaStatus = 'planejada' | 'em_andamento' | 'concluida' | 'cancelada';
+export type FeriadoTipo = 'nacional' | 'estadual' | 'municipal' | 'institucional';
+export type BloqueioTipo = 'institucional' | 'sala' | 'instrutor' | 'curso';
+
+export interface CatalogoCurso {
+  id: string;
+  tenantId: string;
+  nomeCurso: string;
+  cargaTotalHoras: number;
+  tipoHoraMin?: string;
+  ativo: boolean;
+  createdAt?: string;
+}
+
+export interface DisciplinaCurso {
+  id: string;
+  tenantId: string;
+  cursoId: string;
+  nomeDisciplina: string;
+  cargaHoras: number;
+  tipoDisciplina: DisciplinaTipo;
+  ordem?: number;
+  createdAt?: string;
+}
+
+export interface HorarioSlot {
+  inicio: string;
+  fim: string;
+}
+
+export interface Turma {
+  id: string;
+  tenantId: string;
+  numeroTurma: string;
+  cursoId: string;
+  instrutorId?: string;
+  salaPadrao?: string;
+  dataInicio: string; // Formato YYYY-MM-DD
+  diasSemanaSelecionados: number[]; // 0 = Dom, 1 = Seg, ..., 6 = Sab
+  horariosDoDia: HorarioSlot[];
+  status: TurmaStatus;
+  datasBloqueadas?: string[];
+  createdAt?: string;
+}
+
+export interface Feriado {
+  id: string;
+  tenantId: string;
+  data: string; // Formato YYYY-MM-DD
+  descricao: string;
+  tipo: FeriadoTipo;
+  ativo: boolean;
+}
+
+export interface DataBloqueada {
+  id: string;
+  tenantId: string;
+  data: string; // Formato YYYY-MM-DD
+  motivo: string;
+  tipo: BloqueioTipo;
+  criadoPor?: string;
+  ativo: boolean;
+}
+
+
 export interface Aula {
   id: string;
   tenantId: string; // Multi-tenant isolation
@@ -19,8 +85,10 @@ export interface Aula {
   numeroCurso?: string; // Para exibição no calendário
   numeroTurma?: string; // Para identificar turmas diferentes (cohorts)
   cargaHorariaMateria?: number; // Carga horária da matéria (em horas/aula)
+  disciplinaId?: string; // FK do novo Catálogo de Cursos
+  turmaId?: string; // FK da nova entidade Turma
+  autoGerada?: boolean; // Flag de imutabilidade parcial
 }
-
 export interface Instrutor {
   id: string;
   tenantId: string;
@@ -64,7 +132,7 @@ export interface Evento {
   status: EventStatus;
 }
 
-export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin' | 'room-map';
+export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin' | 'room-map' | 'catalog' | 'calendar';
 
 export interface FilterState {
   search: string;

@@ -151,7 +151,7 @@ export const RegistrationView: React.FC = () => {
                 addMateria({
                     nome: formData.nome,
                     cursoId: formData.cursoId,
-                    cargaHoraria: formData.cargaHoraria
+                    cargaHoraria: formData.cargaHoraria ? Number(formData.cargaHoraria.replace(/\D/g, '')) : undefined
                 });
             } else if (activeTab === 'eventos') {
                 await addEvento({

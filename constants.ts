@@ -22,22 +22,22 @@ export const MOCK_INSTRUTORES: Instrutor[] = [
 ];
 
 export const MOCK_CURSOS: Curso[] = [
-  { id: '1', tenantId: DEMO_TENANT_ID, nome: 'Engenharia de Software', cor: COLORS.blue, cargaHoraria: '3600h' },
-  { id: '2', tenantId: DEMO_TENANT_ID, nome: 'Design Digital', cor: COLORS.purple, cargaHoraria: '2800h' },
-  { id: '3', tenantId: DEMO_TENANT_ID, nome: 'Administração', cor: COLORS.orange, cargaHoraria: '3000h' },
-  { id: '4', tenantId: DEMO_TENANT_ID, nome: 'Direito', cor: COLORS.teal, cargaHoraria: '3700h' },
-  { id: '5', tenantId: DEMO_TENANT_ID, nome: 'Curso Extra', cor: COLORS.indigo, cargaHoraria: '120h' },
+  { id: '1', tenantId: DEMO_TENANT_ID, nome: 'Engenharia de Software', cor: COLORS.blue, cargaHoraria: '3600h', status: 'ativo' },
+  { id: '2', tenantId: DEMO_TENANT_ID, nome: 'Design Digital', cor: COLORS.purple, cargaHoraria: '2800h', status: 'ativo' },
+  { id: '3', tenantId: DEMO_TENANT_ID, nome: 'Administração', cor: COLORS.orange, cargaHoraria: '3000h', status: 'ativo' },
+  { id: '4', tenantId: DEMO_TENANT_ID, nome: 'Direito', cor: COLORS.teal, cargaHoraria: '3700h', status: 'ativo' },
+  { id: '5', tenantId: DEMO_TENANT_ID, nome: 'Curso Extra', cor: COLORS.indigo, cargaHoraria: '120h', status: 'ativo' },
 ];
 
 export const MOCK_MATERIAS: Materia[] = [
-  { id: '1', tenantId: DEMO_TENANT_ID, nome: 'Algoritmos Avançados', cursoId: '1', cargaHoraria: '80h' },
-  { id: '2', tenantId: DEMO_TENANT_ID, nome: 'Estrutura de Dados', cursoId: '1', cargaHoraria: '80h' },
-  { id: '3', tenantId: DEMO_TENANT_ID, nome: 'UX/UI Fundamentals', cursoId: '2', cargaHoraria: '60h' },
-  { id: '4', tenantId: DEMO_TENANT_ID, nome: 'Prototipagem', cursoId: '2', cargaHoraria: '40h' },
-  { id: '5', tenantId: DEMO_TENANT_ID, nome: 'Gestão de Projetos', cursoId: '3', cargaHoraria: '60h' },
-  { id: '6', tenantId: DEMO_TENANT_ID, nome: 'Workshop de Liderança', cursoId: '3', cargaHoraria: '20h' },
-  { id: '7', tenantId: DEMO_TENANT_ID, nome: 'Direito Constitucional', cursoId: '4', cargaHoraria: '100h' },
-  { id: '8', tenantId: DEMO_TENANT_ID, nome: 'Aula Prática', cursoId: '5', cargaHoraria: '10h' },
+  { id: '1', tenantId: DEMO_TENANT_ID, nome: 'Algoritmos Avançados', cursoId: '1', cargaHoraria: 80 },
+  { id: '2', tenantId: DEMO_TENANT_ID, nome: 'Estrutura de Dados', cursoId: '1', cargaHoraria: 80 },
+  { id: '3', tenantId: DEMO_TENANT_ID, nome: 'UX/UI Fundamentals', cursoId: '2', cargaHoraria: 60 },
+  { id: '4', tenantId: DEMO_TENANT_ID, nome: 'Prototipagem', cursoId: '2', cargaHoraria: 40 },
+  { id: '5', tenantId: DEMO_TENANT_ID, nome: 'Gestão de Projetos', cursoId: '3', cargaHoraria: 60 },
+  { id: '6', tenantId: DEMO_TENANT_ID, nome: 'Workshop de Liderança', cursoId: '3', cargaHoraria: 20 },
+  { id: '7', tenantId: DEMO_TENANT_ID, nome: 'Direito Constitucional', cursoId: '4', cargaHoraria: 100 },
+  { id: '8', tenantId: DEMO_TENANT_ID, nome: 'Aula Prática', cursoId: '5', cargaHoraria: 10 },
 ];
 
 export const MOCK_AULAS: Aula[] = [

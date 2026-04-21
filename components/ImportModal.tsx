@@ -12,6 +12,7 @@ interface AIInsight {
 import * as XLSX from 'xlsx';
 import { auditService } from '../services';
 import { supabase } from '../lib/supabase';
+import { runImportTransaction } from '../utils/importTransactionHelper';
 
 interface ImportModalProps {
     isOpen: boolean;
@@ -95,59 +96,115 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
 
     const processHeadersAndData = (headers: string[], rows: any[][]) => {
         console.log('Processing Headers:', headers);
-        // Detect Mode based on headers
-        const hasDate = headers.some(h => h.includes('data'));
-        const hasDisciplina = headers.some(h => h.includes('disciplina') || h.includes('matéria'));
-        const mode = (hasDate && hasDisciplina) ? 'schedule' : 'course';
-        setImportMode(mode);
 
-        // Aggressive Normalization Helper
-        const normalizeKey = (k: string) => k.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const normalizedHeaders = headers.map(normalizeKey);
+        // Mode logic
+        const hasDate = headers.some(h => normalizeString(h).includes('data'));
+        const hasDisciplina = headers.some(h => normalizeString(h).includes('disciplina') || normalizeString(h).includes('materia'));
+        setImportMode((hasDate && hasDisciplina) ? 'schedule' : 'course');
 
+        // 1. Agressive Normalization Function
+        function normalizeString(str: string) {
+            if (!str) return '';
+            return str
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remover acentos
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '') // Manter apenas letras e números, removendo espaços
+                .trim();
+        }
+
+        // 2. Equivalency Dictionary
+        const headerDictionary: Record<string, string[]> = {
+            numeroCurso: ['numero do curso', 'turma', 'codigo do curso', 'codigo turma', 'numero', 'codigo', 'cod', 'cod turma', 'no turma', 'nº turma'],
+            nomeCurso: ['nome do curso', 'curso', 'titulo do curso', 'nome'],
+            cargaCurso: ['carga curso', 'carga horaria curso', 'carga total', 'horas curso', 'carga'],
+            tipoHora: ['tipo hora', 'tipo de hora', 'modalidade hora', 'minutos', 'tipo'],
+            cor: ['cor', 'cor do curso', 'cor agenda'],
+            materia: ['materia', 'disciplina', 'conteudo', 'modulo'],
+            cargaMateria: ['carga materia', 'carga disciplina', 'carga modulo', 'carga horaria disciplina', 'carga horaria materia', 'horas materia', 'horas disciplina', 'ch materia', 'carga mat', 'ch mat', 'horas mat', 'cargamat', 'cargamateria'],
+            data: ['data', 'dia', 'data aula'],
+            horarioInicio: ['horario inicio', 'inicio', 'hora inicio', 'hora inicial', 'start'],
+            horarioFim: ['horario fim', 'fim', 'hora fim', 'hora final', 'end'],
+            instrutor: ['instrutor', 'docente', 'professor', 'facilitador'],
+            sala: ['sala', 'local', 'sala aula', 'ambiente']
+        };
+
+        // 3. Build Reverse Lookup Map
+        const normalizedDict = new Map<string, string>();
+        for (const [canonicalKey, synonyms] of Object.entries(headerDictionary)) {
+            for (const synonym of synonyms) {
+                normalizedDict.set(normalizeString(synonym), canonicalKey);
+            }
+        }
+
+        // 4. Parse Headers deterministically (Left-to-Right)
+        const mappedColumns = new Map<string, number>(); // canonicalKey -> original columnIndex
+        const recognizedHeaders: string[] = [];
+        const ignoredHeaders: string[] = [];
+
+        headers.forEach((header, index) => {
+            const normH = normalizeString(header);
+            const canonicalKey = normalizedDict.get(normH);
+
+            if (canonicalKey) {
+                if (mappedColumns.has(canonicalKey)) {
+                    console.warn(`[Import Aviso] Coluna '${header}' (índice ${index}) também mapeia para o campo '${canonicalKey}', mas a coluna no índice ${mappedColumns.get(canonicalKey)} já assumiu esse campo primeiro. Ignorando silenciosamente.`);
+                    ignoredHeaders.push(header);
+                } else {
+                    mappedColumns.set(canonicalKey, index);
+                    recognizedHeaders.push(header);
+                }
+            } else {
+                ignoredHeaders.push(header);
+            }
+        });
+
+        // 5. Parse Data Rows
+        let discardedCount = 0;
         const rawData: RawImportRow[] = rows.map((row, index) => {
-            const mapVal = (searchKeys: string[]) => {
-                // Check against normalized headers
-                const searchNormalized = searchKeys.map(normalizeKey);
-                const idx = normalizedHeaders.findIndex(h => searchNormalized.some(sk => h.includes(sk)));
-                // Return RAW value if found
-                return idx >= 0 ? row[idx] : undefined;
+            const getVal = (canonicalKey: string) => {
+                const colIndex = mappedColumns.get(canonicalKey);
+                if (colIndex !== undefined && row[colIndex] !== undefined && row[colIndex] !== null && row[colIndex] !== '') {
+                    return String(row[colIndex]).trim();
+                }
+                return undefined;
             };
 
-            // Remove empty rows
-            const nomeStr = mapVal(['nome']); // Removed 'curso' to avoid matching 'numero do curso'
-            const nome = nomeStr ? String(nomeStr).trim() : undefined;
+            const nome = getVal('nomeCurso');
+            const num = getVal('numeroCurso');
 
-            const numStr = mapVal(['numero', 'código', 'codigo', 'cod']);
-
-            if (!nome && !numStr) return null;
+            // Validação mínima da linha
+            if (!nome && !num) {
+                discardedCount++;
+                return null;
+            }
 
             return {
                 originalLine: index + 2,
-                numeroCurso: numStr ? String(numStr).trim() : undefined,
+                numeroCurso: num,
                 nomeCurso: nome,
-                disciplina: mapVal(['disciplina', 'matéria', 'materia']) ? String(mapVal(['disciplina', 'matéria', 'materia'])).trim() : undefined,
-                data: normalizeDate(String(mapVal(['data']))),
-                horarioInicio: normalizeTime(mapVal(['início', 'inicio', 'start'])),
-                horarioFim: normalizeTime(mapVal(['fim', 'end'])),
-                instrutor: mapVal(['instrutor', 'professor']) ? String(mapVal(['instrutor', 'professor'])).trim() : undefined,
-                // Expanded keys to catch variations like "Carga Horária (Curso)"
-                cargaHorariaCurso: mapVal(['carga_curso', 'horas_curso', 'carga curso', 'horas curso', 'carga horaria curso', 'ch curso', 'carga horaria', 'carga']) ? String(mapVal(['carga_curso', 'horas_curso', 'carga curso', 'horas curso', 'carga horaria curso', 'ch curso', 'carga horaria', 'carga'])) : undefined,
-                // Simplify logic: if header has 'materia' or 'disciplina' AND 'carga'/'horas'
-                cargaHorariaMateria: mapVal(['carga_materia', 'horas_materia', 'carga_disciplina', 'horas_disciplina', 'carga disciplina', 'carga horaria disciplina', 'carga horaria materia', 'ch materia', 'carga mat', 'ch mat', 'horas mat', 'cargamat', 'cargamateria']) ? String(mapVal(['carga_materia', 'horas_materia', 'carga_disciplina', 'horas_disciplina', 'carga disciplina', 'carga horaria disciplina', 'carga horaria materia', 'ch materia', 'carga mat', 'ch mat', 'horas mat', 'cargamat', 'cargamateria'])) : undefined,
-                tipoHora: String(mapVal(['tipo', 'minutos'])).includes('50') ? 50 : 60,
-                cor: mapVal(['cor']) ? String(mapVal(['cor'])) : undefined,
-                sala: mapVal(['sala']) ? String(mapVal(['sala'])) : undefined,
-                numeroTurma: mapVal(['turma', 'no turma', 'nº turma', 'codigo turma', 'cod turma']) ? String(mapVal(['turma', 'no turma', 'nº turma', 'codigo turma', 'cod turma'])).trim() : undefined
+                numeroTurma: num, // Duplicamos interno pra compatibilidade com importRules
+                disciplina: getVal('materia'),
+                data: normalizeDate(getVal('data') || ''),
+                horarioInicio: normalizeTime(getVal('horarioInicio')),
+                horarioFim: normalizeTime(getVal('horarioFim')),
+                instrutor: getVal('instrutor'),
+                cargaHorariaCurso: getVal('cargaCurso'),
+                cargaHorariaMateria: getVal('cargaMateria'),
+                tipoHora: getVal('tipoHora')?.includes('50') ? 50 : 60,
+                cor: getVal('cor'),
+                sala: getVal('sala')
             };
         }).filter(Boolean) as RawImportRow[];
 
-        // Refine Carga Mapping Logic because 'carga' matches both curso and materia
-        // Better strategy: Specific keys first
-        rawData.forEach(r => {
-            // Re-map strictly if needed, but let's trust the normalizeKey finding specific matches first
-            // For "Carga Curso", normalizer makes 'cargacurso'. Search key 'cargacurso' works.
+        // 6. Log Console Table Report
+        console.table({
+            'Colunas Reconhecidas': recognizedHeaders.length,
+            'Colunas Ignoradas': ignoredHeaders.length,
+            'Linhas Válidas Mapeadas': rawData.length,
+            'Linhas Descartadas (Vazias)': discardedCount
         });
+        console.log('Reconhecidas detalhe:', recognizedHeaders);
+        console.log('Ignoradas detalhe:', ignoredHeaders);
 
         const processed = processImportData(rawData, cursos, instrutores);
         setPreview(processed);
@@ -222,13 +279,21 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
         const rowErrors: string[] = [];
 
         // We will do this sequentially to ensure IDs are available
-        const { cursoService, materiaService, aulaService } = await import('../services');
+        const { cursoService, materiaService, aulaService, authService } = await import('../services');
+        // Import omitted due to top-level
+
+        const currentUser = await authService.getCurrentUser();
+        if (!currentUser) {
+            alert('Erro de sessão: Faça login novamente.');
+            setIsImporting(false);
+            return;
+        }
 
         // 1. Identify distinct new courses and create them
         const uniqueNewCourses = new Map<string, RawImportRow>();
         preview.forEach(row => {
-            if (row.courseAction === 'create' && row.numeroCurso) {
-                if (!uniqueNewCourses.has(row.numeroCurso)) uniqueNewCourses.set(row.numeroCurso, row);
+            if (row.courseAction === 'create' && row.numeroTurma) {
+                if (!uniqueNewCourses.has(row.numeroTurma)) uniqueNewCourses.set(row.numeroTurma, row);
             } else if (row.courseAction === 'create' && row.nomeCurso) {
                 // Fallback name
                 if (!uniqueNewCourses.has(row.nomeCurso)) uniqueNewCourses.set(row.nomeCurso, row);
@@ -248,10 +313,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
         for (const [key, row] of uniqueNewCourses.entries()) {
             if (courseIdMap.has(key)) continue;
 
-            // FIX: Type assertion or check
             const res = await cursoService.create({
                 nome: row.nomeCurso || 'Novo Curso',
-                numero_curso: row.numeroCurso,
+                numero_curso: row.numeroTurma,
                 carga_horaria: row.cargaHorariaCurso ? Number(String(row.cargaHorariaCurso).replace(/\D/g, '')) : undefined,
                 minutos_por_hora: row.tipoHora,
                 cor: row.cor || '#3b82f6',
@@ -259,132 +323,195 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
             });
 
             if (res.success && res.data) {
-                // FIX: Cast data to any to access id if strictly typed as generic
                 const created = res.data as any;
                 if (created.id) {
                     courseIdMap.set(key, created.id);
 
                     auditService.log({
                         action: 'IMPORT',
-                        entity: `Curso: ${row.numeroCurso || row.nomeCurso}`,
+                        entity: `Curso: ${row.numeroTurma || row.nomeCurso}`,
                         details: { message: `Created via Import. Key: ${key}` },
                         result: 'success'
                     });
                 }
+            } else {
+                console.error('Falha ao criar curso base:', res.error);
+                errorCount++;
+                rowErrors.push(`Erro fatal ao criar curso base: ${row.numeroTurma || row.nomeCurso}`);
             }
         }
 
-        // 2. Process Rows
+        // 2. Process Rows per Course (Grouping for Transactions)
+        const coursesToProcess = new Map<string, ProcessedRow[]>(); // Key: courseId
+
         for (const row of preview) {
             if (!row.isValid) continue;
 
-            try {
-                // Resolve Course ID
-                let cId = courseIdMap.get(row.numeroCurso || '') || courseIdMap.get(row.nomeCurso || '');
-                if (!cId && row.courseId) cId = row.courseId; // From validation step
+            let cId = courseIdMap.get(row.numeroTurma || '') || courseIdMap.get(row.nomeCurso || '');
+            if (!cId && row.courseId) cId = row.courseId; // From validation step
 
-                if (!cId) {
-                    console.error('Failed to resolve Course ID for row', row);
-                    errorCount++;
-                    continue; // Skip if no course
-                }
+            if (!cId) {
+                console.error('Failed to resolve Course ID for row', row);
+                errorCount++;
+                rowErrors.push(`Linha ${(row.originalLine || '?')}: Curso não resolvido.`);
+                continue;
+            }
+
+            const courseRows = coursesToProcess.get(cId) || [];
+            courseRows.push(row);
+            coursesToProcess.set(cId, courseRows);
+        }
+
+        // 3. Execute logic per course group
+        for (const [courseId, rows] of coursesToProcess.entries()) {
+            try {
+                const isExistingCourse = cursos.some(c => c.id === courseId);
+                const firstRow = rows[0];
 
                 if (importMode === 'schedule') {
-                    // Handle Subject (Materia)
-                    let mId = '';
-                    if (row.disciplina) {
-                        // Check if subject exists in THIS course
-                        let mat = materias.find(m => m.cursoId === cId && m.nome.toLowerCase() === row.disciplina?.toLowerCase());
+                    if (isExistingCourse) {
+                        // --- TRANSACTIONAL UPDATE FOR EXISITING COURSES ---
+                        // Build the payload for RPC
+                        const materiasPayloadMap = new Map<string, any>();
 
-                        if (!mat) {
-                            // Try to create
-                            const res = await materiaService.create({
-                                nome: row.disciplina,
-                                curso_id: cId,
-                                carga_horaria: row.cargaHorariaMateria ? Number(String(row.cargaHorariaMateria).replace(/\D/g, '')) : undefined
-                            });
-
-                            if (res.success && res.data) {
-                                const createdMateria = res.data as any;
-                                mId = createdMateria.id;
+                        // Aggregate all unique subjects
+                        rows.forEach(r => {
+                            if (r.disciplina && !materiasPayloadMap.has(r.disciplina)) {
+                                materiasPayloadMap.set(r.disciplina, {
+                                    id: crypto.randomUUID(),
+                                    nome: r.disciplina,
+                                    carga_horaria: r.cargaHorariaMateria ? Number(String(r.cargaHorariaMateria).replace(/\D/g, '')) : null
+                                });
                             }
+                        });
+                        const p_materia_insertions = Array.from(materiasPayloadMap.values());
+
+                        // Build Aulas Payload
+                        const p_aula_insertions = rows.map(r => {
+                            const searchName = r.instrutor?.toLowerCase().trim();
+                            let instrutorObj = instrutores.find(i => i.nome.toLowerCase() === searchName);
+                            if (!instrutorObj && searchName) {
+                                const partials = instrutores.filter(i => i.nome.toLowerCase().includes(searchName));
+                                if (partials.length === 1) instrutorObj = partials[0];
+                            }
+
+                            return {
+                                id: crypto.randomUUID(),
+                                materia_id: materiasPayloadMap.get(r.disciplina)?.id,
+                                materia_nome: r.disciplina,
+                                instrutor_id: instrutorObj?.id || null,
+                                numero_turma: r.numeroTurma,
+                                data: r.data,
+                                horario_inicio: r.horarioInicio,
+                                horario_fim: r.horarioFim,
+                                carga_horaria_materia: r.cargaHorariaMateria ? Number(String(r.cargaHorariaMateria).replace(/\D/g, '')) : null,
+                                sala: r.sala || null
+                            };
+                        }).filter(a => a.data && a.horario_inicio && a.horario_fim);
+
+                        // Execute Atomic Transaction
+                        const transactionResult = await runImportTransaction({
+                            p_course_id: courseId,
+                            p_course_data: { nome: firstRow.nomeCurso, numero_curso: firstRow.numeroCurso || null }, // Fallback info
+                            p_materias_data: p_materia_insertions,
+                            p_aulas_data: p_aula_insertions,
+                            p_user_id: currentUser.id,
+                            p_tenant_id: currentUser.tenant_id
+                        });
+
+                        if (transactionResult.success) {
+                            successCount += rows.length;
+                            auditService.log({
+                                action: 'IMPORT',
+                                entity: `Curso: ${courseId}`,
+                                details: { message: `Transação atômica concluída com snapshot. Aulas processadas: ${rows.length}` },
+                                result: 'success'
+                            });
                         } else {
-                            mId = mat.id;
-                        }
-                    }
-
-                    // Create Class (Aula)
-                    if (row.data && row.horarioInicio && row.horarioFim) {
-                        // ROBUST INSTRUCTOR MAPPING
-                        const searchName = row.instrutor?.toLowerCase().trim();
-                        let instrutorObj = instrutores.find(i => i.nome.toLowerCase() === searchName);
-
-                        // Fallback: Partial match if unique
-                        if (!instrutorObj && searchName) {
-                            const partials = instrutores.filter(i => i.nome.toLowerCase().includes(searchName));
-                            if (partials.length === 1) instrutorObj = partials[0];
+                            errorCount += rows.length;
+                            let friendlyError = transactionResult.error;
+                            if (friendlyError?.includes('idx_unique_instrutor_horario')) {
+                                friendlyError = 'O instrutor fornecido já está agendado nesse mesmo dia e horário em outro curso (Conflito de Agenda).';
+                            } else if (friendlyError?.includes('uniq_numero_curso_tenant')) {
+                                friendlyError = 'O código da turma ou curso preenchido já está sendo usado por um curso diferente.';
+                            } else if (friendlyError?.includes('invalid input syntax for type time')) {
+                                friendlyError = 'A formatação dos horários na planilha (Início/Fim) é inválida. Use o formato HH:MM (ex: 14:30).';
+                            }
+                            rowErrors.push(`Erro ao atualizar turma "${firstRow.numeroTurma || firstRow.nomeCurso}": ${friendlyError} (As aulas anteriores desta turma foram preservadas).`);
+                            console.error('Transaction failed for course:', courseId, transactionResult.error);
                         }
 
-                        const aulaPayload: any = {
-                            data: row.data,
-                            horario_inicio: row.horarioInicio,
-                            horario_fim: row.horarioFim,
-                            curso_id: cId,
-                            materia_id: mId || undefined,
-                            instrutor_id: instrutorObj?.id,
-                            sala: row.sala,
-                            status: 'agendada',
-                            carga_horaria_materia: row.cargaHorariaMateria ? Number(String(row.cargaHorariaMateria).replace(/\D/g, '')) : undefined,
-                            numero_turma: row.numeroTurma
-                        };
+                    } else {
+                        // --- STANDARD (NON-ATOMIC) CREATION FOR BRAND NEW COURSES ---
+                        // No snapshot needed because there's nothing to lose.
+                        let groupSuccess = 0;
+                        let groupError = 0;
 
-                        const aulaResult = await aulaService.create(aulaPayload);
-                        if (aulaResult.success) {
-                            successCount++;
-                        } else {
-                            console.error('Failed to create aula:', aulaResult.error, row);
-                            errorCount++;
-                            let msg = aulaResult.error;
-
-                            // Handle Warnings as Errors for Import
-                            if (!msg && aulaResult.warning) {
-                                if (aulaResult.warning === 'INSTRUCTOR_CONFLICT') {
-                                    const conflicts = aulaResult.conflicts || [];
-                                    const details = conflicts.map((c: any) => `${c.materia} (${c.horarioInicio}-${c.horarioFim})`).join(', ');
-                                    msg = `Conflito de Instrutor: Já possui aula neste horário [${details}]`;
-                                } else if (aulaResult.warning === 'ROOM_CONFLICT') {
-                                    const conflicts = aulaResult.conflicts || [];
-                                    const details = conflicts.map((c: any) => `${c.materia}`).join(', ');
-                                    msg = `Conflito de Sala: Sala já ocupada [${details}]`;
+                        for (const row of rows) {
+                            let mId = '';
+                            if (row.disciplina) {
+                                const { data: matData } = await supabase.from('materias').select('id').eq('curso_id', courseId).ilike('nome', row.disciplina).single();
+                                if (!matData) {
+                                    const res = await materiaService.create({
+                                        nome: row.disciplina,
+                                        curso_id: courseId,
+                                        carga_horaria: row.cargaHorariaMateria ? Number(String(row.cargaHorariaMateria).replace(/\D/g, '')) : undefined
+                                    });
+                                    if (res.success && res.data) { mId = (res.data as any).id; }
                                 } else {
-                                    msg = `Aviso: ${aulaResult.warning}`;
+                                    mId = matData.id;
                                 }
                             }
 
-                            msg = msg || 'Erro desconhecido';
+                            if (row.data && row.horarioInicio && row.horarioFim) {
+                                const searchName = row.instrutor?.toLowerCase().trim();
+                                let instrutorObj = instrutores.find(i => i.nome.toLowerCase() === searchName);
+                                if (!instrutorObj && searchName) {
+                                    const partials = instrutores.filter(i => i.nome.toLowerCase().includes(searchName));
+                                    if (partials.length === 1) instrutorObj = partials[0];
+                                }
 
-                            rowErrors.push(`Linha ${(row.originalLine || '?')}: ${msg}`);
+                                const aulaPayload: any = {
+                                    data: row.data,
+                                    horario_inicio: row.horarioInicio,
+                                    horario_fim: row.horarioFim,
+                                    curso_id: courseId,
+                                    materia_id: mId || undefined,
+                                    instrutor_id: instrutorObj?.id,
+                                    sala: row.sala,
+                                    status: 'agendada',
+                                    carga_horaria_materia: row.cargaHorariaMateria ? Number(String(row.cargaHorariaMateria).replace(/\D/g, '')) : undefined,
+                                    numero_turma: row.numeroTurma
+                                };
+
+                                const aulaResult = await aulaService.create(aulaPayload, true); // force create because it's a new course mapping
+                                if (aulaResult.success) {
+                                    groupSuccess++;
+                                } else {
+                                    groupError++;
+                                    let friendlyError = aulaResult.error || aulaResult.warning || 'Erro desconhecido';
+                                    if (friendlyError?.includes('idx_unique_instrutor_horario')) {
+                                        friendlyError = 'O instrutor já está agendado nesse mesmo dia e horário em outro curso (Conflito de Agenda).';
+                                    } else if (friendlyError?.includes('invalid input syntax for type time')) {
+                                        friendlyError = 'A formatação dos horários na planilha (Início/Fim) é inválida. Use o formato HH:MM (ex: 14:30).';
+                                    }
+                                    rowErrors.push(`Linha ${(row.originalLine || '?')}: ${friendlyError}`);
+                                }
+                            }
                         }
-                    } else {
-                        console.warn('Skipping row - missing required fields (data, horarioInicio, horarioFim):', row);
-                        errorCount++;
-                        rowErrors.push(`Linha ${(row.originalLine || '?')}: Dados incompletos.`);
+                        successCount += groupSuccess;
+                        errorCount += groupError;
                     }
+
                 } else {
                     // Course-only mode
-                    successCount++;
+                    successCount += rows.length;
                 }
-            } catch (e: any) {
-                console.error(e);
-                errorCount++;
-                const errMsg = e.message || String(e);
-                rowErrors.push(`Linha ${(row.originalLine || '?')}: Erro de sistema (${errMsg})`);
 
-                if (errMsg.includes('violates foreign key constraint') || errMsg.includes('column')) {
-                    alert(`Erro Crítico no Banco de Dados: ${errMsg}`);
-                    setIsImporting(false);
-                    return;
-                }
+            } catch (e: any) {
+                console.error('Group processing error for course:', courseId, e);
+                errorCount += rows.length;
+                rowErrors.push(`Erro de processamento no grupo (Turma ${rows[0]?.numeroTurma}): ${e.message}`);
             }
         }
 

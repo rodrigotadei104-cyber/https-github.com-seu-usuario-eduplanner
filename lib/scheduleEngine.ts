@@ -14,6 +14,7 @@ export interface ScheduleEngineInput {
     horariosDoDia: HorarioSlot[];
     disciplinas: DisciplinaCurso[];
     diasBloqueados: Set<string>;
+    datasBloqueadasTurma?: Set<string>;
 }
 
 export interface EngineResult {
@@ -28,7 +29,8 @@ const MAX_ITERATIONS = 10000; // Edge Case 1 (Proteção contra Loop Infinito) �
 export function generateSchedule(input: ScheduleEngineInput): EngineResult {
     const {
         tenantId, numeroTurma, cursoId, cursoNome, instrutorId, instrutorNome, salaPadrao,
-        dataInicio, diasSemanaSelecionados, horariosDoDia, disciplinas, diasBloqueados
+        dataInicio, diasSemanaSelecionados, horariosDoDia, disciplinas, diasBloqueados,
+        datasBloqueadasTurma = new Set()
     } = input;
 
     if (diasSemanaSelecionados.length === 0) throw new Error('Nenhum dia da semana foi selecionado.');
@@ -70,13 +72,14 @@ export function generateSchedule(input: ScheduleEngineInput): EngineResult {
             const dateStr = format(currentDate, 'yyyy-MM-dd');
             const dayOfWeek = getDay(currentDate);
 
-            if (diasSemanaSelecionados.includes(dayOfWeek) && !diasBloqueados.has(dateStr)) {
+            if (diasSemanaSelecionados.includes(dayOfWeek) && !diasBloqueados.has(dateStr) && !datasBloqueadasTurma.has(dateStr)) {
                 isValidDay = true;
             } else {
-                // Registrar se foi pulado por feriado (e ainda não registrado)
-                if (diasBloqueados.has(dateStr) && !_feriadosPulados.has(dateStr)) {
+                // Registrar se foi pulado por feriado ou bloqueio de turma
+                if ((diasBloqueados.has(dateStr) || datasBloqueadasTurma.has(dateStr)) && !_feriadosPulados.has(dateStr)) {
                     _feriadosPulados.add(dateStr);
-                    diasPuladosFeriado.push({ data: dateStr, motivo: 'Feriado / Bloqueio' });
+                    const motivo = datasBloqueadasTurma.has(dateStr) ? 'Bloqueio da Turma' : 'Feriado / Bloqueio';
+                    diasPuladosFeriado.push({ data: dateStr, motivo });
                 }
                 currentDate = addDays(currentDate, 1);
                 currentSlotIndex = 0;
@@ -105,7 +108,7 @@ export function generateSchedule(input: ScheduleEngineInput): EngineResult {
                     // Testa se o dia é válido (pode ser o inicio da geração)
                     const dateStr = format(currentDate, 'yyyy-MM-dd');
                     const dayOfWeek = getDay(currentDate);
-                    if (!diasSemanaSelecionados.includes(dayOfWeek) || diasBloqueados.has(dateStr)) {
+                    if (!diasSemanaSelecionados.includes(dayOfWeek) || diasBloqueados.has(dateStr) || datasBloqueadasTurma.has(dateStr)) {
                         advanceCursorToNextValidSlot();
                     }
                 }

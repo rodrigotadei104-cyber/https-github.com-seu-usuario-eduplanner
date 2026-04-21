@@ -4,6 +4,7 @@ import { useSchedule } from '../context/ScheduleContext';
 import { aulaService } from '../services/aula.service';
 import { catalogoService } from '../services/catalogo.service';
 import { calendarioService } from '../services/calendario.service';
+import { turmaService } from '../services/turma.service';
 import { CatalogoCurso, DisciplinaCurso, Aula, HorarioSlot } from '../types';
 import { generateSchedule, ScheduleEngineInput } from '../lib/scheduleEngine';
 import { format, parseISO, addMinutes } from 'date-fns';
@@ -43,6 +44,10 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
     const [shift1End, setShift1End] = useState('12:00');
     const [shift2Start, setShift2Start] = useState('');
     const [shift2End, setShift2End] = useState('');
+
+    // Blocked Dates for this specific cohort
+    const [datasBloqueadasTurma, setDatasBloqueadasTurma] = useState<string[]>([]);
+    const [newDataBloqueada, setNewDataBloqueada] = useState('');
 
     // Output State (From Engine, mapped as Omit<Aula, 'id'>)
     const [generatedSchedule, setGeneratedSchedule] = useState<Omit<Aula, 'id'>[]>([]);
@@ -99,6 +104,38 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
         );
     };
 
+    const addDataBloqueada = () => {
+        if (!newDataBloqueada) return;
+        if (datasBloqueadasTurma.includes(newDataBloqueada)) return;
+        setDatasBloqueadasTurma(prev => [...prev, newDataBloqueada].sort());
+        setNewDataBloqueada('');
+    };
+
+    const removeDataBloqueada = (date: string) => {
+        setDatasBloqueadasTurma(prev => prev.filter(d => d !== date));
+    };
+
+    const resetForm = () => {
+        setStep('config');
+        setSelectedCursoId('');
+        setCursoSearchText('');
+        setNomeTurma('');
+        setSelectedInstructorId('');
+        setSelectedRoom('');
+        setStartDate(new Date().toISOString().split('T')[0]);
+        setSelectedDays([1, 2, 3, 4, 5]);
+        setShift1Start('08:00');
+        setShift1End('12:00');
+        setShift2Start('');
+        setShift2End('');
+        setDatasBloqueadasTurma([]);
+        setNewDataBloqueada('');
+        setGeneratedSchedule([]);
+        setDiasPuladosFeriado([]);
+        setError(null);
+        setDisciplinasSelecionadas([]);
+    };
+
     const handleGenerateEngine = async () => {
         if (!selectedCursoId) return setError('Selecione um curso base do catálogo.');
         if (!nomeTurma.trim()) return setError('Indique o Nome/Código da nova Turma.');
@@ -142,6 +179,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                 horariosDoDia: timeSlots,
                 disciplinas: disciplinasSelecionadas,
                 diasBloqueados,
+                datasBloqueadasTurma: new Set(datasBloqueadasTurma)
             };
 
             const engineOutput = generateSchedule(engineInput);
@@ -166,14 +204,41 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
 
         setIsSaving(true);
         try {
-            // O serviço salvarGradeAutomatica já espera o formato camelCase vindo da Engine
-            // e faz a conversão para snake_case internamente.
-            const response = await aulaService.salvarGradeAutomatica(generatedSchedule);
+            // 1. Criar o registro na tabela 'turmas' primeiro
+            const timeSlots: HorarioSlot[] = [];
+            if (shift1Start && shift1End) timeSlots.push({ inicio: shift1Start, fim: shift1End });
+            if (shift2Start && shift2End) timeSlots.push({ inicio: shift2Start, fim: shift2End });
+
+            console.log('[Wizard] Criando registro da Turma...', nomeTurma);
+            const novaTurma = await turmaService.create({
+                numeroTurma: nomeTurma,
+                cursoId: selectedCursoId,
+                instrutorId: selectedInstructorId || undefined,
+                salaPadrao: selectedRoom || undefined,
+                dataInicio: startDate,
+                diasSemanaSelecionados: selectedDays,
+                horariosDoDia: timeSlots,
+                datasBloqueadas: datasBloqueadasTurma,
+                status: 'planejada'
+            });
+
+            console.log('[Wizard] Turma criada com ID:', novaTurma.id);
+
+            // 2. Salvar as aulas vinculando-as ao ID da turma recém criada
+            const aulasComTurmaId = generatedSchedule.map(aula => ({
+                ...aula,
+                turmaId: novaTurma.id,
+                numeroTurma: nomeTurma // Mantendo redundância útil
+            }));
+
+            console.log('[Wizard] Salvando grade de aulas...', aulasComTurmaId.length);
+            const response = await aulaService.salvarGradeAutomatica(aulasComTurmaId);
 
             if (response.success) {
                 const totalCreated = (response.data as any[])?.length || generatedSchedule.length;
-                alert(`Sucesso Supremo!\n\n${totalCreated} aulas foram cravadas no Banco de Dados em apenas 1 clique.`);
+                alert(`Sucesso Supremo!\n\nTurma "${nomeTurma}" aberta e ${totalCreated} aulas foram cravadas no Banco de Dados.`);
                 await refreshData();
+                resetForm();
                 onClose();
             } else {
                 alert("Falha no Banco: " + response.error);
@@ -377,6 +442,39 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                     className="w-full p-2.5 border rounded-lg text-sm bg-white dark:bg-slate-800 dark:border-slate-700"
                                                 />
                                             </div>
+                                        </div>
+
+                                        <div className="bg-amber-50 p-4 border border-amber-200 rounded-xl dark:bg-amber-900/10 dark:border-amber-900/30">
+                                            <h4 className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-3 flex items-center gap-2 dark:text-amber-400">
+                                                <AlertTriangle size={14} /> Datas Bloqueadas da Turma (Exceções)
+                                            </h4>
+                                            <div className="flex gap-2 mb-3">
+                                                <input
+                                                    type="date"
+                                                    value={newDataBloqueada}
+                                                    onChange={e => setNewDataBloqueada(e.target.value)}
+                                                    className="flex-1 p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 dark:border-slate-700"
+                                                />
+                                                <button
+                                                    onClick={addDataBloqueada}
+                                                    className="px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition"
+                                                >
+                                                    Pular Data
+                                                </button>
+                                            </div>
+                                            {datasBloqueadasTurma.length > 0 && (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {datasBloqueadasTurma.map(date => (
+                                                        <span key={date} className="inline-flex items-center gap-1.5 bg-white border border-amber-200 px-2 py-1 rounded-md text-xs font-mono font-bold text-amber-800 dark:bg-slate-800 dark:border-amber-900/50 dark:text-amber-400 shadow-sm">
+                                                            {format(parseISO(date), 'dd/MM/yy')}
+                                                            <button onClick={() => removeDataBloqueada(date)} className="text-amber-400 hover:text-red-500 transition-colors">✕</button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {datasBloqueadasTurma.length === 0 && (
+                                                <p className="text-[10px] text-amber-600/70 italic dark:text-amber-500/50">Nenhuma data extra bloqueada para esta turma.</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

@@ -48,28 +48,50 @@ export const processImportData = (
         let courseId: string | undefined;
 
         // 1. Minimum Requirements
-        if (!row.numeroCurso && !row.nomeCurso) {
-            errors.push('Linha sem identificação de curso (Nome ou Número).');
+        if (!row.numeroTurma && !row.nomeCurso) {
+            errors.push('Linha sem identificação de curso (Turma ou Nome).');
             isValid = false;
         }
 
+        // 1.1 Date Validation (Must exist and be valid)
+        if (!row.data) {
+            errors.push('Data da aula é obrigatória.');
+            isValid = false;
+        } else {
+            const normalized = normalizeDate(row.data);
+            if (!normalized || !/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+                errors.push(`Formato de data inválido: ${row.data}`);
+                isValid = false;
+            } else {
+                // Check if it's a real date (e.g. not 2026-02-30)
+                const d = new Date(normalized + 'T12:00:00Z');
+                if (isNaN(d.getTime())) {
+                    errors.push(`Data inválida ou inexistente: ${row.data}`);
+                    isValid = false;
+                }
+            }
+        }
+
         // 2. Course Identification Logic
+        // 1. Resolve Course (Create or Reuse)
+        const courseIdentifier = row.numeroTurma || row.numeroCurso;
+
         if (isValid) {
-            if (row.numeroCurso) {
-                // A. Check Consistency within file
-                if (fileCourses.has(row.numeroCurso)) {
-                    const prev = fileCourses.get(row.numeroCurso)!;
+            if (courseIdentifier) {
+                // A. Check for internal consistency in the file
+                if (fileCourses.has(courseIdentifier)) {
+                    const prev = fileCourses.get(courseIdentifier)!;
 
                     if (row.cargaHorariaCurso && row.cargaHorariaCurso !== prev.carga) {
-                        errors.push(`Inconsistência: Carga horária (${row.cargaHorariaCurso}) difere da anterior (${prev.carga}) para este número.`);
+                        errors.push(`Inconsistência: Carga horária (${row.cargaHorariaCurso}) difere da anterior (${prev.carga}) para a turma ${courseIdentifier}.`);
                         isValid = false;
                     }
                     if (row.tipoHora && row.tipoHora !== prev.tipo) {
-                        errors.push(`Inconsistência: Tipo de hora (${row.tipoHora}) difere da anterior (${prev.tipo}) para este número.`);
+                        errors.push(`Inconsistência: Tipo de hora (${row.tipoHora}) difere da anterior (${prev.tipo}) para a turma ${courseIdentifier}.`);
                         isValid = false;
                     }
                 } else if (row.cargaHorariaCurso || row.tipoHora || row.nomeCurso) {
-                    fileCourses.set(row.numeroCurso, {
+                    fileCourses.set(courseIdentifier, {
                         carga: row.cargaHorariaCurso || '',
                         tipo: row.tipoHora || 60,
                         nome: row.nomeCurso || ''
@@ -77,7 +99,7 @@ export const processImportData = (
                 }
 
                 // B. Check against Database
-                const existing = existingCourses.find(c => c.numeroCurso === row.numeroCurso);
+                const existing = existingCourses.find(c => c.numeroCurso === courseIdentifier);
                 if (existing) {
                     courseAction = 'reuse';
                     courseId = existing.id;
@@ -86,7 +108,7 @@ export const processImportData = (
                 }
 
             } else {
-                errors.push('Aviso: Curso identificado apenas por nome (sem número externo).');
+                errors.push('Aviso: Curso identificado apenas por nome (sem identificador de turma externo).');
                 const existing = existingCourses.find(c => c.nome.toLowerCase() === row.nomeCurso?.toLowerCase());
                 if (existing) {
                     courseAction = 'reuse';
@@ -97,7 +119,7 @@ export const processImportData = (
             }
         }
 
-        // 3. Instructor Validation (New)
+        // 3. Instructor Validation
         if (isValid && row.instrutor) {
             // If instructor is provided, it MUST exist in the system
             const searchName = row.instrutor.trim().toLowerCase();
@@ -112,6 +134,7 @@ export const processImportData = (
 
         processed.push({
             ...row,
+            data: normalizeDate(row.data) || row.data, // Ensure data is normalized in output
             isValid: isValid,
             validationErrors: errors,
             courseAction,
@@ -166,18 +189,17 @@ export const normalizeDate = (dateStr?: string): string | undefined => {
 export const normalizeTime = (timeVal?: string | number): string | undefined => {
     if (timeVal === undefined || timeVal === null || timeVal === '') return undefined;
 
-    // Excel Number (Fraction of day, e.g. 0.33333 = 08:00)
-    if (typeof timeVal === 'number') {
-        // Handle integers as hours ?? No, usually Excel time is 0-1.
-        // Exception: 8 might mean 08:00? Unlikely in standard Excel, usually 8.0/24
-        // But let's assume it's standard Excel OLE Automation Date/Time fraction
-        const totalSeconds = Math.round(timeVal * 86400);
+    const timeStr = String(timeVal).trim();
+
+    // Excel Number (Fraction of day, e.g. 0.33333 = 08:00 or "0.3125" = 07:30)
+    // Se for numero ou um texto convertivel para numero e menor que 1 (fração do dia)
+    const timeNum = Number(timeStr);
+    if (!isNaN(timeNum) && timeNum >= 0 && timeNum < 1) {
+        const totalSeconds = Math.round(timeNum * 86400);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
-
-    const timeStr = String(timeVal).trim();
 
     // HH:MM
     if (/^\d{1,2}:\d{2}$/.test(timeStr)) {

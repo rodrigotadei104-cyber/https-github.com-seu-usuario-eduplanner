@@ -12,7 +12,7 @@ export const DataInspector: React.FC<{ isOpen: boolean; onClose: () => void }> =
     const filtered = aulas.filter(a =>
         a.materia.toLowerCase().includes(filter.toLowerCase()) ||
         a.curso.toLowerCase().includes(filter.toLowerCase()) ||
-        String(a.data).includes(filter)
+        String(a.data).toLowerCase().includes(filter.toLowerCase())
     );
 
     return (
@@ -36,7 +36,7 @@ export const DataInspector: React.FC<{ isOpen: boolean; onClose: () => void }> =
                     {filtered.slice(0, 50).map((aula, i) => (
                         <div key={aula.id} className="border p-2 rounded bg-white shadow-sm">
                             <div className="font-bold text-blue-600">
-                                [{i + 1}] ID: {aula.id} | Date: "{aula.data}"
+                                [{i + 1}] ID: {aula.id} | Date: "{String(aula.data)}"
                             </div>
                             <div className="grid grid-cols-2 gap-2 mt-1">
                                 <div><span className="text-gray-500">Curso:</span> {aula.curso}</div>

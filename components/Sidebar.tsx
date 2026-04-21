@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Calendar, CalendarDays, BarChart3, Plus, Settings, LogOut, Database, Shield, Building2, BookOpen, FileText, Info, LayoutGrid } from 'lucide-react';
+import { LayoutDashboard, Calendar, CalendarDays, BarChart3, Plus, Settings, LogOut, Database, Shield, Building2, BookOpen, FileText, Info, LayoutGrid, Library, CalendarOff } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useSchedule } from '../context/ScheduleContext';
 import { EduPlannerLogo } from './EduPlannerLogo';
@@ -160,11 +160,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
                         {/* 4. Gerenciamento Acadêmico */}
                         <div className="px-2 mb-2 mt-4">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Acadêmico</p>
+                            {isAdmin && (
+                                <button
+                                    onClick={() => { onChangeView('catalog'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'catalog' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
+                                >
+                                    <Library size={18} /> Catálogo Base
+                                </button>
+                            )}
+                            {isAdmin && (
+                                <button
+                                    onClick={() => { onChangeView('calendar'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'calendar' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
+                                >
+                                    <CalendarOff size={18} /> Calendário Instit.
+                                </button>
+                            )}
                             <button
                                 onClick={() => { onChangeView('registrations'); setFilters(prev => ({ ...prev, status: 'todos', search: '' })); }}
                                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'registrations' ? 'bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200'}`}
                             >
-                                <BookOpen size={18} /> Cadastros
+                                <BookOpen size={18} /> Cadastros Rápidos
                             </button>
                         </div>
 

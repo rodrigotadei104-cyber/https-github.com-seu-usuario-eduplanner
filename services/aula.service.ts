@@ -14,12 +14,15 @@ export interface AulaInput {
     data: string;
     horario_inicio: string;
     horario_fim: string;
-    instrutor_id: string;
-    curso_id: string;
-    materia_id: string;
+    instrutor_id?: string;
+    curso_id?: string;
+    materia_id?: string;
     sala?: string;
     observacoes?: string;
     numero_turma?: string; // Identifier for the specific cohort (e.g. T01-2026)
+    disciplina_id?: string; // Nova Arquitetura
+    turma_id?: string; // Nova Arquitetura
+    auto_gerada?: boolean; // Nova Arquitetura
 }
 
 export interface AulaUpdateInput extends Partial<AulaInput> {
@@ -61,7 +64,13 @@ export const aulaService = {
     }): Promise<unknown[]> {
         let query = supabase.from('aulas').select(
             filters?.includeRelations
-                ? `*, numero_turma, carga_horaria_materia, instrutor:instrutores(id, nome), curso:cursos(id, nome, cor, minutos_por_hora, numero_curso), materia:materias(id, nome, carga_horaria)`
+                ? `*, 
+                   numero_turma, 
+                   carga_horaria_materia, 
+                   instrutor:instrutores(id, nome), 
+                   curso:cursos(id, nome, cor, minutos_por_hora, numero_curso), 
+                   materia:materias(id, nome, carga_horaria),
+                   disciplina:disciplinas_curso(id, nome_disciplina, curso:catalogo_cursos(id, nome_curso))`
                 : '*'
         );
 
@@ -403,6 +412,58 @@ export const aulaService = {
     },
 
     /**
+     * NOVA ARQUITETURA: Salvar Grade Automática em Lote
+     * Recebe as aulas processadas pelo Motor de Geração e salva tudo otimizadamente.
+     */
+    async salvarGradeAutomatica(aulasGeradas: Omit<import('../types').Aula, 'id'>[]): Promise<ServiceResult> {
+        const canCreate = await permissionService.checkPermission('CREATE_CLASS', 'Aula');
+        if (!canCreate) {
+            return { success: false, error: 'Permissão negada. Apenas Administradores e Editores podem gerar turmas.' };
+        }
+
+        const tenantId = tenantService.getCurrentTenantId();
+
+        // Converter payload do frontend (camelCase) para o banco de dados (snake_case)
+        const payloadDB = aulasGeradas.map(aula => ({
+            tenant_id: tenantId,
+            data: (aula.data instanceof Date ? aula.data : new Date(aula.data)).toISOString().split('T')[0],
+            horario_inicio: aula.horarioInicio,
+            horario_fim: aula.horarioFim,
+            disciplina_id: aula.disciplinaId,
+            numero_turma: (aula as any).numeroTurma || null,
+            turma_id: (aula as any).turmaId || null,
+            sala: aula.sala || null,
+            instrutor_id: aula.instrutor || null,
+            status: aula.status,
+            auto_gerada: aula.autoGerada || false,
+            carga_horaria_materia: aula.cargaHorariaMateria
+        }));
+
+        const { data, error } = await supabase
+            .from('aulas')
+            .insert(payloadDB)
+            .select();
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        // Auditoria em Lote (Para não floodar os logs com 300 inserções)
+        await auditService.log({
+            action: 'CREATE',
+            entity: 'turma_agenda',
+            details: {
+                loteSize: aulasGeradas.length,
+                turmaId: aulasGeradas[0]?.turmaId,
+                fonte: 'ScheduleEngine'
+            },
+            result: 'success'
+        });
+
+        return { success: true, data };
+    },
+
+    /**
      * Atualizar aula (Admin ou Editor, com restrições para cancelamento)
      */
     async update(id: string, input: AulaUpdateInput, forceUpdate: boolean = false, propagateRoom: boolean = false): Promise<ServiceResult> {
@@ -585,13 +646,20 @@ export const aulaService = {
             try {
                 // Buscar todas as aulas do mesmo curso e turma (cohort) que possuem a SALA ANTIGA
                 // Limitamos ao mesmo curso e turma para evitar efeitos colaterais indesejados
-                const { data: relatedAulas } = await supabase
+                let query = supabase
                     .from('aulas')
                     .select('id')
                     .eq('curso_id', existing.curso_id)
                     .eq('numero_turma', existing.numero_turma)
-                    .eq('sala', existing.sala || '') // Supabase lida com string vazia vs null dependendo do schema
                     .neq('id', id); // Excluir a aula que já acabamos de atualizar
+
+                if (existing.sala) {
+                    query = query.eq('sala', existing.sala);
+                } else {
+                    query = query.is('sala', null);
+                }
+
+                const { data: relatedAulas } = await query;
 
                 if (relatedAulas && relatedAulas.length > 0) {
                     const idsToUpdate = relatedAulas.map(a => a.id);
