@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale';
 // Icons removed for minimalism
 
 export const JovemAprendizView: React.FC = () => {
-    const { aulas, addAulaPrograma, instrutores, currentDate, setCurrentDate, deleteAula, feriados, feriadosSet } = useSchedule();
+    const { aulas, addAulaPrograma, instrutores, currentDate, setCurrentDate, deleteAulaPrograma, feriados, feriadosSet } = useSchedule();
     const [isLoading, setIsLoading] = useState(false);
     const [isConfigOpen, setIsConfigOpen] = useState(false);
 
@@ -39,6 +39,32 @@ export const JovemAprendizView: React.FC = () => {
     useEffect(() => {
         localStorage.setItem('eduplanner_programas', JSON.stringify(programs));
     }, [programs]);
+
+    // SYNC: Mesclar programas do banco (origens das aulas PROGRAMA) com programas locais.
+    // Garante que colunas criadas por outros usuários (ex: admin Wilson) apareçam para todos.
+    useEffect(() => {
+        const origensNoBanco = new Set<string>();
+        aulas.forEach(a => {
+            if (a.tipoAula === 'PROGRAMA' && a.origem) {
+                origensNoBanco.add(a.origem);
+            }
+        });
+
+        if (origensNoBanco.size === 0) return;
+
+        setPrograms(prev => {
+            const merged = new Set(prev);
+            let changed = false;
+            origensNoBanco.forEach(origem => {
+                if (!merged.has(origem)) {
+                    merged.add(origem);
+                    changed = true;
+                }
+            });
+            if (!changed) return prev; // evita re-render desnecessário
+            return Array.from(merged);
+        });
+    }, [aulas]);
 
     const addProgram = () => {
         if (newProgramName.trim()) {
@@ -95,7 +121,7 @@ export const JovemAprendizView: React.FC = () => {
         if (!instructorId) {
             if (existingClass) {
                 // Remove class Se o usuário selecionou 'Vazio'
-                await deleteAula(existingClass.id);
+                await deleteAulaPrograma(existingClass.id);
             }
             return;
         }
@@ -217,93 +243,103 @@ export const JovemAprendizView: React.FC = () => {
                 </div>
             )}
 
-            {/* Grid Area */}
-            <div className="flex-1 min-h-0 overflow-auto custom-scrollbar p-0 sm:p-6 bg-slate-100 dark:bg-slate-900 relative">
+            {/* Grid Area — Scroll Excel-like: header sticky vertical + colunas DATA/DIA sticky horizontal */}
+            <div className="flex-1 min-h-0 flex flex-col bg-slate-100 dark:bg-slate-900 relative">
                 {isLoading && (
                     <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500 z-[60] overflow-hidden">
                         <div className="h-full bg-amber-200 animate-progress-flow w-1/3"></div>
                     </div>
                 )}
                 
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <table className="w-full relative border-collapse text-left text-sm">
-                        <thead className="bg-slate-100 dark:bg-slate-900/80 sticky top-0 z-20">
-                            <tr>
-                                <th className="p-3 w-24 border-b border-r border-slate-300 dark:border-slate-700 font-black text-slate-700 uppercase tracking-wider text-xs text-center">Data</th>
-                                <th className="p-3 w-16 border-b border-r border-slate-300 dark:border-slate-700 font-black text-slate-700 uppercase tracking-wider text-xs text-center">Dia</th>
-                                {programs.map(p => (
-                                    <th key={p} className="p-3 border-b border-r border-amber-300 dark:border-amber-900/50 font-black text-amber-900 dark:text-amber-400 uppercase tracking-wider text-[11px] text-center bg-amber-100/50 dark:bg-amber-900/20">
-                                        {p.replace(/\s*\[\d{2}:\d{2}-\d{2}:\d{2}\]/, '')}
-                                        <div className="text-[10px] text-amber-800 dark:text-amber-400/70 font-bold">
-                                            {guessTimeForProgram(p).start} - {guessTimeForProgram(p).end}
-                                        </div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {days.map(date => {
-                                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                                const isToday = isSameDay(date, new Date());
-                                const isoDate = format(date, 'yyyy-MM-dd');
-                                const feriado = feriadosSet.has(isoDate) ? feriados.find(f => f.data === isoDate) : null;
-                                
-                                const rowHighlightClass = feriado 
-                                    ? 'bg-amber-100/50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-900/40' 
-                                    : isWeekend 
-                                        ? 'bg-slate-50 dark:bg-slate-800/50' 
-                                        : 'hover:bg-blue-50/30 dark:hover:bg-slate-750';
+                <div className="flex-1 min-h-0 p-0 sm:p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-auto custom-scrollbar h-full">
+                        <table className="relative border-collapse text-left text-sm min-w-max">
+                            <thead className="bg-slate-100 dark:bg-slate-900/80 sticky top-0 z-30">
+                                <tr>
+                                    <th className="p-3 w-24 min-w-[96px] border-b border-r border-slate-300 dark:border-slate-700 font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider text-xs text-center sticky left-0 z-40 bg-slate-100 dark:bg-slate-900">Data</th>
+                                    <th className="p-3 w-20 min-w-[80px] border-b border-r border-slate-300 dark:border-slate-700 font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider text-xs text-center sticky left-[96px] z-40 bg-slate-100 dark:bg-slate-900">Dia</th>
+                                    {programs.map(p => (
+                                        <th key={p} className="px-1.5 py-2 min-w-[85px] max-w-[110px] border-b border-r border-amber-300 dark:border-amber-900/50 font-black text-amber-900 dark:text-amber-400 uppercase tracking-wider text-[10px] text-center bg-amber-100/50 dark:bg-amber-900/20">
+                                            {p.replace(/\s*\[\d{2}:\d{2}-\d{2}:\d{2}\]/, '')}
+                                            <div className="text-[10px] text-amber-800 dark:text-amber-400/70 font-bold">
+                                                {guessTimeForProgram(p).start} - {guessTimeForProgram(p).end}
+                                            </div>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                {days.map(date => {
+                                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                                    const isToday = isSameDay(date, new Date());
+                                    const isoDate = format(date, 'yyyy-MM-dd');
+                                    const feriado = feriadosSet.has(isoDate) ? feriados.find(f => f.data === isoDate) : null;
+                                    
+                                    const rowHighlightClass = feriado 
+                                        ? 'bg-amber-100/50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-900/40' 
+                                        : isWeekend 
+                                            ? 'bg-slate-50 dark:bg-slate-800/50' 
+                                            : 'hover:bg-blue-50/30 dark:hover:bg-slate-750';
 
-                                return (
-                                    <tr key={date.toISOString()} className={`${rowHighlightClass} transition-colors`}>
-                                        <td className={`p-2 border-r dark:border-slate-700 text-center font-mono font-bold ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                                            {format(date, 'dd/MM')}
-                                        </td>
-                                        <td className={`p-2 border-r dark:border-slate-700 text-center font-medium text-xs uppercase flex flex-col items-center justify-center min-h-[44px] ${feriado ? 'text-amber-800 dark:text-amber-500' : isWeekend ? 'text-red-400' : 'text-slate-500'}`}>
-                                            <span>{format(date, 'EE', { locale: ptBR })}</span>
-                                            {feriado && (
-                                                <span className="text-[8px] font-black uppercase text-amber-600 dark:text-amber-400 leading-tight text-center mt-1 bg-amber-200/50 dark:bg-amber-900/50 px-1 rounded">
-                                                    {feriado.descricao}
-                                                </span>
-                                            )}
-                                        </td>
-                                        {programs.map(prog => {
-                                            const existingAulas = programAulas.filter(a => isSameDay(new Date(a.data), date) && a.origem === prog);
-                                            // Pode ter mais de 1 num edge case
-                                            const aulaTarget = existingAulas[0];
+                                    // Classes de background para colunas sticky do tbody (devem herdar cor da linha)
+                                    const stickyBg = feriado 
+                                        ? 'bg-amber-100/50 dark:bg-amber-900/30' 
+                                        : isWeekend 
+                                            ? 'bg-slate-50 dark:bg-slate-800/50' 
+                                            : 'bg-white dark:bg-slate-800';
 
-                                            return (
-                                                <td key={`${date.toISOString()}-${prog}`} className="p-0 border-r border-slate-200 dark:border-slate-700/50 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors cursor-pointer group relative">
-                                                    <div className="w-full h-full flex flex-col">
-                                                        <select
-                                                            value={aulaTarget?.instrutorId || ''}
-                                                            onChange={(e) => handleCellChange(date, prog, e.target.value)}
-                                                            className={`w-full h-full text-[11px] p-2.5 bg-transparent outline-none appearance-none font-semibold cursor-pointer ${aulaTarget ? 'text-amber-900 dark:text-amber-400 font-black bg-amber-50 dark:bg-amber-900/40' : 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 focus:opacity-100'} transition-all`}
-                                                        >
-                                                            <option value="">- Livre -</option>
-                                                            {instrutores.map(i => (
-                                                                <option key={i.id} value={i.id}>{i.nome}</option>
-                                                            ))}
-                                                        </select>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); handleCellChange(date, prog, ''); }}
-                                                className="absolute right-1 top-1 px-1.5 py-0.5 rounded-md bg-white/90 dark:bg-slate-800/90 text-red-600 opacity-0 group-hover:opacity-100 hover:bg-red-600 hover:text-white transition-all border border-red-200 shadow-sm text-[8px] font-black uppercase tracking-tighter"
-                                                title="Remover"
-                                            >
-                                                EXCLUIR
-                                            </button>
-                                                    </div>
-                                                    {existingAulas.length > 1 && (
-                                                        <div className="absolute bottom-0 left-0 right-0 bg-red-500 text-white text-[8px] font-black text-center py-0.5">DUPLICADO!</div>
+                                    return (
+                                        <tr key={date.toISOString()} className={`${rowHighlightClass} transition-colors`}>
+                                            <td className={`p-2 border-r dark:border-slate-700 text-center font-mono font-bold sticky left-0 z-10 ${stickyBg} ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                                                {format(date, 'dd/MM')}
+                                            </td>
+                                            <td className={`p-2 border-r dark:border-slate-700 text-center font-medium text-xs uppercase sticky left-[96px] z-10 ${stickyBg} ${feriado ? 'text-amber-800 dark:text-amber-500' : isWeekend ? 'text-red-400' : 'text-slate-500'}`}>
+                                                <div className="flex flex-col items-center justify-center min-h-[44px]">
+                                                    <span>{format(date, 'EE', { locale: ptBR })}</span>
+                                                    {feriado && (
+                                                        <span className="text-[8px] font-black uppercase text-amber-600 dark:text-amber-400 leading-tight text-center mt-1 bg-amber-200/50 dark:bg-amber-900/50 px-1 rounded">
+                                                            {feriado.descricao}
+                                                        </span>
                                                     )}
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
-                    </table>
+                                                </div>
+                                            </td>
+                                            {programs.map(prog => {
+                                                const existingAulas = programAulas.filter(a => isSameDay(new Date(a.data), date) && a.origem === prog);
+                                                const aulaTarget = existingAulas[0];
+
+                                                return (
+                                                    <td key={`${date.toISOString()}-${prog}`} className="p-0 border-r border-slate-200 dark:border-slate-700/50 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors cursor-pointer group relative min-w-[85px] max-w-[110px]">
+                                                        <div className="w-full h-full flex flex-col">
+                                                            <select
+                                                                value={aulaTarget?.instrutorId || ''}
+                                                                onChange={(e) => handleCellChange(date, prog, e.target.value)}
+                                                                className={`w-full h-full text-[11px] p-2.5 bg-transparent outline-none appearance-none font-semibold cursor-pointer ${aulaTarget ? 'text-amber-900 dark:text-amber-400 font-black bg-amber-50 dark:bg-amber-900/40' : 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 focus:opacity-100'} transition-all`}
+                                                            >
+                                                                <option value="">- Livre -</option>
+                                                                {instrutores.map(i => (
+                                                                    <option key={i.id} value={i.id}>{i.nome}</option>
+                                                                ))}
+                                                            </select>
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); handleCellChange(date, prog, ''); }}
+                                                                className="absolute right-1 top-1 px-1.5 py-0.5 rounded-md bg-white/90 dark:bg-slate-800/90 text-red-600 opacity-0 group-hover:opacity-100 hover:bg-red-600 hover:text-white transition-all border border-red-200 shadow-sm text-[8px] font-black uppercase tracking-tighter"
+                                                                title="Remover"
+                                                            >
+                                                                EXCLUIR
+                                                            </button>
+                                                        </div>
+                                                        {existingAulas.length > 1 && (
+                                                            <div className="absolute bottom-0 left-0 right-0 bg-red-500 text-white text-[8px] font-black text-center py-0.5">DUPLICADO!</div>
+                                                        )}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

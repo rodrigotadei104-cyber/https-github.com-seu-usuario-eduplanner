@@ -14,8 +14,8 @@ interface AberturaTurmaWizardProps {
 }
 
 export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen, onClose }) => {
-    const { refreshData, instrutores } = useSchedule();
-    const tenantId = 'rodrigotadei104-cyber'; // Default provisório até injetarmos Auth session
+    const { refreshData, instrutores, userProfile } = useSchedule();
+    const tenantId = userProfile.tenantId; // Tenant real do usuário autenticado via ScheduleContext
 
     // Reference Data States
     const [cursosBase, setCursosBase] = useState<CatalogoCurso[]>([]);
@@ -243,9 +243,10 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
             } else {
                 alert("Falha no Banco: " + response.error);
             }
-        } catch (error) {
-            console.error(error);
-            alert("Erro catastrófico ao despachar grade para a API.");
+        } catch (error: any) {
+            console.error('[Wizard] Erro ao salvar turma/aulas:', error);
+            const detalhe = error?.message || error?.details || String(error);
+            alert(`Erro ao salvar a turma no banco de dados.\n\nDetalhe técnico: ${detalhe}`);
         } finally {
             setIsSaving(false);
         }

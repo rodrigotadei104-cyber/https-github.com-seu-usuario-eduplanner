@@ -89,6 +89,7 @@ interface ScheduleContextType {
     error?: string;
   }>;
   deleteAula: (id: string) => Promise<boolean>;
+  deleteAulaPrograma: (id: string) => Promise<boolean>;
 
   // Actions - Registrations
   addInstrutor: (data: Omit<Instrutor, 'id' | 'tenantId'>) => void;
@@ -691,6 +692,26 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [showNotification]);
 
+  const deleteAulaPrograma = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      setIsActionLoading(true);
+      const result = await aulaService.deleteAulaPrograma(id);
+      if (result.success) {
+        setAulas(prev => prev.filter(a => a.id !== id));
+        showNotification('Programa removido com sucesso.', 'success');
+        return true;
+      } else {
+        showNotification(result.error || 'Erro ao remover programa.', 'error');
+        return false;
+      }
+    } catch (error: any) {
+      showNotification(error.message || 'Erro inesperado.', 'error');
+      return false;
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [showNotification]);
+
   // ============================================
   // REGISTRATIONS ACTIONS
   // ============================================
@@ -1062,6 +1083,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateAula,
         addAulaPrograma,
         deleteAula,
+        deleteAulaPrograma,
 
         addInstrutor,
         deleteInstrutor,
@@ -1103,7 +1125,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isAuthenticated, isLoading, isDemo, login, logout, enterDemoMode, activateAccount, resetPassword,
         aulas, instrutores, cursos, materias, users, systemLogs, eventos, feriadosSet, feriados,
         filteredAulas, currentDate, viewMode, filters,
-        addAula, updateAula, addAulaPrograma, deleteAula,
+        addAula, updateAula, addAulaPrograma, deleteAula, deleteAulaPrograma,
         addInstrutor, deleteInstrutor, addCurso, updateCurso, deleteCurso, addMateria, deleteMateria,
         addEvento, updateEvento, deleteEvento,
         createUser, updateUserStatus, updateUserRole, resendInvitation, acceptInvitation, deleteUser, setTestPassword,

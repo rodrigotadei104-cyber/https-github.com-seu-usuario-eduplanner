@@ -908,6 +908,61 @@ export const aulaService = {
     },
 
     /**
+     * Excluir aula tipo PROGRAMA (Admin + Editor)
+     * Permite que Editores removam instrutores na aba Jovem Aprendiz.
+     * Valida que a aula é realmente do tipo PROGRAMA para evitar escalação de privilégio.
+     */
+    async deleteAulaPrograma(id: string): Promise<ServiceResult> {
+        // 1. Permissão: usa CREATE_CLASS (admin + editor), não DELETE_CLASS (admin only)
+        const canManage = await permissionService.checkPermission('CREATE_CLASS', `AulaPrograma:${id}`);
+        if (!canManage) {
+            return { success: false, error: 'Permissão negada.' };
+        }
+
+        // 2. Buscar aula e validar que é tipo PROGRAMA
+        const { data: existing, error: fetchError } = await supabase
+            .from('aulas')
+            .select('tenant_id, tipo_aula')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !existing) {
+            return { success: false, error: 'Aula não encontrada.' };
+        }
+
+        if (existing.tipo_aula !== 'PROGRAMA') {
+            return { success: false, error: 'Apenas aulas do tipo PROGRAMA podem ser removidas por este método.' };
+        }
+
+        // 3. Validação de tenant
+        const tenantValid = await tenantService.validateTenantAccess(existing.tenant_id, 'aula_programa', id);
+        if (!tenantValid) {
+            return { success: false, error: 'Acesso negado.' };
+        }
+
+        // 4. Executar DELETE
+        const { error: deleteError } = await supabase
+            .from('aulas')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) {
+            return { success: false, error: deleteError.message };
+        }
+
+        // 5. Audit log
+        await auditService.log({
+            action: 'DELETE',
+            entity: 'aula_programa',
+            entityId: id,
+            details: { type: 'PROGRAMA_DELETION', source: 'JovemAprendiz' },
+            result: 'success'
+        });
+
+        return { success: true };
+    },
+
+    /**
      * Métricas (EXCLUI aulas canceladas das métricas principais)
      * Pode filtrar por período opcional.
      */
