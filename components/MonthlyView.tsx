@@ -196,12 +196,35 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
 
                     return consolidatedAulas.map((aula) => {
                       const isProgram = aula.tipoAula === 'PROGRAMA';
-                      const instrutorNome = isProgram ? `Menor: ${aula.origem}` : aula.instrutor || 'Sem Instrutor';
+
+                      // Nomes base para cor e tooltip
+                      const instrutorNome = aula.instrutor || aula.origem || 'Sem Instrutor';
                       const baseColor = isProgram ? '#c2410c' : getInstructorColor(instrutorNome);
                       const turnoLabel = `${formatHorasEnxuto(aula.horarioInicio)} às ${formatHorasEnxuto(aula.horarioFim)}`;
-                      const line1 = `${instrutorNome.split(' ')[0]} • ${turnoLabel}`;
+                      // cursoNome: para aulas normais usa a tabela de cursos
                       const cursoNome = cursos.find(c => c.id === aula.cursoId)?.nome || aula.curso || '';
-                      const turmaLabel = `Turma #${aula.numeroTurma || aula.id.substring(0,5)}`;
+
+                      // programaNome: para PROGRAMA usa aula.materia ("Assist. Log."),
+                      // com fallback para origem sem o trecho de horário
+                      const programaNome = isProgram
+                        ? aula.materia || aula.origem?.replace(/\s*\[\d{2}:\d{2}-\d{2}:\d{2}\]/, '') || ''
+                        : '';
+
+                      // ── Estrutura idêntica para ambos os tipos (3 linhas curtas) ──
+                      // Linha 1 → "Aprendiz • 07h às 11h"  /  "Giovanna • 13h às 17h"
+                      const line1 = isProgram
+                        ? `Aprendiz • ${turnoLabel}`
+                        : `${instrutorNome.split(' ')[0]} • ${turnoLabel}`;
+
+                      // Linha 2 → nome do instrutor (PROGRAMA) ou nome do curso (normal)
+                      const line2 = isProgram
+                        ? instrutorNome          // ex: "Wilson Roger"
+                        : cursoNome;             // ex: "Metodologias Ágeis"
+
+                      // Linha 3 → nome do programa/matéria (PROGRAMA) ou turma (normal)
+                      const line3 = isProgram
+                        ? programaNome || null   // ex: "Assist. Log."
+                        : `Turma #${aula.numeroTurma || aula.id.substring(0,5)}`;
 
                       return (
                         <div
@@ -209,11 +232,11 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
                           onClick={(e) => { e.stopPropagation(); onEditAula(aula); }}
                           className="text-[9px] px-2 py-1.5 rounded shadow-sm hover:opacity-90 transition text-white flex flex-col gap-[1px] leading-tight cursor-pointer mb-1"
                           style={{ backgroundColor: baseColor }}
-                          title={`${aula.horarioInicio} às ${aula.horarioFim}\n${instrutorNome}\nTurma #${aula.numeroTurma || '-'}\n${cursoNome}`}
+                          title={`${aula.horarioInicio} às ${aula.horarioFim}\n${instrutorNome}${!isProgram ? `\nTurma #${aula.numeroTurma || '-'}` : ''}\n${cursoNome}`}
                         >
-                           <span className="font-bold truncate">{line1}</span>
-                           {cursoNome && <span className="truncate opacity-[0.85] text-[8px] tracking-wide">{cursoNome}</span>}
-                           <span className="truncate opacity-70 tracking-wider text-[8px]">{turmaLabel}</span>
+                          <span className="font-bold truncate">{line1}</span>
+                          {line2 && <span className="truncate opacity-[0.85] text-[8px] tracking-wide">{line2}</span>}
+                          {line3 && <span className="truncate opacity-70 tracking-wider text-[8px]">{line3}</span>}
                         </div>
                       );
                     });

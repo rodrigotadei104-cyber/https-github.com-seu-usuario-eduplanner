@@ -4,7 +4,11 @@ import { format, getDaysInMonth, startOfMonth, addDays, parseISO, isSameDay } fr
 import { ptBR } from 'date-fns/locale';
 // Icons removed for minimalism
 
-export const JovemAprendizView: React.FC = () => {
+interface JovemAprendizViewProps {
+    readOnly?: boolean;
+}
+
+export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly = false }) => {
     const { aulas, addAulaPrograma, instrutores, currentDate, setCurrentDate, deleteAulaPrograma, feriados, feriadosSet } = useSchedule();
     const [isLoading, setIsLoading] = useState(false);
     const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -186,12 +190,15 @@ export const JovemAprendizView: React.FC = () => {
                         </button>
                     </div>
 
-                    <button 
-                        onClick={() => setIsConfigOpen(!isConfigOpen)}
-                        className={`px-4 py-2 rounded-lg border transition-all text-xs font-bold uppercase tracking-widest ${isConfigOpen ? 'bg-amber-500 text-white border-amber-600 shadow-inner' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300'}`}
-                    >
-                        Colunas
-                    </button>
+                    {/* Botão Colunas: oculto para visualizadores */}
+                    {!readOnly && (
+                        <button 
+                            onClick={() => setIsConfigOpen(!isConfigOpen)}
+                            className={`px-4 py-2 rounded-lg border transition-all text-xs font-bold uppercase tracking-widest ${isConfigOpen ? 'bg-amber-500 text-white border-amber-600 shadow-inner' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300'}`}
+                        >
+                            Colunas
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -310,23 +317,28 @@ export const JovemAprendizView: React.FC = () => {
                                                 return (
                                                     <td key={`${date.toISOString()}-${prog}`} className="p-0 border-r border-slate-200 dark:border-slate-700/50 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors cursor-pointer group relative min-w-[85px] max-w-[110px]">
                                                         <div className="w-full h-full flex flex-col">
-                                                            <select
+                                                            {/* Select: desabilitado para readOnly */}
+                                                        <select
                                                                 value={aulaTarget?.instrutorId || ''}
-                                                                onChange={(e) => handleCellChange(date, prog, e.target.value)}
-                                                                className={`w-full h-full text-[11px] p-2.5 bg-transparent outline-none appearance-none font-semibold cursor-pointer ${aulaTarget ? 'text-amber-900 dark:text-amber-400 font-black bg-amber-50 dark:bg-amber-900/40' : 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 focus:opacity-100'} transition-all`}
+                                                                onChange={(e) => !readOnly && handleCellChange(date, prog, e.target.value)}
+                                                                disabled={readOnly}
+                                                                className={`w-full h-full text-[11px] p-2.5 bg-transparent outline-none appearance-none font-semibold ${readOnly ? 'cursor-default' : 'cursor-pointer'} ${aulaTarget ? 'text-amber-900 dark:text-amber-400 font-black bg-amber-50 dark:bg-amber-900/40' : 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 focus:opacity-100'} transition-all`}
                                                             >
                                                                 <option value="">- Livre -</option>
                                                                 {instrutores.map(i => (
                                                                     <option key={i.id} value={i.id}>{i.nome}</option>
                                                                 ))}
                                                             </select>
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); handleCellChange(date, prog, ''); }}
-                                                                className="absolute right-1 top-1 px-1.5 py-0.5 rounded-md bg-white/90 dark:bg-slate-800/90 text-red-600 opacity-0 group-hover:opacity-100 hover:bg-red-600 hover:text-white transition-all border border-red-200 shadow-sm text-[8px] font-black uppercase tracking-tighter"
-                                                                title="Remover"
-                                                            >
-                                                                EXCLUIR
-                                                            </button>
+                                                            {/* Botão Excluir: oculto para visualizadores */}
+                                                            {!readOnly && (
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleCellChange(date, prog, ''); }}
+                                                                    className="absolute right-1 top-1 px-1.5 py-0.5 rounded-md bg-white/90 dark:bg-slate-800/90 text-red-600 opacity-0 group-hover:opacity-100 hover:bg-red-600 hover:text-white transition-all border border-red-200 shadow-sm text-[8px] font-black uppercase tracking-tighter"
+                                                                    title="Remover"
+                                                                >
+                                                                    EXCLUIR
+                                                                </button>
+                                                            )}
                                                         </div>
                                                         {existingAulas.length > 1 && (
                                                             <div className="absolute bottom-0 left-0 right-0 bg-red-500 text-white text-[8px] font-black text-center py-0.5">DUPLICADO!</div>

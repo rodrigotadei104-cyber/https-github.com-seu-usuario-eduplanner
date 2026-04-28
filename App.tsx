@@ -300,8 +300,9 @@ const App: React.FC = () => {
                 if (!isAdmin) return <AccessDenied onNavigateBack={() => setViewMode('dashboard')} />;
                 return <CalendarioInstitucionalView />;
             case 'jovem-aprendiz': // Programas Paralelos
-                if (!isAdmin && !isEditor) return <AccessDenied onNavigateBack={() => setViewMode('dashboard')} />;
-                return <JovemAprendizView />;
+                // Admin e Editor podem editar; Viewer tem acesso somente leitura
+                if (!isAdmin && !isEditor && userProfile.role !== 'viewer') return <AccessDenied onNavigateBack={() => setViewMode('dashboard')} />;
+                return <JovemAprendizView readOnly={!isAdmin && !isEditor} />;
             case 'admin': // 5. Gerenciamento de Usuários & 7. Logs
                 // STRICT PERMISSION CHECK
                 if (!canViewAdminPanel) {

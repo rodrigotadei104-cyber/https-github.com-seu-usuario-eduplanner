@@ -351,6 +351,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (restored) {
           const profile = await authService.getCurrentUser();
           if (profile) {
+            // CRÍTICO: inicializar permissionService antes de loadAllData
+            permissionService.setCurrentUser(profile.id, profile.role as UserRole);
             setUserProfile({
               id: profile.id,
               tenantId: profile.tenant_id,
@@ -388,6 +390,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (result.success) {
         const profile = await authService.getCurrentUser();
         if (profile) {
+          // CRÍTICO: inicializar permissionService antes de loadAllData
+          permissionService.setCurrentUser(profile.id, profile.role as UserRole);
           setUserProfile({
             id: profile.id,
             tenantId: profile.tenant_id,
