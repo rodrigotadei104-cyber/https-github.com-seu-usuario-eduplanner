@@ -122,7 +122,7 @@ export interface Materia {
   cargaHoraria?: number; // Carga horária total (meta) em horas
 }
 
-export type EventType = 'reuniao' | 'treinamento' | 'feedback' | 'outro';
+export type EventType = 'reuniao' | 'treinamento' | 'feedback' | 'ferias' | 'outro';
 export type EventStatus = 'agendado' | 'concluido' | 'cancelado';
 
 export interface Evento {

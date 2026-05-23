@@ -465,7 +465,8 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                             ${evento.tipo === 'reuniao' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' :
                                                 evento.tipo === 'treinamento' ? 'bg-teal-50 border-teal-500 text-teal-700' :
                                                     evento.tipo === 'feedback' ? 'bg-amber-50 border-amber-500 text-amber-700' :
-                                                        'bg-gray-100 border-gray-500 text-gray-700'}
+                                                        evento.tipo === 'ferias' ? 'bg-rose-50 border-rose-500 text-rose-700' :
+                                                            'bg-gray-100 border-gray-500 text-gray-700'}
                                         `}
                                         style={{
                                             top: `calc(${top} + 2px)`,

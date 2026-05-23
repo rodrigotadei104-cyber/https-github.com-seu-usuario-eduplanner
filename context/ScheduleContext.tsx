@@ -104,7 +104,9 @@ interface ScheduleContextType {
   // Actions - Events
   addEvento: (data: Omit<EventInput, 'tenantId'>) => Promise<void>;
   updateEvento: (id: string, data: Partial<EventInput>) => Promise<void>;
+  replaceEventos: (ids: string[], data: Omit<EventInput, 'tenantId'>) => Promise<void>;
   deleteEvento: (id: string) => Promise<void>;
+  deleteEventos: (ids: string[]) => Promise<void>;
 
   // Actions - Users
   createUser: (data: Omit<UserAccount, 'id' | 'createdAt' | 'avatarInitials' | 'tenantId' | 'active' | 'invitationStatus'>) => void;
@@ -888,6 +890,21 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [loadAllData, showNotification]);
 
+  const replaceEventos = useCallback(async (ids: string[], data: Omit<EventInput, 'tenantId'>) => {
+    try {
+      setIsActionLoading(true);
+      const result = await eventService.replaceMany(ids, data as any);
+      if (result.success) {
+        await loadAllData();
+        showNotification('PerÃ­odo atualizado com sucesso!', 'success');
+      } else {
+        showNotification(result.error || 'Erro ao atualizar perÃ­odo.', 'error');
+      }
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [loadAllData, showNotification]);
+
   const deleteEvento = useCallback(async (id: string) => {
     try {
       setIsActionLoading(true);
@@ -897,6 +914,21 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         showNotification('Evento removido.', 'success');
       } else {
         showNotification(result.error || 'Erro ao remover evento.', 'error');
+      }
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [loadAllData, showNotification]);
+
+  const deleteEventos = useCallback(async (ids: string[]) => {
+    try {
+      setIsActionLoading(true);
+      const result = await eventService.deleteMany(ids);
+      if (result.success) {
+        await loadAllData();
+        showNotification('PerÃ­odo removido.', 'success');
+      } else {
+        showNotification(result.error || 'Erro ao remover perÃ­odo.', 'error');
       }
     } finally {
       setIsActionLoading(false);
@@ -1137,7 +1169,9 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         addEvento,
         updateEvento,
+        replaceEventos,
         deleteEvento,
+        deleteEventos,
 
         createUser,
         updateUserStatus,
@@ -1169,7 +1203,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         filteredAulas, currentDate, viewMode, filters,
         addAula, updateAula, addAulaPrograma, deleteAula, deleteAulaPrograma, deleteAulasTurma,
         addInstrutor, deleteInstrutor, addCurso, updateCurso, deleteCurso, addMateria, deleteMateria,
-        addEvento, updateEvento, deleteEvento,
+        addEvento, updateEvento, replaceEventos, deleteEvento, deleteEventos,
         createUser, updateUserStatus, updateUserRole, resendInvitation, acceptInvitation, deleteUser, setTestPassword,
         stats,
         userProfile, updateUserProfile, appSettings, updateAppSettings,

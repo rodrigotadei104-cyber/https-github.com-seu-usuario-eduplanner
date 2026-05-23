@@ -154,7 +154,8 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
                       className={`text-[9px] px-2 py-1 rounded truncate shadow-sm font-semibold text-white
                             ${evento.tipo === 'reuniao' ? 'bg-indigo-600' :
                           evento.tipo === 'treinamento' ? 'bg-teal-600' :
-                            'bg-gray-600'}
+                            evento.tipo === 'ferias' ? 'bg-rose-600' :
+                              'bg-gray-600'}
                         `}
                       title={`${evento.horarioInicio} - ${evento.nome} (${evento.tipo})${evento.instrutorId ? ` - Instrutor: ${instrutores.find(i => i.id === evento.instrutorId)?.nome}` : ''}`}
                     >

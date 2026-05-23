@@ -1,17 +1,24 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
-import { Instrutor, Curso, Materia, EventType, EventStatus } from '../types';
+import { Instrutor, Curso, Materia, Evento, EventType, EventStatus } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 import { ImportModal } from './ImportModal';
 
 type Tab = 'instrutores' | 'cursos' | 'materias' | 'eventos';
+
+type EventoListItem = Evento & {
+    ids: string[];
+    dataFim?: Date;
+    quantidadeDias?: number;
+    isPeriodoFerias?: boolean;
+};
 
 export const RegistrationView: React.FC = () => {
     const {
         instrutores, addInstrutor, deleteInstrutor,
         cursos, addCurso, updateCurso, deleteCurso,
         materias, addMateria, deleteMateria,
-        eventos, addEvento, updateEvento, deleteEvento,
+        eventos, addEvento, updateEvento, replaceEventos, deleteEvento, deleteEventos,
         userProfile, canManageRegistrations, isActionLoading
     } = useSchedule();
 
@@ -42,6 +49,7 @@ export const RegistrationView: React.FC = () => {
         // Event Fields
         tipo: 'outro' as EventType,
         data: new Date().toISOString().split('T')[0],
+        dataFim: '',
         horarioInicio: '',
         horarioFim: '',
         instrutorId: '',
@@ -49,7 +57,73 @@ export const RegistrationView: React.FC = () => {
     });
 
     // Edit State
-    const [editingItem, setEditingItem] = useState<{ id: string, type: Tab } | null>(null);
+    const [editingItem, setEditingItem] = useState<{ id: string, type: Tab, ids?: string[] } | null>(null);
+
+    const toDateInputValue = (date: Date | string) => {
+        if (typeof date === 'string') return date.substring(0, 10);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const addOneDay = (date: Date) => {
+        const next = new Date(date);
+        next.setDate(next.getDate() + 1);
+        return next;
+    };
+
+    const isSameLocalDay = (a: Date, b: Date) =>
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+
+    const groupedEventos = useMemo<EventoListItem[]>(() => {
+        const regularEvents: EventoListItem[] = [];
+        const ferias = eventos
+            .filter(e => e.tipo === 'ferias')
+            .slice()
+            .sort((a, b) => {
+                const instructorCompare = (a.instrutorId || '').localeCompare(b.instrutorId || '');
+                if (instructorCompare !== 0) return instructorCompare;
+                const nameCompare = a.nome.localeCompare(b.nome);
+                if (nameCompare !== 0) return nameCompare;
+                return new Date(a.data).getTime() - new Date(b.data).getTime();
+            });
+
+        eventos
+            .filter(e => e.tipo !== 'ferias')
+            .forEach(e => regularEvents.push({ ...e, ids: [e.id] }));
+
+        const groups: EventoListItem[] = [];
+        for (const event of ferias) {
+            const eventDate = event.data instanceof Date ? event.data : new Date(event.data);
+            const last = groups[groups.length - 1];
+            const canJoin =
+                last &&
+                last.nome === event.nome &&
+                last.instrutorId === event.instrutorId &&
+                last.horarioInicio === event.horarioInicio &&
+                last.horarioFim === event.horarioFim &&
+                last.status === event.status &&
+                (last.sala || '') === (event.sala || '') &&
+                last.dataFim &&
+                isSameLocalDay(eventDate, addOneDay(last.dataFim));
+
+            if (canJoin) {
+                last.ids.push(event.id);
+                last.dataFim = eventDate;
+                last.quantidadeDias = last.ids.length;
+            } else {
+                groups.push({
+                    ...event,
+                    ids: [event.id],
+                    dataFim: eventDate,
+                    quantidadeDias: 1,
+                    isPeriodoFerias: true
+                });
+            }
+        }
+
+        return [...regularEvents, ...groups].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    }, [eventos]);
 
     const resetForm = () => {
         setFormData({
@@ -64,6 +138,7 @@ export const RegistrationView: React.FC = () => {
             status: 'agendado',
             tipo: 'outro',
             data: new Date().toISOString().split('T')[0],
+            dataFim: '',
             horarioInicio: '',
             horarioFim: '',
             instrutorId: '',
@@ -72,7 +147,7 @@ export const RegistrationView: React.FC = () => {
     };
 
     const handleEdit = (item: any, type: Tab) => {
-        setEditingItem({ id: item.id, type });
+        setEditingItem({ id: item.id, type, ids: item.ids });
         setFormData({
             nome: item.nome,
             email: item.email || '',
@@ -84,7 +159,8 @@ export const RegistrationView: React.FC = () => {
             numeroCurso: item.numeroCurso || '',
             status: item.status || 'agendado',
             tipo: item.tipo || 'outro',
-            data: item.data ? (item.data instanceof Date ? item.data.toISOString().split('T')[0] : item.data) : '',
+            data: item.data ? toDateInputValue(item.data) : '',
+            dataFim: item.dataFim ? toDateInputValue(item.dataFim) : '',
             horarioInicio: item.horarioInicio || '',
             horarioFim: item.horarioFim || '',
             instrutorId: item.instrutorId || '',
@@ -104,6 +180,10 @@ export const RegistrationView: React.FC = () => {
         e.preventDefault();
         if (!canManage) return;
         if (!formData.nome.trim()) return;
+        if (activeTab === 'eventos' && formData.tipo === 'ferias') {
+            if (!formData.instrutorId) return;
+            if (formData.dataFim && formData.dataFim < formData.data) return;
+        }
 
         if (editingItem) {
             if (activeTab === 'cursos') {
@@ -116,16 +196,23 @@ export const RegistrationView: React.FC = () => {
                     status: formData.status as 'ativo' | 'concluido'
                 });
             } else if (activeTab === 'eventos') {
-                await updateEvento(editingItem.id, {
+                const eventPayload = {
                     nome: formData.nome,
                     tipo: formData.tipo,
                     data: formData.data,
+                    data_fim: formData.tipo === 'ferias' ? (formData.dataFim || formData.data) : undefined,
                     horario_inicio: formData.horarioInicio,
                     horario_fim: formData.horarioFim,
                     instrutor_id: formData.instrutorId || undefined,
                     sala: formData.sala,
                     status: formData.status as EventStatus
-                });
+                };
+
+                if (formData.tipo === 'ferias') {
+                    await replaceEventos(editingItem.ids?.length ? editingItem.ids : [editingItem.id], eventPayload);
+                } else {
+                    await updateEvento(editingItem.id, eventPayload);
+                }
             }
             // Add others if needed
             setEditingItem(null);
@@ -157,6 +244,7 @@ export const RegistrationView: React.FC = () => {
                     nome: formData.nome,
                     tipo: formData.tipo,
                     data: formData.data,
+                    data_fim: formData.tipo === 'ferias' ? (formData.dataFim || formData.data) : undefined,
                     horario_inicio: formData.horarioInicio,
                     horario_fim: formData.horarioFim,
                     instrutor_id: formData.instrutorId || undefined,
@@ -168,16 +256,20 @@ export const RegistrationView: React.FC = () => {
         resetForm();
     };
 
-    const handleDelete = (id: string, type: 'instrutor' | 'curso' | 'materia' | 'evento') => {
+    const handleDelete = (id: string, type: 'instrutor' | 'curso' | 'materia' | 'evento', ids?: string[]) => {
+        const isBulkEvent = type === 'evento' && ids && ids.length > 1;
         setConfirmModal({
             isOpen: true,
-            title: 'Excluir registro',
-            description: 'Tem certeza que deseja excluir este registro? Esta ação é irreversível.',
+            title: isBulkEvent ? 'Excluir período de férias' : 'Excluir registro',
+            description: isBulkEvent ? `Tem certeza que deseja excluir este período inteiro? ${ids.length} dias serão removidos.` : 'Tem certeza que deseja excluir este registro? Esta ação é irreversível.',
             action: () => {
                 if (type === 'instrutor') deleteInstrutor(id);
                 if (type === 'curso') deleteCurso(id);
                 if (type === 'materia') deleteMateria(id);
-                if (type === 'evento') deleteEvento(id);
+                if (type === 'evento') {
+                    if (ids && ids.length > 1) deleteEventos(ids);
+                    else deleteEvento(id);
+                }
             }
         });
     };
@@ -188,6 +280,12 @@ export const RegistrationView: React.FC = () => {
         { id: 'materias', label: 'Matérias', color: 'text-amber-700', bg: 'bg-amber-50' },
         { id: 'eventos', label: 'Eventos', color: 'text-emerald-700', bg: 'bg-emerald-50' },
     ];
+
+    const formatEventType = (type: EventType) => {
+        if (type === 'ferias') return 'Férias';
+        if (type === 'reuniao') return 'Reunião';
+        return type;
+    };
 
     return (
         <>
@@ -390,12 +488,23 @@ export const RegistrationView: React.FC = () => {
                                                 <select
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
                                                     value={formData.tipo}
-                                                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value as EventType })}
+                                                    onChange={(e) => {
+                                                        const tipo = e.target.value as EventType;
+                                                        setFormData({
+                                                            ...formData,
+                                                            tipo,
+                                                            nome: tipo === 'ferias' && !formData.nome ? 'Férias' : formData.nome,
+                                                            horarioInicio: tipo === 'ferias' && !formData.horarioInicio ? '00:00' : formData.horarioInicio,
+                                                            horarioFim: tipo === 'ferias' && !formData.horarioFim ? '23:59' : formData.horarioFim,
+                                                            sala: tipo === 'ferias' ? '' : formData.sala
+                                                        });
+                                                    }}
                                                     disabled={isActionLoading}
                                                 >
                                                     <option value="reuniao">Reunião</option>
                                                     <option value="treinamento">Treinamento</option>
                                                     <option value="feedback">Feedback</option>
+                                                    <option value="ferias">Férias</option>
                                                     <option value="outro">Outro</option>
                                                 </select>
                                             </div>
@@ -411,6 +520,21 @@ export const RegistrationView: React.FC = () => {
                                                     disabled={isActionLoading}
                                                 />
                                             </div>
+
+                                            {formData.tipo === 'ferias' && (
+                                                <div className="md:col-span-1">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Data Final</label>
+                                                    <input
+                                                        type="date"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
+                                                        value={formData.dataFim}
+                                                        min={formData.data}
+                                                        onChange={(e) => setFormData({ ...formData, dataFim: e.target.value })}
+                                                        required
+                                                        disabled={isActionLoading}
+                                                    />
+                                                </div>
+                                            )}
 
                                             <div className="md:col-span-1">
                                                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Início</label>
@@ -437,14 +561,17 @@ export const RegistrationView: React.FC = () => {
                                             </div>
 
                                             <div className="md:col-span-1">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Instrutor (Opc)</label>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                                                    Instrutor {formData.tipo === 'ferias' ? '' : '(Opc)'}
+                                                </label>
                                                 <select
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
                                                     value={formData.instrutorId}
                                                     onChange={(e) => setFormData({ ...formData, instrutorId: e.target.value })}
+                                                    required={formData.tipo === 'ferias'}
                                                     disabled={isActionLoading}
                                                 >
-                                                    <option value="">Todos</option>
+                                                    <option value="">{formData.tipo === 'ferias' ? 'Selecione...' : 'Todos'}</option>
                                                     {instrutores.map(i => (
                                                         <option key={i.id} value={i.id}>{i.nome}</option>
                                                     ))}
@@ -529,6 +656,15 @@ export const RegistrationView: React.FC = () => {
                                         <>
                                             <th className="px-6 py-4">Curso Vinculado</th>
                                             <th className="px-6 py-4">Carga Horária</th>
+                                        </>
+                                    )}
+
+                                    {activeTab === 'eventos' && (
+                                        <>
+                                            <th className="px-6 py-4">Tipo</th>
+                                            <th className="px-6 py-4">Data</th>
+                                            <th className="px-6 py-4">HorÃ¡rio</th>
+                                            <th className="px-6 py-4">Status</th>
                                         </>
                                     )}
 
@@ -631,7 +767,7 @@ export const RegistrationView: React.FC = () => {
                                     );
                                 })}
 
-                                {activeTab === 'eventos' && eventos.map((item) => (
+                                {activeTab === 'eventos' && groupedEventos.map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-200">
                                             {item.nome}
@@ -640,10 +776,16 @@ export const RegistrationView: React.FC = () => {
                                                     Instrutor: {instrutores.find(i => i.id === item.instrutorId)?.nome || 'N/A'}
                                                 </div>
                                             )}
+                                            {item.isPeriodoFerias && item.quantidadeDias && item.quantidadeDias > 1 && (
+                                                <div className="text-xs text-rose-500 font-semibold">
+                                                    Período com {item.quantidadeDias} dias
+                                                </div>
+                                            )}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400 capitalize">{item.tipo}</td>
+                                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400 capitalize">{formatEventType(item.tipo)}</td>
                                         <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                                             {item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-'}
+                                            {item.dataFim && !isSameLocalDay(new Date(item.data), item.dataFim) ? ` até ${item.dataFim.toLocaleDateString('pt-BR')}` : ''}
                                         </td>
                                         <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                                             {item.horarioInicio} - {item.horarioFim}
@@ -669,7 +811,7 @@ export const RegistrationView: React.FC = () => {
                                                         Editar
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(item.id, 'evento')}
+                                                        onClick={() => handleDelete(item.id, 'evento', item.ids)}
                                                         disabled={isActionLoading}
                                                         className="text-red-600 hover:text-red-800 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded hover:bg-red-50 transition-colors disabled:opacity-30"
                                                     >
@@ -684,7 +826,7 @@ export const RegistrationView: React.FC = () => {
                                 {((activeTab === 'instrutores' && instrutores.length === 0) ||
                                     (activeTab === 'cursos' && cursos.length === 0) ||
                                     (activeTab === 'materias' && materias.length === 0) ||
-                                    (activeTab === 'eventos' && eventos.length === 0)) && (
+                                    (activeTab === 'eventos' && groupedEventos.length === 0)) && (
                                         <tr>
                                             <td colSpan={canManage ? 5 : 4} className="px-6 py-12 text-center">
                                                 <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">

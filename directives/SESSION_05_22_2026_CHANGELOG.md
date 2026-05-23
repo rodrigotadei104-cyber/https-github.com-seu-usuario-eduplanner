@@ -72,17 +72,23 @@ Após os primeiros testes locais, implementamos duas melhorias cruciais:
   - **No backend do Service (`aula.service.ts`):** Adicionamos uma validação preventiva no método `deleteAulasTurma` que intercepta `cursoId` nulo, indefinido ou igual à string `"null"`, retornando uma rejeição de negócio limpa e segura em vez de estourar o banco de dados.
   - **Na Interface (`ClassModal.tsx`):** Ocultamos o botão "Excluir Grade da Turma" quando a aula for do tipo `PROGRAMA` (`initialData.tipoAula === 'PROGRAMA'`), já que os agendamentos institucionais não possuem grade curricular tradicional regular para deleção em lote, blindando a UI contra erros.
 
-### 2. Redesenho Estético do Rodapé de Botões (Estética Premium)
-- **Problema:** A inclusão de múltiplos botões na área da esquerda com cores pasteis brilhantes e muito colados entre si criava poluição visual e quebras de linha desordenadas ("um horror").
+### 2. UX/UI: Redesenho Definitivo do Rodapé do Modal (Padrão Enterprise)
+- **Problema:** A disposição dos botões administrativos estava "um horror", confusa e poluída visualmente.
 - **Melhorias de UI/UX Aplicadas ([ClassModal.tsx](file:///c:/Users/HP/Documents/App_EduPlanner/components/ClassModal.tsx)):**
-  - **Unificação de Alturas:** Todos os botões do rodapé agora possuem exatamente **40px de altura (`h-10`)**, garantindo um alinhamento vertical milimétrico perfeito.
-  - **Unificação de Tipografia:** Todas as labels usam a fonte elegante `text-[10px] font-bold uppercase tracking-wider` proporcionando uma consistência visual premium.
-  - **Design Minimalista Neutro (Apple/Stripe Style):** Substituímos as cores de fundo pastéis permanentes por uma abordagem sóbria de botões *outline neutros* em tons de Slate (`border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300`).
-  - **Hovers Contextuais Dinâmicos:** As cores indicativas aparecem apenas quando o mouse passa por cima do botão (Hover), mantendo o visual sóbrio por padrão:
-    - *Cancelar Aula:* Hover ganha fundo âmbar suave com borda amarela.
-    - *Excluir Permanentemente:* Hover ganha fundo vermelho suave com borda vermelha.
-    - *Excluir Grade:* Hover ganha fundo laranja suave com borda laranja.
-  - **Layout Responsivo:** Implementamos um contêiner flexível inteligente (`flex flex-col sm:flex-row gap-4 items-center justify-between`) que organiza as ações administrativas destrutivas perfeitamente alinhadas à esquerda e os botões de ação principal ("Cancelar" e "Gravar Aula") perfeitamente alinhados à direita, adaptando-se com elegância a qualquer resolução de tela sem espremer ou empilhar botões de forma confusa.
+  - **Design Minimalista ("Ghost Buttons"):** Ações destrutivas e secundárias (`Suspender`, `Excluir Permanentemente`, `Excluir Grade`) foram movidas para a esquerda, ao lado de `Fechar`, utilizando botões sutis sem fundo com ícones em SVG discretos.
+  - As cores de atenção (Amarelo, Vermelho, Laranja) agora se manifestam elegantemente **apenas no hover** (ao passar o mouse).
+  - O botão principal à direita (`Gravar Aula`) ganhou destaque absoluto e um indicador de processamento visualizado através de um elegante **spinner de carregamento** (*Salvando...*) quando `isActionLoading` é verdadeiro, impedindo cliques duplos.
 
-### 🧪 Verificação Técnica
-- A compilação TypeScript pós-redesenho retornou **sucesso total com zero erros sintáticos ou de tipos**, atestando a robustez técnica absoluta da entrega.
+### 3. Backend: Resolução do Bug de Deleção ("null" UUID) e Falha de Fallback
+- **Problema Crítico:** Ao excluir aulas sem turma ou cursoId, o frontend repassava a string `'null'` para a API, provocando o erro do PostgreSQL: `invalid input syntax for type uuid: "null"`. Além disso, a query tentava realizar um _fallback_ consultando a coluna `curso` inexistente na tabela `aulas`.
+- **Solução (`aula.service.ts`):** 
+  - Refatoramos a condicional da deleção. O sistema agora ignora totalmente os valores `"null"` e `"undefined"`.
+  - O fallback inválido foi totalmente removido.
+  - A exclusão de Grade agora apaga corretamente todo o histórico: **Passado, Presente e Futuro**, sem exceções, resolvendo a frustração de que "aulas continuavam lá".
+
+### 4. Deploy em Produção
+- O bug das credenciais fantasma locais do GitHub (`classeeshop-afk`) foi limpo do Gerenciador de Credenciais do Windows.
+- O código foi consolidado e um `git push` disparou com sucesso o build automatizado no Vercel (Produção).
+
+### ⏳ Pendência de Performance Identificada
+O carregamento da aplicação exibe de imediato o *loading spinner* elegante, mas a demora geral de consulta (`aulaService.list({ includeRelations: true })`) baixando *todas as aulas do histórico sem limite de paginação* ainda requer uma intervenção profunda de refatoração para carregar os dados em janelas de tempo limitadas (Lazy Loading). Por enquanto a demora tornou-se tolerável e a prioridade do deploy foi concluída.
