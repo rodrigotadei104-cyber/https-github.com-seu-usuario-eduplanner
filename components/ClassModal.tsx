@@ -19,7 +19,7 @@ interface ClassModalProps {
 }
 
 export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave, initialData }) => {
-  const { instrutores, cursos, materias, appSettings, currentDate, userProfile, addAula, updateAula, deleteAula, isActionLoading } = useSchedule();
+  const { instrutores, cursos, materias, appSettings, currentDate, userProfile, addAula, updateAula, deleteAula, deleteAulasTurma, isActionLoading } = useSchedule();
 
   const [propagateRoom, setPropagateRoom] = useState(false);
   const [formData, setFormData] = useState<Partial<Aula>>({
@@ -484,60 +484,109 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
               />
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-6 dark:border-slate-700 min-h-[50px]">
-              {/* Action Buttons Area */}
-              <div className="flex-1 flex gap-2">
-                {canCancel && (
-                  <button
-                    type="button"
-                    onClick={handleCancelClass}
-                    className="px-3 py-2 text-[10px] font-black text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 uppercase tracking-widest"
-                    title="Cancela a aula mantendo o histórico"
-                  >
-                    Cancelar Aula
-                  </button>
-                )}
 
-                {isAdmin && initialData && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setConfirmModal({
-                        isOpen: true,
-                        title: 'Excluir Aula Permanentemente',
-                        description: 'ATENÇÃO: Esta ação removerá a aula do banco de dados definitivamente. Use para limpar registros de teste. Para manter histórico, use "Cancelar". Deseja continuar?',
-                        action: async () => {
-                          const success = await deleteAula(initialData.id);
-                          if (success) onClose();
-                        }
-                      });
-                    }}
-                    className="px-3 py-2 text-[10px] font-black text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 uppercase tracking-widest"
-                    title="Remove a aula do banco de dados"
-                  >
-                    Excluir Permanentemente
-                  </button>
-                )}
 
-                {/* Information for Editors */}
-              </div>
-
-              <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-5 border-t border-slate-100 mt-6 dark:border-slate-700 gap-4 min-h-[60px]">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600 dark:hover:bg-slate-700"
+                  className="h-10 px-5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 flex items-center justify-center"
                 >
                   {canSave ? 'Cancelar' : 'Fechar'}
                 </button>
 
+                {initialData && canSave && (
+                  <>
+                    <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                    
+                    {canCancel && (
+                      <button
+                        type="button"
+                        onClick={handleCancelClass}
+                        className="h-10 px-3 text-xs font-medium text-slate-500 hover:text-amber-600 hover:bg-amber-50 dark:text-slate-400 dark:hover:bg-amber-900/20 dark:hover:text-amber-400 rounded-lg transition-colors flex items-center gap-1.5"
+                        title="Cancela a aula mantendo o histórico"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                        <span className="hidden sm:inline">Suspender</span>
+                      </button>
+                    )}
+
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: 'Excluir Aula Permanentemente',
+                            description: 'ATENÇÃO: Esta ação removerá a aula do banco de dados definitivamente. Use para limpar registros de teste. Para manter histórico, use "Suspender". Deseja continuar?',
+                            action: async () => {
+                              const success = await deleteAula(initialData.id);
+                              if (success) onClose();
+                            }
+                          });
+                        }}
+                        className="h-10 px-3 text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400 rounded-lg transition-colors flex items-center gap-1.5"
+                        title="Remove a aula do banco de dados"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span className="hidden sm:inline">Excluir</span>
+                      </button>
+                    )}
+
+                    {isAdmin && initialData.tipoAula !== 'PROGRAMA' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cursoNome = initialData.curso || 'este curso';
+                          const turmaNome = initialData.numeroTurma ? `Turma #${initialData.numeroTurma}` : 'esta turma';
+                          
+                          const selectedCursoObj = cursos.find(c => c.nome === (formData.curso || initialData?.curso));
+                          const targetCursoId = initialData?.cursoId || (initialData as any)?.curso_id || selectedCursoObj?.id;
+
+                          setConfirmModal({
+                            isOpen: true,
+                            title: 'Excluir Grade da Turma',
+                            description: `ATENÇÃO: Esta ação removerá TODAS as aulas (passadas, presentes e futuras) da grade do curso "${cursoNome}" (${turmaNome}) definitivamente. Esta operação é irreversível. Deseja continuar?`,
+                            action: async () => {
+                              const success = await deleteAulasTurma(targetCursoId, initialData.numeroTurma || '', initialData.turmaId, initialData.curso || formData.curso || '');
+                              if (success) onClose();
+                            }
+                          });
+                        }}
+                        className="h-10 px-3 text-xs font-medium text-slate-500 hover:text-orange-600 hover:bg-orange-50 dark:text-slate-400 dark:hover:bg-orange-900/20 dark:hover:text-orange-400 rounded-lg transition-colors flex items-center gap-1.5"
+                        title="Exclui todas as aulas desta turma"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span className="hidden sm:inline">Excluir Grade</span>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div>
                 {canSave && (
                   <button
                     type="submit"
                     disabled={isActionLoading}
-                    className="px-6 py-2 text-xs font-black text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
+                    className="h-10 px-6 text-[11px] font-bold uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all active:scale-[0.98] shadow-md shadow-blue-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    {isActionLoading ? 'Salvando...' : 'Gravar Aula'}
+                    {isActionLoading ? (
+                      <div className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Salvando...
+                      </div>
+                    ) : 'Gravar Aula'}
                   </button>
                 )}
               </div>

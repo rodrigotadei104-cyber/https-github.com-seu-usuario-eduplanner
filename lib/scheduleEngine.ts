@@ -15,6 +15,7 @@ export interface ScheduleEngineInput {
     disciplinas: DisciplinaCurso[];
     diasBloqueados: Set<string>;
     datasBloqueadasTurma?: Set<string>;
+    minutosPorHora?: number;
 }
 
 export interface EngineResult {
@@ -30,7 +31,8 @@ export function generateSchedule(input: ScheduleEngineInput): EngineResult {
     const {
         tenantId, numeroTurma, cursoId, cursoNome, instrutorId, instrutorNome, salaPadrao,
         dataInicio, diasSemanaSelecionados, horariosDoDia, disciplinas, diasBloqueados,
-        datasBloqueadasTurma = new Set()
+        datasBloqueadasTurma = new Set(),
+        minutosPorHora = 60
     } = input;
 
     if (diasSemanaSelecionados.length === 0) throw new Error('Nenhum dia da semana foi selecionado.');
@@ -88,7 +90,7 @@ export function generateSchedule(input: ScheduleEngineInput): EngineResult {
     };
 
     for (const disciplina of disciplinas) {
-        let cargaRestanteMilisegundos = disciplina.cargaHoras * 60 * 60 * 1000;
+        let cargaRestanteMilisegundos = disciplina.cargaHoras * minutosPorHora * 60 * 1000;
 
         while (cargaRestanteMilisegundos > 0) {
             // Se o cursor estiver limpo ou o slot atual já foi 100% consumido, avança.
@@ -150,13 +152,13 @@ export function generateSchedule(input: ScheduleEngineInput): EngineResult {
                 sala: salaPadrao || '',
                 status: 'agendada' as ClassStatus,
                 autoGerada: true,
-                cargaHorariaMateria: +(milisegundosAUsar / (1000 * 60 * 60)).toFixed(2)
+                cargaHorariaMateria: +(milisegundosAUsar / (1000 * 60 * minutosPorHora)).toFixed(2)
             };
 
             aulasGeradas.push(aula);
 
             cargaRestanteMilisegundos -= milisegundosAUsar;
-            totalHorasGeradas += (milisegundosAUsar / (1000 * 60 * 60));
+            totalHorasGeradas += (milisegundosAUsar / (1000 * 60 * minutosPorHora));
             usedMillisecondsInCurrentSlot += milisegundosAUsar;
 
             // Se o slot esgotou (uma matéria grande consumiu tudo, ou várias pequenas preencheram), preparamos o incremento

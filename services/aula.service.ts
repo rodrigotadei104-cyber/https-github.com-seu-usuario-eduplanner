@@ -54,8 +54,32 @@ export interface Metrics {
     instrutoresAtivos: number;
     aulasPorStatus: Record<AulaStatus, number>;
 }
-
 export const aulaService = {
+    /**
+     * Função utilitária para buscar todos os registros paginados do Supabase contornando o limite de 1000 rows
+     */
+    async _fetchPaginated(queryFactory: (start: number, limit: number) => any): Promise<any[]> {
+        let allData: any[] = [];
+        const limit = 1000;
+        let start = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+            const { data, error } = await queryFactory(start, limit);
+            if (error) throw error;
+            
+            const pageData = data || [];
+            allData = [...allData, ...pageData];
+
+            if (pageData.length < limit) {
+                hasMore = false;
+            } else {
+                start += limit;
+            }
+        }
+        return allData;
+    },
+
     /**
      * Listar aulas (filtro por tenant automático via RLS)
      */
@@ -65,36 +89,37 @@ export const aulaService = {
         dateTo?: string;
         includeRelations?: boolean;
     }): Promise<unknown[]> {
-        let query = supabase.from('aulas').select(
-            filters?.includeRelations
-                ? `*, 
-                   numero_turma, 
-                   carga_horaria_materia, 
-                   tipo_aula,
-                   origem,
-                   contabiliza_carga,
-                   instrutor:instrutores(id, nome), 
-                   curso:cursos(id, nome, cor, minutos_por_hora, numero_curso), 
-                   materia:materias(id, nome, carga_horaria),
-                   disciplina:disciplinas_curso(id, nome_disciplina, curso:catalogo_cursos(id, nome_curso))`
-                : '*'
-        );
+        return this._fetchPaginated((start, limit) => {
+            let query = supabase.from('aulas').select(
+                filters?.includeRelations
+                    ? `*, 
+                       numero_turma, 
+                       carga_horaria_materia, 
+                       tipo_aula,
+                       origem,
+                       contabiliza_carga,
+                       instrutor:instrutores(id, nome), 
+                       curso:cursos(id, nome, cor, minutos_por_hora, numero_curso), 
+                       materia:materias(id, nome, carga_horaria),
+                       disciplina:disciplinas_curso(id, nome_disciplina, curso:catalogo_cursos(id, nome_curso))`
+                    : '*'
+            );
 
-        if (filters?.status) {
-            query = query.eq('status', filters.status);
-        }
+            if (filters?.status) {
+                query = query.eq('status', filters.status);
+            }
 
-        if (filters?.dateFrom) {
-            query = query.gte('data', filters.dateFrom);
-        }
+            if (filters?.dateFrom) {
+                query = query.gte('data', filters.dateFrom);
+            }
 
-        if (filters?.dateTo) {
-            query = query.lte('data', filters.dateTo);
-        }
+            if (filters?.dateTo) {
+                query = query.lte('data', filters.dateTo);
+            }
 
-        const { data, error } = await query.order('data', { ascending: true });
-        if (error) throw error;
-        return data || [];
+            return query.order('data', { ascending: true })
+                        .range(start, start + limit - 1);
+        });
     },
 
     /**
@@ -963,22 +988,104 @@ export const aulaService = {
     },
 
     /**
+     * Excluir todas as aulas de uma turma em lote (Admin apenas)
+     * Deleta apenas as aulas futuras/agendadas da turma informada
+     */
+    async deleteAulasTurma(cursoId: string, numeroTurma: string, turmaId?: string, cursoNome?: string): Promise<ServiceResult> {
+        // Validação preventiva contra UUIDs nulos ou strings inválidas (apenas se não houver turmaId e cursoNome)
+        if (!turmaId && (!cursoId || cursoId === 'null' || cursoId === 'undefined') && (!cursoNome || cursoNome.trim() === '')) {
+            return { success: false, error: 'Esta aula não possui um curso regular associado (ex: programas Jovem Aprendiz não possuem grade regular de aulas para exclusão em lote).' };
+        }
+
+        const canDelete = await permissionService.checkPermission('DELETE_CLASS', turmaId ? `LoteTurma:${turmaId}` : `LoteAulas:${cursoId}`);
+        if (!canDelete) {
+            return { success: false, error: 'Permissão negada. Apenas administradores podem excluir grades.' };
+        }
+
+        const tenantId = tenantService.getCurrentTenantId();
+
+        // --- TENTATIVA A: Deleção Baseada em Identificadores (FK ou CursoID + NumeroTurma) ---
+        let query = supabase
+            .from('aulas')
+            .delete()
+            .eq('tenant_id', tenantId);
+
+        // Se informou turmaId (Nova Arquitetura), a deleção é 100% precisa por FK!
+        let canProceed = false;
+
+        if (turmaId && turmaId !== 'null' && turmaId !== 'undefined') {
+            query = query.eq('turma_id', turmaId);
+            canProceed = true;
+        } else if (cursoId && cursoId !== 'null' && cursoId !== 'undefined') {
+            // Caso clássico: deletar por curso_id e numero_turma
+            query = query.eq('curso_id', cursoId);
+            
+            const targetTurma = (numeroTurma || '').trim();
+            if (targetTurma !== '' && targetTurma !== 'null' && targetTurma !== 'undefined') {
+                query = query.eq('numero_turma', targetTurma);
+            } else {
+                // Se não informou turma (nulo ou vazio), deleta as que não têm turma associada (nulo, vazio ou as strings "null"/"undefined")
+                query = query.or('numero_turma.is.null,numero_turma.eq."",numero_turma.eq.null,numero_turma.eq.undefined');
+            }
+            canProceed = true;
+        }
+
+        if (!canProceed) {
+            return {
+                success: false,
+                error: `Esta aula não possui um vínculo de curso/turma válido para exclusão em lote.`
+            };
+        }
+
+        // Executamos a query e coletamos os dados deletados
+        let { data: deletedRows, error } = await query.select('id');
+        let countDeleted = deletedRows?.length || 0;
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        if (countDeleted === 0) {
+            return {
+                success: false,
+                error: `Nenhuma aula correspondente foi encontrada para remoção no banco de dados. (Turma: "${numeroTurma || 'Sem Turma'}")`
+            };
+        }
+
+        // Audit log
+        await auditService.log({
+            action: 'DELETE',
+            entity: 'aula',
+            details: {
+                type: 'LOTE_DELETION',
+                cursoId,
+                numeroTurma,
+                turmaId,
+                quantidadeDeletada: countDeleted,
+                apenasAgendadas: false
+            },
+            result: 'success'
+        });
+
+        return { success: true };
+    },
+
+    /**
      * Métricas (EXCLUI aulas canceladas das métricas principais)
      * Pode filtrar por período opcional.
      */
     async getMetrics(period?: { start: string; end: string }): Promise<Metrics> {
-        // Fetch course info to know minutes_per_hour
-        let query = supabase
-            .from('aulas')
-            .select('status, horario_inicio, horario_fim, instrutor_id, curso:cursos(minutos_por_hora)');
+        const aulas = await this._fetchPaginated((start, limit) => {
+            let query = supabase
+                .from('aulas')
+                .select('status, horario_inicio, horario_fim, instrutor_id, curso:cursos(minutos_por_hora)');
 
-        if (period) {
-            query = query.gte('data', period.start).lte('data', period.end);
-        }
+            if (period) {
+                query = query.gte('data', period.start).lte('data', period.end);
+            }
 
-        const { data: aulas, error } = await query;
-
-        if (error) throw error;
+            return query.range(start, start + limit - 1);
+        });
 
         const instructors = new Set<string>();
         let totalLegalHours = 0; // Changed from totalMinutes to totalLegalHours accumulator
@@ -1031,79 +1138,74 @@ export const aulaService = {
      */
     async syncClassStatuses(): Promise<void> {
         const now = new Date();
-        // create local YYYY-MM-DD string
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         const todayStr = `${year}-${month}-${day}`;
 
-        // Buscar aulas não finalizadas (agendada ou em_andamento)
+        // Select ONLY needed columns (not '*') for speed
         const { data: aulas, error } = await supabase
             .from('aulas')
-            .select('*')
+            .select('id, data, horario_inicio, horario_fim, status')
             .neq('status', 'cancelada')
             .neq('status', 'concluida')
             .lte('data', todayStr);
 
-        if (error || !aulas) return;
+        if (error || !aulas || aulas.length === 0) return;
 
-        const updates: any[] = [];
         const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
 
-        // Helper para converter HH:mm em minutos
         const toMinutes = (time: string) => {
             if (!time) return 0;
             const [h, m] = time.split(':').map(Number);
             return h * 60 + m;
         };
 
+        // Group IDs by target status for batch updates
+        const toComplete: string[] = [];
+        const toInProgress: string[] = [];
+
         for (const aula of aulas) {
-            let newStatus: AulaStatus | null = null;
             const isPastDay = aula.data < todayStr;
             const isToday = aula.data === todayStr;
-
-            const startMinutes = toMinutes(aula.horario_inicio);
             const endMinutes = toMinutes(aula.horario_fim);
+            const startMinutes = toMinutes(aula.horario_inicio);
 
-            if (isPastDay) {
-                // Se é dia passado e não está cancelada/concluída, deve finalizar
-                newStatus = 'concluida';
-            } else if (isToday) {
-                if (currentTimeMinutes >= endMinutes) {
-                    newStatus = 'concluida';
-                } else if (currentTimeMinutes >= startMinutes && currentTimeMinutes < endMinutes) {
-                    newStatus = 'em_andamento';
-                }
-            }
-
-            // Só atualiza se o status for mudar
-            if (newStatus && newStatus !== aula.status) {
-                updates.push(
-                    supabase
-                        .from('aulas')
-                        .update({ status: newStatus })
-                        .eq('id', aula.id)
-                        .then(async ({ error }) => {
-                            if (!error) {
-                                await auditService.log({
-                                    action: 'STATUS_CHANGE',
-                                    entity: 'aula',
-                                    entityId: aula.id,
-                                    details: {
-                                        previousStatus: aula.status,
-                                        newStatus: newStatus,
-                                        reason: 'auto_sync'
-                                    },
-                                    result: 'success'
-                                });
-                            }
-                        })
-                );
+            if (isPastDay || (isToday && currentTimeMinutes >= endMinutes)) {
+                if (aula.status !== 'concluida') toComplete.push(aula.id);
+            } else if (isToday && currentTimeMinutes >= startMinutes && currentTimeMinutes < endMinutes) {
+                if (aula.status !== 'em_andamento') toInProgress.push(aula.id);
             }
         }
 
-        if (updates.length > 0) {
-            await Promise.all(updates);
+        // Execute batch updates (max 2 requests instead of N)
+        const batchOps: PromiseLike<any>[] = [];
+
+        if (toComplete.length > 0) {
+            batchOps.push(
+                supabase.from('aulas').update({ status: 'concluida' }).in('id', toComplete).then()
+            );
+        }
+        if (toInProgress.length > 0) {
+            batchOps.push(
+                supabase.from('aulas').update({ status: 'em_andamento' }).in('id', toInProgress).then()
+            );
+        }
+
+        if (batchOps.length > 0) {
+            await Promise.all(batchOps);
+            // Single consolidated audit log instead of N individual logs
+            await auditService.log({
+                action: 'STATUS_CHANGE',
+                entity: 'aula',
+                entityId: 'batch',
+                details: {
+                    completed: toComplete.length,
+                    inProgress: toInProgress.length,
+                    reason: 'auto_sync_batch'
+                },
+                result: 'success'
+            });
         }
     },
 
@@ -1119,14 +1221,15 @@ export const aulaService = {
         const startOfYear = `${year}-01-01`;
         const endOfYear = `${year}-12-31`;
 
-        const { data: aulas, error } = await supabase
-            .from('aulas')
-            .select('data, instrutor:instrutores(nome), status, carga_horaria_materia, horario_inicio, horario_fim, curso:cursos(minutos_por_hora)')
-            .gte('data', startOfYear)
-            .lte('data', endOfYear)
-            .neq('status', 'cancelada');
-
-        if (error) throw error;
+        const aulas = await this._fetchPaginated((start, limit) => {
+            return supabase
+                .from('aulas')
+                .select('data, instrutor:instrutores(nome), status, carga_horaria_materia, horario_inicio, horario_fim, curso:cursos(minutos_por_hora)')
+                .gte('data', startOfYear)
+                .lte('data', endOfYear)
+                .neq('status', 'cancelada')
+                .range(start, start + limit - 1);
+        });
 
         const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
         const instructorMap = new Map<string, number[]>();
@@ -1213,14 +1316,15 @@ export const aulaService = {
         const startOfYear = `${year}-01-01`;
         const endOfYear = `${year}-12-31`;
 
-        const { data: aulas, error } = await supabase
-            .from('aulas')
-            .select('data, status, carga_horaria_materia, horario_inicio, horario_fim, curso:cursos(minutos_por_hora)')
-            .gte('data', startOfYear)
-            .lte('data', endOfYear)
-            .neq('status', 'cancelada');
-
-        if (error) throw error;
+        const aulas = await this._fetchPaginated((start, limit) => {
+            return supabase
+                .from('aulas')
+                .select('data, status, carga_horaria_materia, horario_inicio, horario_fim, curso:cursos(minutos_por_hora)')
+                .gte('data', startOfYear)
+                .lte('data', endOfYear)
+                .neq('status', 'cancelada')
+                .range(start, start + limit - 1);
+        });
 
         const historyMap = new Map<string, { totalClasses: number; totalHours: number; completed: number }>();
 

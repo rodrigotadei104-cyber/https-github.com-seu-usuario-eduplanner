@@ -90,6 +90,7 @@ interface ScheduleContextType {
   }>;
   deleteAula: (id: string) => Promise<boolean>;
   deleteAulaPrograma: (id: string) => Promise<boolean>;
+  deleteAulasTurma: (cursoId: string, numeroTurma: string, turmaId?: string, cursoNome?: string) => Promise<boolean>;
 
   // Actions - Registrations
   addInstrutor: (data: Omit<Instrutor, 'id' | 'tenantId'>) => void;
@@ -214,28 +215,24 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!isAuthenticated && !isDemo) return;
 
     try {
-      // Auto-sync statuses logic before fetching to ensure data is fresh
-      if (!isDemo) {
-        await aulaService.syncClassStatuses().catch(err => console.error('Sync error:', err));
-      }
-
-      // SCHEMA CHECK: Validate if numero_turma exists
-      const { error: schemaError } = await supabase.from('aulas').select('numero_turma').limit(1);
-      if (schemaError && schemaError.message?.includes('column')) {
-        showNotification("CRÍTICO: Coluna 'numero_turma' não encontrada no banco. Execute a migração SQL imediatamente!", 'error');
-      }
-
-      // Load data from services (RLS filters by tenant automatically)
-      const [aulasData, instrutoresData, cursosData, materiasData, eventsData] = await Promise.all([
+      setIsLoading(true);
+      // Load ALL data in parallel (including feriados) for maximum speed
+      const [aulasData, instrutoresData, cursosData, materiasData, eventsData, feriadosData] = await Promise.all([
         aulaService.list({ includeRelations: true }).catch(() => []),
         instrutorService.list().catch(() => []),
         cursoService.list().catch(() => []),
         materiaService.list().catch(() => []),
-        eventService.list().catch(() => [])
+        eventService.list().catch(() => []),
+        calendarioService.getFeriados().catch(() => [])
       ]);
 
-      // Carregar feriados para exibicão nas views
-      const feriadosData = await calendarioService.getFeriados().catch(() => []);
+      // Fire-and-forget: sync statuses in background AFTER data is loaded
+      // This ensures UI renders immediately while statuses update silently
+      if (!isDemo) {
+        aulaService.syncClassStatuses().catch(err => console.error('Sync error:', err));
+      }
+
+      // Process feriados
       const novoFeriadosSet = new Set(feriadosData.map((f: any) => String(f.data || f.dataReferencia || '').substring(0, 10)));
       setFeriadosSet(novoFeriadosSet);
       setFeriados(feriadosData.map((f: any) => ({
@@ -268,7 +265,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         tipoAula: a.tipo_aula || 'NORMAL',
         origem: a.origem,
         contabilizaCarga: a.contabiliza_carga ?? true,
-        instrutorId: a.instrutor_id
+        instrutorId: a.instrutor_id,
+        turmaId: a.turma_id
       })));
 
 
@@ -336,6 +334,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     } catch (error) {
       console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
     }
   }, [isAuthenticated, isDemo]);
 
@@ -706,6 +706,43 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return true;
       } else {
         showNotification(result.error || 'Erro ao remover programa.', 'error');
+        return false;
+      }
+    } catch (error: any) {
+      showNotification(error.message || 'Erro inesperado.', 'error');
+      return false;
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [showNotification]);
+
+  const deleteAulasTurma = useCallback(async (cursoId: string, numeroTurma: string, turmaId?: string, cursoNome?: string): Promise<boolean> => {
+    try {
+      setIsActionLoading(true);
+      const result = await aulaService.deleteAulasTurma(cursoId, numeroTurma, turmaId, cursoNome);
+      if (result.success) {
+        // Filtra localmente todas as aulas dessa turma e curso (passado, presente e futuro) de forma normalizada e robusta
+        setAulas(prev => prev.filter(a => {
+          // Se deletou especificamente por turmaId (Nova Arquitetura), remove as correspondentes
+          if (turmaId && a.turmaId === turmaId) {
+            return false;
+          }
+
+          const matchCurso = a.cursoId === cursoId;
+          
+          // Normaliza valores para comparar corretamente undefined, null, strings vazias ou a string 'null'
+          const getNorm = (v: any) => {
+            const s = String(v || '').trim();
+            return (s === 'null' || s === 'undefined') ? '' : s;
+          };
+          const matchTurma = getNorm(a.numeroTurma) === getNorm(numeroTurma);
+          
+          return !(matchCurso && matchTurma);
+        }));
+        showNotification('Grade de aulas removida com sucesso.', 'success');
+        return true;
+      } else {
+        showNotification(result.error || 'Erro ao remover grade.', 'error');
         return false;
       }
     } catch (error: any) {
@@ -1088,6 +1125,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addAulaPrograma,
         deleteAula,
         deleteAulaPrograma,
+        deleteAulasTurma,
 
         addInstrutor,
         deleteInstrutor,
@@ -1129,7 +1167,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isAuthenticated, isLoading, isDemo, login, logout, enterDemoMode, activateAccount, resetPassword,
         aulas, instrutores, cursos, materias, users, systemLogs, eventos, feriadosSet, feriados,
         filteredAulas, currentDate, viewMode, filters,
-        addAula, updateAula, addAulaPrograma, deleteAula, deleteAulaPrograma,
+        addAula, updateAula, addAulaPrograma, deleteAula, deleteAulaPrograma, deleteAulasTurma,
         addInstrutor, deleteInstrutor, addCurso, updateCurso, deleteCurso, addMateria, deleteMateria,
         addEvento, updateEvento, deleteEvento,
         createUser, updateUserStatus, updateUserRole, resendInvitation, acceptInvitation, deleteUser, setTestPassword,

@@ -178,7 +178,8 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                 horariosDoDia: timeSlots,
                 disciplinas: disciplinasSelecionadas,
                 diasBloqueados,
-                datasBloqueadasTurma: new Set(datasBloqueadasTurma)
+                datasBloqueadasTurma: new Set(datasBloqueadasTurma),
+                minutosPorHora: Number(cursoObj?.tipoHoraMin) || 60
             };
 
             const engineOutput = generateSchedule(engineInput);
