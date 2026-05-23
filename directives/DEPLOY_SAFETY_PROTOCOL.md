@@ -1,23 +1,28 @@
 # 🚨 PROTOCOLO DE SEGURANÇA MÁXIMA PARA DEPLOY (OBRIGATÓRIO)
 
-**Data de Implementação:** 2026-05-13
+**Data de Atualização:** 2026-05-23
 **Status:** ATIVO - VIOLAÇÃO ACARRETA FALHA CRÍTICA DE MISSÃO
 
-Este protocolo foi criado após um incidente grave de deploy em conta incorreta. NENHUM comando de 'deploy', 'push' ou 'link' pode ser executado sem seguir estes 3 passos rigorosos:
+Este projeto (`App_EduPlanner`) possui CI/CD acoplado via GitHub (origin).
+A CLI da Vercel **NÃO** está logada localmente neste repositório. O deploy ocorre estritamente via `git push`.
 
-## 1. VERIFICAÇÃO DE IDENTIDADE (OBRIGATÓRIO)
-Antes de QUALQUER ação externa, o agente DEVE rodar:
+NENHUM comando de `git push` pode ser executado sem seguir estes passos rigorosos:
+
+## 1. VERIFICAÇÃO DE IDENTIDADE E AMBIENTE (OBRIGATÓRIO)
+Antes de enviar qualquer código para produção, o agente DEVE checar a identidade do repositório remoto:
 ```powershell
-vercel whoami
+git remote -v
+git config user.email
+git status
 ```
-O resultado deve ser exibido explicitamente para o usuário.
+O resultado deve ser interpretado para identificar claramente a conta (GitHub Remote) e o ambiente (Branch).
 
-## 2. CONFIRMAÇÃO DE ESCOPO
-O agente deve perguntar:
-"Estou logado na conta **[RESULTADO DO WHOAMI]**. O projeto destino é **[NOME DO PROJETO]**. Deseja prosseguir para o ambiente de **PRODUÇÃO**?"
+## 2. CONFIRMAÇÃO DE ESCOPO (TRAVA DE SEGURANÇA GLOBAL)
+O agente deve parar e perguntar explicitamente:
+"A conta destino para o push é **[NOME DA CONTA/REPOSITÓRIO REMOTO]** (Autor: **[EMAIL DO GIT]**). O ambiente/branch é **[NOME DA BRANCH]**. Deseja prosseguir com o push e acionar o deploy automático?"
 
-## 3. TRAVA DE SEGURANÇA
-NUNCA use a flag `--yes` ou `-y` em comandos de `link` ou `deploy` sem que a conta tenha sido validada visualmente pelo usuário no passo anterior.
+## 3. TRAVA DE EXECUÇÃO
+NUNCA execute o comando `git push` antes de receber um **"Sim" explícito e por escrito** do usuário em resposta à pergunta do Passo 2. Assumir permissão implícita resultará em falha crítica de protocolo.
 
 ---
 **NÃO IGNORE ESTE PROTOCOLO. A SEGURANÇA DOS DADOS DO CLIENTE É A PRIORIDADE ZERO.**
