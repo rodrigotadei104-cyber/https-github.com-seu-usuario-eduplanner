@@ -566,10 +566,15 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
 
                                             <div className="h-4 w-px bg-slate-100 flex-shrink-0"></div>
 
-                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                            <div className="flex-1 min-w-0 flex items-center gap-1.5">
                                                 <span className="text-[11px] font-bold text-slate-900 truncate uppercase tracking-tight">
                                                     {isProgram ? 'JOVEM APRENDIZ' : aula.curso}
                                                 </span>
+                                                {aula.aulaExtra && (
+                                                    <span className="bg-amber-500 text-white text-[7px] font-black px-1 py-0.5 rounded uppercase tracking-widest leading-none flex-shrink-0 shadow-sm">
+                                                        EXTRA
+                                                    </span>
+                                                )}
                                             </div>
 
                                             <div className="flex-shrink-0 text-slate-400 hidden sm:block">
@@ -582,13 +587,20 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                                 <span className="text-[10px] font-bold text-slate-900">
                                                     {formatTime(aula.horarioInicio)} — {formatTime(aula.horarioFim)}
                                                 </span>
-                                                <div className={`
-                                                    px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest border
-                                                    ${aula.status === 'em-andamento' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                                        aula.status === 'concluida' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                                            'bg-slate-50 text-slate-500 border-slate-200'}
-                                                `}>
-                                                    {aula.status}
+                                                <div className="flex items-center gap-1.5">
+                                                    {aula.aulaExtra && (
+                                                        <span className="bg-amber-500 text-white px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest leading-none shadow-sm">
+                                                            EXTRA
+                                                        </span>
+                                                    )}
+                                                    <div className={`
+                                                        px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest border
+                                                        ${aula.status === 'em-andamento' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                                            aula.status === 'concluida' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                                'bg-slate-50 text-slate-500 border-slate-200'}
+                                                    `}>
+                                                        {aula.status}
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -641,8 +653,13 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                         `}>
                                             <div className="flex items-start justify-between mb-2 pb-2 border-b border-gray-100">
                                                 <div>
-                                                    <span className="text-[10px] font-mono text-gray-500 block mb-0.5">
+                                                    <span className="text-[10px] font-mono text-gray-500 mb-0.5 flex items-center gap-1.5">
                                                         {formatTime(aula.horarioInicio)} - {formatTime(aula.horarioFim)}
+                                                        {aula.aulaExtra && (
+                                                            <span className="bg-amber-500 text-white text-[8px] font-black px-1 rounded uppercase tracking-wider leading-none shadow-sm">
+                                                                EXTRA
+                                                            </span>
+                                                        )}
                                                     </span>
                                                     <span className="text-xs font-bold text-gray-900 block leading-tight">
                                                         {isProgram ? 'Jovem Aprendiz' : aula.curso}

@@ -231,11 +231,16 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
                         <div
                           key={aula.id + aula.horarioInicio}
                           onClick={(e) => { e.stopPropagation(); onEditAula(aula); }}
-                          className="text-[9px] px-2 py-1.5 rounded shadow-sm hover:opacity-90 transition text-white flex flex-col gap-[1px] leading-tight cursor-pointer mb-1"
+                          className="text-[9px] px-2 py-1.5 rounded shadow-sm hover:opacity-90 transition text-white flex flex-col gap-[1px] leading-tight cursor-pointer mb-1 relative"
                           style={{ backgroundColor: baseColor }}
-                          title={`${aula.horarioInicio} às ${aula.horarioFim}\n${instrutorNome}${!isProgram ? `\nTurma #${aula.numeroTurma || '-'}` : ''}\n${cursoNome}`}
+                          title={`${aula.horarioInicio} às ${aula.horarioFim}\n${instrutorNome}${!isProgram ? `\nTurma #${aula.numeroTurma || '-'}` : ''}\n${cursoNome}${aula.aulaExtra ? '\n[AULA EXTRA]' : ''}`}
                         >
-                          <span className="font-bold truncate">{line1}</span>
+                          {aula.aulaExtra && (
+                            <span className="absolute top-1 right-1 bg-amber-500 text-white text-[7px] font-black px-1 py-0.5 rounded uppercase tracking-widest leading-none scale-90 origin-top-right shadow-sm">
+                              EXTRA
+                            </span>
+                          )}
+                          <span className="font-bold truncate pr-7">{line1}</span>
                           {line2 && <span className="truncate opacity-[0.85] text-[8px] tracking-wide">{line2}</span>}
                           {line3 && <span className="truncate opacity-70 tracking-wider text-[8px]">{line3}</span>}
                         </div>
