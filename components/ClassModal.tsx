@@ -33,6 +33,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
     status: 'agendada',
     cor: '#3b82f6',
     observacoes: '',
+    aulaExtra: false,
   });
 
   // Confirmation State
@@ -87,13 +88,13 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
     if (!selectedCursoObj) return [];
     return materias.filter(m => m.cursoId === selectedCursoObj.id);
   }, [formData.curso, cursos, materias]);
-
-  useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       if (initialData) {
         setFormData({
           ...initialData,
-          numeroTurma: initialData.numeroTurma || initialData.numeroCurso || ''
+          numeroTurma: initialData.numeroTurma || initialData.numeroCurso || '',
+          aulaExtra: initialData.aulaExtra || false
         });
       } else {
         const defaultCurso = cursos[0];
@@ -103,7 +104,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
         baseDate.setHours(h, m, 0, 0);
         const endDate = addMinutes(baseDate, appSettings.defaultClassDuration);
         const endTime = format(endDate, 'HH:mm');
-
+ 
         setFormData({
           data: baseDate,
           horarioInicio: startTime,
@@ -116,11 +117,12 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
           cor: defaultCurso?.cor || '#3b82f6',
           observacoes: '',
           numeroCurso: defaultCurso?.numeroCurso || '',
-          numeroTurma: defaultCurso?.numeroCurso || ''
+          numeroTurma: defaultCurso?.numeroCurso || '',
+          aulaExtra: false
         });
       }
     }
-  }, [isOpen, initialData, instrutores, cursos, appSettings.defaultClassDuration, currentDate]);
+  }, [isOpen, initialData, instrutores, cursos, appSettings.defaultClassDuration, currentDate]);;
 
   if (!isOpen) return null;
 
@@ -470,6 +472,25 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                   <option value="concluida">Concluída</option>
                   <option value="cancelada" disabled={!isAdmin}>Cancelada {isAdmin ? '' : '(Admin)'}</option>
                 </select>
+              </div>
+ 
+              <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-100 dark:border-amber-900/30 md:col-span-2">
+                <input
+                  type="checkbox"
+                  id="aulaExtra"
+                  disabled={isReadOnly || isActionLoading}
+                  checked={formData.aulaExtra || false}
+                  onChange={(e) => handleChange('aulaExtra', e.target.checked)}
+                  className="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 disabled:opacity-50"
+                />
+                <div className="flex flex-col">
+                  <label htmlFor="aulaExtra" className="text-sm font-bold text-amber-800 dark:text-amber-400 cursor-pointer flex items-center gap-1">
+                    <span>⚡ Aula Extra</span>
+                  </label>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-500 font-medium">
+                    Permite criar ou editar esta aula desconsiderando o limite de carga horária planejada da matéria.
+                  </span>
+                </div>
               </div>
             </div>
 

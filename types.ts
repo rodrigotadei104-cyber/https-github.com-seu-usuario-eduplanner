@@ -93,6 +93,7 @@ export interface Aula {
   tipoAula?: TipoAula; // Tipo de aula (NORMAL ou PROGRAMA)
   origem?: OrigemPrograma; // Origem do programa (ex: JOVEM_APRENDIZ)
   contabilizaCarga?: boolean; // Se conta na carga horária (Dashboard)
+  aulaExtra?: boolean; // Aula adicional além da carga horária planejada da matéria
   instrutorId?: string; // ID fixo do instrutor para evitar problemas de nome
 }
 export interface Instrutor {

@@ -267,6 +267,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         tipoAula: a.tipo_aula || 'NORMAL',
         origem: a.origem,
         contabilizaCarga: a.contabiliza_carga ?? true,
+        aulaExtra: a.aula_extra || false,
         instrutorId: a.instrutor_id,
         turmaId: a.turma_id
       })));
@@ -537,7 +538,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       materia_id: materias.find(m => m.nome === data.materia)?.id || '',
       sala: data.sala,
       observacoes: data.observacoes,
-      numero_turma: data.numeroTurma // Pass custom cohort number
+      numero_turma: data.numeroTurma, // Pass custom cohort number
+      aula_extra: data.aulaExtra || false
     };
 
     const result = await aulaService.create(serviceInput, forceCreate);
@@ -644,7 +646,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       sala: data.sala,
       status: data.status === 'em-andamento' ? 'em_andamento' as const : data.status as any,
       observacoes: data.observacoes,
-      numero_turma: data.numeroTurma // Update custom cohort number
+      numero_turma: data.numeroTurma, // Update custom cohort number
+      aula_extra: data.aulaExtra || false
     };
 
     console.log('[DEBUG-UPDATE] Sending payload:', serviceInput);

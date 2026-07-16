@@ -26,6 +26,7 @@ export interface AulaInput {
     tipo_aula?: string; // NORMAL ou PROGRAMA
     origem?: string;
     contabiliza_carga?: boolean;
+    aula_extra?: boolean; // Aula adicional além da carga horária planejada da matéria
 }
 
 export interface AulaUpdateInput extends Partial<AulaInput> {
@@ -413,7 +414,8 @@ export const aulaService = {
                 tenant_id: tenantId,
                 status: 'agendada',
                 carga_horaria_materia: (input as any).carga_horaria_materia || computedCargaHoraria,
-                numero_turma: input.numero_turma // Save cohort ID to the class itself
+                numero_turma: input.numero_turma, // Save cohort ID to the class itself
+                aula_extra: input.aula_extra || false
             })
             .select()
             .single();
@@ -745,7 +747,8 @@ export const aulaService = {
             .from('aulas')
             .update({
                 ...safeInput,
-                carga_horaria_materia: (input as any).carga_horaria_materia || cargaHorariaCalculada
+                carga_horaria_materia: (input as any).carga_horaria_materia || cargaHorariaCalculada,
+                ...(input.aula_extra !== undefined ? { aula_extra: input.aula_extra } : {})
             })
             .eq('id', id)
             .select()
