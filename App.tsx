@@ -29,6 +29,7 @@ import { CatalogoView } from './components/CatalogoView';
 import { CalendarioInstitucionalView } from './components/CalendarioInstitucionalView';
 import { JovemAprendizView } from './components/JovemAprendizView';
 import { DisponibilidadeInstrutorModal } from './components/DisponibilidadeInstrutorModal';
+import { GradePersonalizadaWizard } from './components/GradePersonalizadaWizard';
 
 const App: React.FC = () => {
     const {
@@ -59,6 +60,7 @@ const App: React.FC = () => {
     const [isInspectorOpen, setIsInspectorOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
+    const [isGradePersonalizadaOpen, setIsGradePersonalizadaOpen] = useState(false);
 
     // DEBUG: Log State
     React.useEffect(() => {
@@ -437,6 +439,15 @@ const App: React.FC = () => {
                             Quem está livre?
                         </button>
 
+                        {/* Grade Personalizada por matéria (fluxo isolado) */}
+                        <button
+                            onClick={() => setIsGradePersonalizadaOpen(true)}
+                            className="hidden md:flex items-center bg-teal-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-teal-700 transition-all active:scale-95 shadow-md shadow-teal-200 dark:shadow-none"
+                            title="Abrir turma com dias, turnos e instrutor por matéria (ex.: Escola de Motorista)"
+                        >
+                            Grade Personalizada
+                        </button>
+
                         {/* Primary Action Clássico: Agente Criador Roxo */}
                         <button
                             onClick={() => setIsGeneratorOpen(true)}
@@ -515,6 +526,11 @@ const App: React.FC = () => {
             <DisponibilidadeInstrutorModal
                 isOpen={isAvailabilityOpen}
                 onClose={() => setIsAvailabilityOpen(false)}
+            />
+
+            <GradePersonalizadaWizard
+                isOpen={isGradePersonalizadaOpen}
+                onClose={() => setIsGradePersonalizadaOpen(false)}
             />
         </div>
     );
