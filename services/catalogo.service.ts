@@ -155,6 +155,36 @@ export const catalogoService = {
         };
     },
 
+    // Envia texto e/ou imagem (print) para o endpoint de IA e recebe a matriz estruturada.
+    // Não grava nada — apenas interpreta. A gravação continua sendo feita por importarCatalogoLote.
+    async interpretarMatriz(payload: {
+        text?: string;
+        image?: { data: string; mimeType: string };
+    }): Promise<{
+        nomeCurso: string;
+        tipoHoraMin: number;
+        cargaTotalHoras: number;
+        disciplinas: Array<{ nomeDisciplina: string; cargaHoras: number; tipoDisciplina: 'teorica' | 'pratica'; ordem: number }>;
+    }> {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) throw new Error('Não autenticado');
+
+        const resp = await fetch('/api/parse-course', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const json = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            throw new Error(json?.error || 'Falha ao interpretar a matriz.');
+        }
+        return json;
+    },
+
     async importarCatalogoLote(cursosComDisciplinas: Array<{
         curso: Omit<CatalogoCurso, 'id' | 'tenantId' | 'createdAt'>,
         disciplinas: Omit<DisciplinaCurso, 'id' | 'tenantId' | 'cursoId' | 'createdAt'>[]
