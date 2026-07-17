@@ -27,6 +27,7 @@ import { RoomMapView } from './components/RoomMapView';
 import { CatalogoView } from './components/CatalogoView';
 import { CalendarioInstitucionalView } from './components/CalendarioInstitucionalView';
 import { JovemAprendizView } from './components/JovemAprendizView';
+import { DisponibilidadeInstrutorModal } from './components/DisponibilidadeInstrutorModal';
 
 const App: React.FC = () => {
     const {
@@ -56,6 +57,7 @@ const App: React.FC = () => {
     const [editingAula, setEditingAula] = useState<Aula | null>(null);
     const [isInspectorOpen, setIsInspectorOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
 
     // DEBUG: Log State
     React.useEffect(() => {
@@ -418,6 +420,15 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        {/* Consulta rápida de disponibilidade de instrutores */}
+                        <button
+                            onClick={() => setIsAvailabilityOpen(true)}
+                            className="hidden sm:flex items-center bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-md shadow-emerald-200 dark:shadow-none"
+                            title="Ver quais instrutores estão livres em um dia/horário"
+                        >
+                            Quem está livre?
+                        </button>
+
                         {/* Primary Action Clássico: Agente Criador Roxo */}
                         <button
                             onClick={() => setIsGeneratorOpen(true)}
@@ -491,6 +502,11 @@ const App: React.FC = () => {
             <AberturaTurmaWizard
                 isOpen={isGeneratorOpen}
                 onClose={() => setIsGeneratorOpen(false)}
+            />
+
+            <DisponibilidadeInstrutorModal
+                isOpen={isAvailabilityOpen}
+                onClose={() => setIsAvailabilityOpen(false)}
             />
         </div>
     );
