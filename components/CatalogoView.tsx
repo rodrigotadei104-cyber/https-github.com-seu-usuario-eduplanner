@@ -3,6 +3,7 @@ import { CatalogoCurso, DisciplinaCurso } from '../types';
 import { catalogoService } from '../services/catalogo.service';
 import { useSchedule } from '../context/ScheduleContext';
 import { ConfirmationModal } from './ConfirmationModal';
+import { ImportarCursoIAModal } from './ImportarCursoIAModal';
 import { auditService } from '../services/audit.service';
 import * as XLSX from 'xlsx';
 
@@ -16,6 +17,7 @@ export const CatalogoView: React.FC = () => {
     const [expandedCursoId, setExpandedCursoId] = useState<string | null>(null);
 
     const [isImporting, setIsImporting] = useState(false);
+    const [isIAModalOpen, setIsIAModalOpen] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Modal States
@@ -389,6 +391,13 @@ export const CatalogoView: React.FC = () => {
                         {isImporting ? 'Lendo Excel...' : 'Importar Excel'}
                     </button>
                     <button
+                        onClick={() => setIsIAModalOpen(true)}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition"
+                        title="Ler matriz de um texto ou print e cadastrar automaticamente"
+                    >
+                        Importar com IA
+                    </button>
+                    <button
                         onClick={() => handleOpenCursoModal()}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition shadow-sm"
                     >
@@ -699,6 +708,12 @@ export const CatalogoView: React.FC = () => {
                     </div>
                 )
             }
+
+            <ImportarCursoIAModal
+                isOpen={isIAModalOpen}
+                onClose={() => setIsIAModalOpen(false)}
+                onImported={carregarCursos}
+            />
 
             <ConfirmationModal
                 isOpen={deleteModal.isOpen}
