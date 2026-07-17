@@ -5,7 +5,7 @@ export const config = {
     maxDuration: 60,
 };
 
-const PRIMARY_MODEL = 'gemini-2.0-flash';
+const PRIMARY_MODEL = 'gemini-2.5-flash';
 
 // ---------------------------------------------------------------------------
 // Helpers de normalização (rede de segurança caso a IA devolva formatos crus)
