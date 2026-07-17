@@ -118,6 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
                         <NavItem view="monthly" label="Mensal" />
                         <NavItem view="annual" label="Anual" />
                         <NavItem view="room-map" label="Mapa de Salas" />
+                        <NavItem view="instructor-map" label="Mapa de Instrutores" />
 
                         <SectionTitle label="Acadêmico" />
                         <NavItem view="jovem-aprendiz" label="Jovem Aprendiz" />

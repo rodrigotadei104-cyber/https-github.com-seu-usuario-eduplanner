@@ -24,6 +24,7 @@ import { AboutPage } from './components/AboutPage';
 import { DataInspector } from './components/DataInspector';
 import { AberturaTurmaWizard } from './components/AberturaTurmaWizard';
 import { RoomMapView } from './components/RoomMapView';
+import { MapaInstrutoresView } from './components/MapaInstrutoresView';
 import { CatalogoView } from './components/CatalogoView';
 import { CalendarioInstitucionalView } from './components/CalendarioInstitucionalView';
 import { JovemAprendizView } from './components/JovemAprendizView';
@@ -220,6 +221,7 @@ const App: React.FC = () => {
         if (viewMode === 'registrations') return 'Gestão Acadêmica';
         if (viewMode === 'admin') return 'Gestão de Usuários & Logs';
         if (viewMode === 'room-map') return 'Mapa de Salas';
+        if (viewMode === 'instructor-map') return 'Mapa de Instrutores';
         if (viewMode === 'catalog') return 'Catálogo Base';
         if (viewMode === 'calendar') return 'Calendário Instit.';
         if (viewMode === 'jovem-aprendiz') return 'Jovem Aprendiz';
@@ -234,7 +236,7 @@ const App: React.FC = () => {
         window.print();
     };
 
-    const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin' && viewMode !== 'room-map' && viewMode !== 'catalog' && viewMode !== 'calendar' && viewMode !== 'jovem-aprendiz';
+    const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin' && viewMode !== 'room-map' && viewMode !== 'instructor-map' && viewMode !== 'catalog' && viewMode !== 'calendar' && viewMode !== 'jovem-aprendiz';
     const showSearchBar = showNavControls && viewMode !== 'dashboard'; // Hide search in dashboard
 
     const handleExportMonth = async () => {
@@ -314,6 +316,12 @@ const App: React.FC = () => {
             case 'room-map': // Mapa de Salas — visão semanal por sala
                 return (
                     <RoomMapView
+                        onEditAula={handleEditAula}
+                    />
+                );
+            case 'instructor-map': // Mapa de Instrutores — visão semanal de disponibilidade
+                return (
+                    <MapaInstrutoresView
                         onEditAula={handleEditAula}
                     />
                 );
