@@ -26,8 +26,8 @@ interface DailyViewProps {
     onEdit: (aula: Aula) => void;
 }
 
-const START_HOUR = 5; // Start timeline at 05:00
-const HOURS = Array.from({ length: 24 - START_HOUR }, (_, i) => i + START_HOUR);
+// START_HOUR / HOURS agora são dinâmicos (calculados por dia) dentro do componente,
+// para a timeline começar no 1º horário e terminar no último — sem vazios de madrugada/noite.
 
 // Unified item type for layout
 interface ProcessedItem {
@@ -51,6 +51,21 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
     const feriadoDoDia = feriadosSet.has(dataISO)
         ? (feriados.find(f => f.data === dataISO) || { descricao: 'Feriado', tipo: 'nacional' })
         : null;
+
+    // Instrutores de férias no dia — exibidos numa faixa no topo (não ocupam a grade)
+    const feriasHoje = useMemo(() => {
+        if (!eventos) return [] as string[];
+        const nomes = eventos
+            .filter(e => {
+                const d = e.data instanceof Date ? e.data : new Date(e.data);
+                return e.tipo === 'ferias' && e.status !== 'cancelado' &&
+                    d.getDate() === currentDate.getDate() &&
+                    d.getMonth() === currentDate.getMonth() &&
+                    d.getFullYear() === currentDate.getFullYear();
+            })
+            .map(e => (e.instrutorId && instrutores.find(i => i.id === e.instrutorId)?.nome) || e.nome || 'Instrutor');
+        return Array.from(new Set(nomes)).sort((a, b) => a.localeCompare(b));
+    }, [eventos, currentDate, instrutores]);
 
     // 1. Calculate layout for BOTH classes and events together
     const processedItems = useMemo(() => {
@@ -81,6 +96,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
         // 2. Add Events (Eventos) - Using Local Date Fix
         if (eventos) {
             eventos.forEach(evento => {
+                if (evento.tipo === 'ferias') return; // Férias não ocupam a grade — vão para a faixa no topo
                 const eDate = evento.data instanceof Date ? evento.data : new Date(evento.data);
                 if (
                     eDate.getDate() === currentDate.getDate() &&
@@ -225,6 +241,23 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
         });
     }, [aulas, eventos, currentDate]);
 
+    // Janela dinâmica da timeline: do 1º horário ao último do dia (com fallback quando vazio).
+    const { START_HOUR, END_HOUR, HOURS } = useMemo(() => {
+        if (processedItems.length === 0) {
+            const s = 7, e = 19;
+            return { START_HOUR: s, END_HOUR: e, HOURS: Array.from({ length: e - s }, (_, i) => i + s) };
+        }
+        let minStart = Infinity, maxEnd = -Infinity;
+        processedItems.forEach(it => {
+            if (it.startMinutes < minStart) minStart = it.startMinutes;
+            if (it.endMinutes > maxEnd) maxEnd = it.endMinutes;
+        });
+        const s = Math.max(0, Math.floor(minStart / 60));
+        let e = Math.min(24, Math.ceil(maxEnd / 60));
+        if (e <= s) e = s + 1;
+        return { START_HOUR: s, END_HOUR: e, HOURS: Array.from({ length: e - s }, (_, i) => i + s) };
+    }, [processedItems]);
+
     const [progressMap, setProgressMap] = React.useState<{ [key: string]: any }>({});
 
     // Optimized: Only fetch progress for VISIBLE items (current day)
@@ -353,7 +386,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
     };
 
     const currentHours = getCurrentTimePosition();
-    const showTimeIndicator = isSameDay(new Date(), currentDate) && currentHours >= START_HOUR;
+    const showTimeIndicator = isSameDay(new Date(), currentDate) && currentHours >= START_HOUR && currentHours <= END_HOUR;
 
     // Helper for Status Badge
     const getStatusConfig = (status: ClassStatus) => {
@@ -393,6 +426,15 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                         <span className="ml-2 text-xs text-red-500 dark:text-red-400 capitalize bg-red-100 dark:bg-red-900/40 px-1.5 py-0.5 rounded-full">{feriadoDoDia.tipo}</span>
                     </div>
                     <span className="ml-auto text-xs text-red-500 dark:text-red-400 italic">Aulas não realizadas neste dia</span>
+                </div>
+            )}
+
+            {/* Faixa de Férias (instrutores de férias no dia) */}
+            {feriasHoje.length > 0 && (
+                <div className="px-4 py-2 bg-rose-50 border-b border-rose-200 dark:bg-rose-900/20 dark:border-rose-900/40 flex items-center gap-2 flex-wrap">
+                    <span className="text-base">🌴</span>
+                    <span className="text-sm font-bold text-rose-700 dark:text-rose-300">De férias:</span>
+                    <span className="text-sm text-rose-600 dark:text-rose-400">{feriasHoje.join(', ')}</span>
                 </div>
             )}
 
@@ -461,7 +503,7 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                 return (
                                     <div
                                         key={evento.id}
-                                        className={`absolute z-20 rounded border-l-4 p-2 shadow-sm text-xs transition-all
+                                        className={`absolute z-20 rounded-lg border-l-4 p-2 text-xs transition-all
                                             ${evento.tipo === 'reuniao' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' :
                                                 evento.tipo === 'treinamento' ? 'bg-teal-50 border-teal-500 text-teal-700' :
                                                     evento.tipo === 'feedback' ? 'bg-amber-50 border-amber-500 text-amber-700' :
@@ -474,7 +516,8 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                             // Dynamic positioning
                                             left: `calc(${leftPercent}% + 4px)`,
                                             width: `calc(${widthPercent}% - 8px)`,
-                                            opacity: 0.95
+                                            opacity: 0.95,
+                                            boxShadow: '0 6px 18px -4px rgba(15,23,42,0.28)'
                                         }}
                                         title={`${evento.nome} (${evento.horarioInicio} - ${evento.horarioFim})`}
                                     >
@@ -538,15 +581,19 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                                     onClick={() => onEdit(aula)}
                                     className={`
                                         absolute cursor-pointer transition-all duration-200 z-10 group
-                                        rounded-md border border-gray-100 shadow-sm bg-white
+                                        rounded-lg border border-gray-100 bg-white
                                         ${opacityClass}
-                                        ${isHovered ? 'z-50 shadow-xl ring-2 ring-indigo-500/20' : 'hover:shadow-md'}
+                                        ${isHovered ? 'z-50 ring-2 ring-indigo-500/20' : ''}
                                     `}
                                     style={{
                                         top: `calc(${top} + 1px)`,
                                         height: `calc(${height} - 2px)`,
                                         left: `calc(${leftPercent}% + 2px)`,
                                         width: `calc(${widthPercent}% - 4px)`,
+                                        boxShadow: isHovered
+                                            ? '0 18px 40px -8px rgba(15,23,42,0.45)'
+                                            : '0 6px 18px -4px rgba(15,23,42,0.28)',
+                                        transform: isHovered ? 'translateY(-2px)' : 'none',
                                     }}
                                 >
                                     {/* Barra Lateral de Status */}

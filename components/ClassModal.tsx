@@ -249,7 +249,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
           <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-slate-700">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                {isReadOnly ? 'Detalhes da Aula' : (initialData ? 'Editar Aula' : 'Nova Aula')}
+                {isReadOnly ? 'Detalhes da Aula' : (initialData ? 'Editar Aula' : 'Nova Aula Avulsa')}
               </h2>
               {isViewer && (
                 <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100 uppercase tracking-widest">
@@ -289,75 +289,14 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                       {c.numeroCurso ? `${c.numeroCurso} - ` : ''}{c.nome}
                     </option>
                   ))}
+                  {/* Curso da aula que não está na lista legada (ex.: gerado pelo Agente Criador via Catálogo).
+                      Sem isto, o select cairia na 1ª opção e mostraria o curso errado. */}
+                  {formData.curso && !cursos.some(c => c.nome === formData.curso) && (
+                    <option value={formData.curso}>{formData.curso}</option>
+                  )}
                 </select>
               </div>
 
-              {/* SEARCH BY NUMBER FIELD */}
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 dark:bg-slate-700/50 dark:border-slate-600">
-                <label className="block text-sm font-semibold text-blue-800 mb-1 dark:text-blue-300">
-                  Buscar por Número
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Digite o número do curso..."
-                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-                    disabled={isReadOnly || isActionLoading}
-                    list="course-numbers-list"
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      // Try to find exact match
-                      const found = cursos.find(c => c.numeroCurso === val || (c.numeroCurso && val && c.numeroCurso.startsWith(val)));
-
-                      // If exact match on number, auto-select
-                      const exact = cursos.find(c => c.numeroCurso === val);
-                      if (exact) {
-                        handleCursoChange(exact.nome);
-                        // Log selection
-                        import('../services').then(({ auditService }) => {
-                          auditService.log({
-                            action: 'COURSE_SELECTED_BY_NUMBER',
-                            entity: 'ui_interaction',
-                            details: {
-                              type: 'COURSE_SEARCH',
-                              numero_curso: val,
-                              course_id: exact.id,
-                              target_course: exact.nome // Adding nome to details since 'target' property is not available
-                            },
-                            result: 'success'
-                          });
-                        });
-                      }
-                    }}
-                  />
-                  <datalist id="course-numbers-list">
-                    {cursos.filter(c => c.numeroCurso).map(c => (
-                      <option key={c.id} value={c.numeroCurso}>
-                        {c.nome} ({c.status})
-                      </option>
-                    ))}
-                  </datalist>
-                  <span className="absolute right-3 top-2.5 text-[9px] font-black text-blue-400 uppercase">BUSCA</span>
-                </div>
-                <p className="text-xs text-blue-600 mt-1 dark:text-blue-400">
-                  Digite o número para selecionar automaticamente.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Número do Curso (Confirmado)</label>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Número do Curso (Confirmado)</label>
-                  <input
-                    type="text"
-                    disabled={isReadOnly || isActionLoading}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:disabled:bg-slate-800"
-                    value={formData.numeroTurma || ''}
-                    onChange={(e) => handleChange('numeroTurma', e.target.value)}
-                    placeholder={formData.numeroCurso || 'Número da turma'}
-                  />
-                </div>
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Matéria *</label>
@@ -374,6 +313,10 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
                   {filteredMaterias.map(m => (
                     <option key={m.id} value={m.nome}>{m.nome}</option>
                   ))}
+                  {/* Matéria da aula que não está na lista filtrada (curso do Catálogo novo). */}
+                  {formData.materia && !filteredMaterias.some(m => m.nome === formData.materia) && (
+                    <option value={formData.materia}>{formData.materia}</option>
+                  )}
                 </select>
               </div>
 

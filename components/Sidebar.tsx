@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
                             onClick={onNewClass}
                             className="w-full bg-[#2563eb] hover:bg-blue-600 text-white py-3.5 rounded-xl font-bold text-[14px] transition-colors mb-6 active:scale-95"
                         >
-                            + Nova Aula
+                            + Aula Avulsa
                         </button>
                     )}
 
