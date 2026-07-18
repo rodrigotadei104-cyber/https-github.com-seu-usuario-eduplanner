@@ -30,6 +30,7 @@ import { CalendarioInstitucionalView } from './components/CalendarioInstituciona
 import { JovemAprendizView } from './components/JovemAprendizView';
 import { DisponibilidadeInstrutorModal } from './components/DisponibilidadeInstrutorModal';
 import { GradePersonalizadaWizard } from './components/GradePersonalizadaWizard';
+import { ImportarAgendaExcelModal } from './components/ImportarAgendaExcelModal';
 
 const App: React.FC = () => {
     const {
@@ -61,6 +62,7 @@ const App: React.FC = () => {
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
     const [isGradePersonalizadaOpen, setIsGradePersonalizadaOpen] = useState(false);
+    const [isImportarAgendaOpen, setIsImportarAgendaOpen] = useState(false);
 
     // DEBUG: Log State
     React.useEffect(() => {
@@ -439,6 +441,15 @@ const App: React.FC = () => {
                             Quem está livre?
                         </button>
 
+                        {/* Importar Agenda do Power BI (fluxo isolado) */}
+                        <button
+                            onClick={() => setIsImportarAgendaOpen(true)}
+                            className="hidden md:flex items-center bg-cyan-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-cyan-700 transition-all active:scale-95 shadow-md shadow-cyan-200 dark:shadow-none"
+                            title="Importar aulas de uma planilha Excel exportada do Power BI (sem duplicar)"
+                        >
+                            Importar Power BI
+                        </button>
+
                         {/* Grade Personalizada por matéria (fluxo isolado) */}
                         <button
                             onClick={() => setIsGradePersonalizadaOpen(true)}
@@ -531,6 +542,11 @@ const App: React.FC = () => {
             <GradePersonalizadaWizard
                 isOpen={isGradePersonalizadaOpen}
                 onClose={() => setIsGradePersonalizadaOpen(false)}
+            />
+
+            <ImportarAgendaExcelModal
+                isOpen={isImportarAgendaOpen}
+                onClose={() => setIsImportarAgendaOpen(false)}
             />
         </div>
     );
