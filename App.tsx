@@ -25,6 +25,8 @@ import { DataInspector } from './components/DataInspector';
 import { AberturaTurmaWizard } from './components/AberturaTurmaWizard';
 import { RoomMapView } from './components/RoomMapView';
 import { MapaInstrutoresView } from './components/MapaInstrutoresView';
+import { TurmasView } from './components/TurmasView';
+import { FechamentoView } from './components/FechamentoView';
 import { CatalogoView } from './components/CatalogoView';
 import { CalendarioInstitucionalView } from './components/CalendarioInstitucionalView';
 import { JovemAprendizView } from './components/JovemAprendizView';
@@ -226,6 +228,8 @@ const App: React.FC = () => {
         if (viewMode === 'admin') return 'Gestão de Usuários & Logs';
         if (viewMode === 'room-map') return 'Mapa de Salas';
         if (viewMode === 'instructor-map') return 'Mapa de Instrutores';
+        if (viewMode === 'turmas') return 'Turmas';
+        if (viewMode === 'fechamento') return 'Fechamento (5/25)';
         if (viewMode === 'catalog') return 'Catálogo Base';
         if (viewMode === 'calendar') return 'Calendário Instit.';
         if (viewMode === 'jovem-aprendiz') return 'Jovem Aprendiz';
@@ -240,7 +244,7 @@ const App: React.FC = () => {
         window.print();
     };
 
-    const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin' && viewMode !== 'room-map' && viewMode !== 'instructor-map' && viewMode !== 'catalog' && viewMode !== 'calendar' && viewMode !== 'jovem-aprendiz';
+    const showNavControls = viewMode !== 'registrations' && viewMode !== 'admin' && viewMode !== 'room-map' && viewMode !== 'instructor-map' && viewMode !== 'turmas' && viewMode !== 'fechamento' && viewMode !== 'catalog' && viewMode !== 'calendar' && viewMode !== 'jovem-aprendiz';
     const showSearchBar = showNavControls && viewMode !== 'dashboard'; // Hide search in dashboard
 
     const handleExportMonth = async () => {
@@ -329,6 +333,10 @@ const App: React.FC = () => {
                         onEditAula={handleEditAula}
                     />
                 );
+            case 'turmas': // Turmas — início/término/progresso por turma
+                return <TurmasView />;
+            case 'fechamento': // Fechamento — componentes/cursos concluídos por corte (5/25)
+                return <FechamentoView />;
             case 'privacy':
                 return <PrivacyPolicy />;
             case 'terms':
