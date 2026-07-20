@@ -139,7 +139,7 @@ export interface Evento {
   status: EventStatus;
 }
 
-export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin' | 'room-map' | 'instructor-map' | 'catalog' | 'calendar' | 'jovem-aprendiz' | 'privacy' | 'terms' | 'about' | 'settings';
+export type ViewMode = 'dashboard' | 'daily' | 'monthly' | 'annual' | 'registrations' | 'admin' | 'room-map' | 'instructor-map' | 'turmas' | 'fechamento' | 'catalog' | 'calendar' | 'jovem-aprendiz' | 'privacy' | 'terms' | 'about' | 'settings';
 
 export interface FilterState {
   search: string;
