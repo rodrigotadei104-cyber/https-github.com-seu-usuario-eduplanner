@@ -4,7 +4,7 @@ import { ptBR } from 'date-fns/locale';
 import { useSchedule } from '../context/ScheduleContext';
 import { AulaMapaSala } from '../services/aula.service';
 import { Aula } from '../types';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 // ============================================
 // HELPERS
@@ -27,6 +27,26 @@ const getCourseColor = (name: string): string => {
     return DARK_COLORS[Math.abs(hash) % DARK_COLORS.length];
 };
 
+// Tons claros (pastel) para preenchimento de célula no Excel — mesma ordem de DARK_COLORS.
+const LIGHT_FILLS = [
+    'D1FAE5', // Emerald
+    'EDE9FE', // Violet
+    'FEE2E2', // Red
+    'FEF3C7', // Amber
+    'DBEAFE', // Blue
+    'CFFAFE', // Cyan
+    'E0E7FF', // Indigo
+    'FCE7F3', // Pink
+];
+
+// Cor de fundo (hex sem #) para o Excel: programas = âmbar; cursos = pastel por hash.
+const getCourseFill = (name: string, isProgram: boolean): string => {
+    if (isProgram) return 'FEF3C7';
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return LIGHT_FILLS[Math.abs(hash) % LIGHT_FILLS.length];
+};
+
 const toMinutes = (time: string): number => {
     const [h, m] = time.split(':').map(Number);
     return h * 60 + m;
@@ -35,6 +55,55 @@ const toMinutes = (time: string): number => {
 const calcDurationHours = (aula: AulaMapaSala): number => {
     const mins = toMinutes(aula.horarioFim) - toMinutes(aula.horarioInicio);
     return mins > 0 ? Math.round((mins / (aula.minutosPorHora || 60)) * 100) / 100 : 0;
+};
+
+interface BlocoSalaConsolidado {
+    id: string;
+    inicio: string;
+    fim: string;
+    curso: string;
+    instrutor: string;
+    numeroTurma?: string;
+    isProgram: boolean;
+    origem?: string;
+    isCancelada: boolean;
+    conflito: boolean;
+    aula: AulaMapaSala;
+}
+
+// Consolida aulas do MESMO curso na mesma célula (sala/dia) em UM bloco: do 1º início ao último fim.
+// Conflito passa a valer só entre CURSOS DIFERENTES que se sobrepõem no tempo (conflito real de sala).
+const consolidarSalaCelula = (aulas: AulaMapaSala[]): BlocoSalaConsolidado[] => {
+    const grupos = new Map<string, AulaMapaSala[]>();
+    aulas.forEach(a => {
+        const isProg = a.tipoAula === 'PROGRAMA';
+        const turma = a.numeroTurma || '';
+        const chave = isProg ? `P:${a.origem || a.curso}:${turma}` : `C:${a.curso}:${turma}`;
+        if (!grupos.has(chave)) grupos.set(chave, []);
+        grupos.get(chave)!.push(a);
+    });
+    const blocos: BlocoSalaConsolidado[] = [];
+    for (const grp of grupos.values()) {
+        const ord = grp.slice().sort((x, y) => toMinutes(x.horarioInicio) - toMinutes(y.horarioInicio));
+        const rep = ord[0];
+        let fim = rep.horarioFim;
+        ord.forEach(a => { if (toMinutes(a.horarioFim) > toMinutes(fim)) fim = a.horarioFim; });
+        blocos.push({
+            id: rep.id, inicio: rep.horarioInicio, fim,
+            curso: rep.curso, instrutor: rep.instrutor, numeroTurma: rep.numeroTurma,
+            isProgram: rep.tipoAula === 'PROGRAMA', origem: rep.origem,
+            isCancelada: grp.every(a => a.status === 'cancelada'),
+            conflito: false, aula: rep
+        });
+    }
+    for (let i = 0; i < blocos.length; i++)
+        for (let j = i + 1; j < blocos.length; j++) {
+            const a = blocos[i], b = blocos[j];
+            if (toMinutes(a.inicio) < toMinutes(b.fim) && toMinutes(a.fim) > toMinutes(b.inicio)) {
+                a.conflito = true; b.conflito = true;
+            }
+        }
+    return blocos.sort((x, y) => toMinutes(x.inicio) - toMinutes(y.inicio));
 };
 
 const detectarConflitos = (aulas: AulaMapaSala[]): Set<string> => {
@@ -132,7 +201,8 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                 status: a.status,
                 minutosPorHora: a.minutosPorHora,
                 tipoAula: a.tipoAula,
-                origem: a.origem
+                origem: a.origem,
+                numeroTurma: a.numeroTurma
                 };
             });
     }, [aulasGlobais, inicioSemana, fimSemana]);
@@ -228,65 +298,132 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
         const wb = XLSX.utils.book_new();
         const diasHeader = diasDaSemana.map(d => format(d, 'EEE dd/MM', { locale: ptBR }));
         const labelS = `${format(inicioSemana, 'dd/MM', { locale: ptBR })} - ${format(fimSemana, 'dd/MM/yyyy', { locale: ptBR })}`;
+        const geradoEm = format(new Date(), "dd/MM/yyyy 'as' HH:mm");
 
-        // â”€â”€ Aba 1: Grade Semanal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        const gradeRows: (string | number)[][] = [
-            [`MAPA DE SALAS  |  ${labelS}  |  ${aulasAtivas.length} aulas  |  ${totalHoras.toFixed(1)}h  |  Gerado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`],
-            [],
-            ['SALA', ...diasHeader.map(d => d.toUpperCase())],
-            ...salasUnicas.map(([salaId, salaNome]) => [
-                salaNome,
-                ...diasDaSemana.map(dia => {
-                    const ac = grade[salaId]?.[format(dia, 'yyyy-MM-dd')] || [];
-                    if (ac.length === 0) return '';
-                    return ac.map(a =>
-                        `${a.horarioInicio}-${a.horarioFim}  ${a.curso}\n[${a.instrutor}]`
-                    ).join('\n---\n');
-                })
-            ]),
-            [],
-            [numConflitos > 0 ? `âš  ${numConflitos} CONFLITO(S) DETECTADO(S) NESTA SEMANA` : 'Sem conflitos']
-        ];
+        // Paleta / estilos reutilizaveis
+        const COR = {
+            titulo: '0F172A', header: '1E293B', branco: 'FFFFFF',
+            sub: '475569', borda: 'CBD5E1', zebra: 'F1F5F9',
+            sala: 'E2E8F0', confFill: 'FECACA', confText: 'B91C1C', texto: '1E293B'
+        };
+        const thin = { style: 'thin', color: { rgb: COR.borda } };
+        const bordas = { top: thin, bottom: thin, left: thin, right: thin };
+        const sTitulo = { font: { bold: true, sz: 14, color: { rgb: COR.branco } }, fill: { fgColor: { rgb: COR.titulo } }, alignment: { horizontal: 'left', vertical: 'center' } };
+        const sSub = { font: { italic: true, sz: 9, color: { rgb: COR.sub } }, alignment: { horizontal: 'left', vertical: 'center' } };
+        const sHeader = { font: { bold: true, sz: 10, color: { rgb: COR.branco } }, fill: { fgColor: { rgb: COR.header } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: bordas };
+        const sSala = { font: { bold: true, sz: 10, color: { rgb: COR.texto } }, fill: { fgColor: { rgb: COR.sala } }, alignment: { horizontal: 'left', vertical: 'top', wrapText: true }, border: bordas };
 
-        const wsGrade = XLSX.utils.aoa_to_sheet(gradeRows);
-        wsGrade['!cols'] = [{ wch: 26 }, ...diasHeader.map(() => ({ wch: 36 }))];
-        wsGrade['!rows'] = [
-            { hpt: 24 }, { hpt: 5 }, { hpt: 18 },
-            ...salasUnicas.map(() => ({ hpt: 64 })),
-            { hpt: 5 }, { hpt: 14 }
+        const setStyle = (ws: any, r: number, c: number, s: any) => {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+            ws[addr].s = s;
+        };
+
+        // ABA 1: GRADE SEMANAL ESTILIZADA
+        const nDias = diasDaSemana.length;
+        const gradeAoA: (string | number)[][] = [
+            [`MAPA DE SALAS   -   ${labelS}   -   ${aulasAtivas.length} aulas   -   ${totalHoras.toFixed(1)}h${numConflitos > 0 ? `   -   ${numConflitos} conflito(s)` : ''}`, ...Array(nDias).fill('')],
+            [`Gerado em ${geradoEm}`, ...Array(nDias).fill('')],
+            ['SALA', ...diasHeader.map(d => d.toUpperCase())]
         ];
-        (wsGrade as any)['!freeze'] = { xSplit: 1, ySplit: 3 };
-        wsGrade['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 + diasHeader.length - 1 } }];
+        const gradeMeta: Record<string, { conf: boolean; fill: string }> = {};
+        salasUnicas.forEach(([salaId, salaNome], si) => {
+            const r = 3 + si;
+            const rowVals: (string | number)[] = [salaNome];
+            diasDaSemana.forEach((dia, di) => {
+                const c = 1 + di;
+                const ac = grade[salaId]?.[format(dia, 'yyyy-MM-dd')] || [];
+                if (ac.length === 0) { rowVals.push(''); return; }
+                const blocos = consolidarSalaCelula(ac);
+                rowVals.push(blocos.map(b => {
+                    const label = b.isProgram ? (b.origem || 'Programa') : b.curso;
+                    return `${(b.inicio || '').slice(0, 5)}-${(b.fim || '').slice(0, 5)}   ${label}${b.numeroTurma ? '  #' + b.numeroTurma : ''}\n${b.instrutor}`;
+                }).join('\n\n'));
+                const conf = blocos.some(b => b.conflito);
+                const fill = conf ? COR.confFill
+                    : blocos.length === 1
+                        ? getCourseFill(blocos[0].isProgram ? (blocos[0].origem || blocos[0].curso) : blocos[0].curso, blocos[0].isProgram)
+                        : COR.branco;
+                gradeMeta[`${r},${c}`] = { conf, fill };
+            });
+            gradeAoA.push(rowVals);
+        });
+
+        const wsGrade = XLSX.utils.aoa_to_sheet(gradeAoA);
+        wsGrade['!cols'] = [{ wch: 22 }, ...diasHeader.map(() => ({ wch: 30 }))];
+        wsGrade['!rows'] = [{ hpt: 26 }, { hpt: 16 }, { hpt: 20 }];
+        wsGrade['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: nDias } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: nDias } }
+        ];
+        setStyle(wsGrade, 0, 0, sTitulo);
+        setStyle(wsGrade, 1, 0, sSub);
+        for (let c = 0; c <= nDias; c++) setStyle(wsGrade, 2, c, sHeader);
+        salasUnicas.forEach((_, si) => {
+            const r = 3 + si;
+            setStyle(wsGrade, r, 0, sSala);
+            for (let di = 0; di < nDias; di++) {
+                const c = 1 + di;
+                const meta = gradeMeta[`${r},${c}`];
+                setStyle(wsGrade, r, c, {
+                    font: { sz: 9, color: { rgb: meta?.conf ? COR.confText : COR.texto } },
+                    fill: { fgColor: { rgb: meta?.fill || COR.branco } },
+                    alignment: { horizontal: 'left', vertical: 'top', wrapText: true },
+                    border: bordas
+                });
+            }
+        });
         XLSX.utils.book_append_sheet(wb, wsGrade, 'Grade Semanal');
 
-        // â”€â”€ Aba 2: Lista Detalhada â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        const detalhadoRows: (string | number)[][] = [
-            [`LISTA DETALHADA  |  ${labelS}`],
-            [],
-            ['SALA', 'DATA', 'INICIO', 'FIM', 'DURACAO (h)', 'CURSO', 'MATERIA', 'INSTRUTOR', 'STATUS', 'CONFLITO'],
+        // ABA 2: TABELA LIMPA (LISTA)
+        const cols = ['SALA', 'DATA', 'INICIO', 'FIM', 'DURACAO (h)', 'CURSO', 'MATERIA', 'INSTRUTOR', 'TURMA', 'STATUS', 'CONFLITO'];
+        const nCol = cols.length;
+        const listaAoA: (string | number)[][] = [
+            [`LISTA DE AULAS   -   ${labelS}`, ...Array(nCol - 1).fill('')],
+            [`${aulasFiltradas.length} aula(s)   -   Gerado em ${geradoEm}`, ...Array(nCol - 1).fill('')],
+            cols,
             ...aulasFiltradas.map(a => [
                 a.sala,
                 format(parseISO(a.data + 'T00:00:00'), 'EEE dd/MM/yyyy', { locale: ptBR }),
-                a.horarioInicio,
-                a.horarioFim,
+                (a.horarioInicio || '').slice(0, 5),
+                (a.horarioFim || '').slice(0, 5),
                 calcDurationHours(a),
                 a.curso,
                 a.materia,
                 a.instrutor,
+                a.numeroTurma || '-',
                 statusLabel(a.status),
                 conflitantes.has(a.id) ? 'SIM' : '-'
             ])
         ];
-
-        const wsDetalhado = XLSX.utils.aoa_to_sheet(detalhadoRows);
-        wsDetalhado['!cols'] = [
-            { wch: 24 }, { wch: 18 }, { wch: 8 }, { wch: 8 }, { wch: 11 },
-            { wch: 34 }, { wch: 24 }, { wch: 28 }, { wch: 14 }, { wch: 9 }
+        const wsLista = XLSX.utils.aoa_to_sheet(listaAoA);
+        wsLista['!cols'] = [
+            { wch: 22 }, { wch: 16 }, { wch: 8 }, { wch: 8 }, { wch: 11 },
+            { wch: 32 }, { wch: 24 }, { wch: 26 }, { wch: 9 }, { wch: 14 }, { wch: 10 }
         ];
-        wsDetalhado['!rows'] = [{ hpt: 24 }, { hpt: 5 }, { hpt: 18 }];
-        (wsDetalhado as any)['!freeze'] = { xSplit: 1, ySplit: 3 };
-        wsDetalhado['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }];
-        XLSX.utils.book_append_sheet(wb, wsDetalhado, 'Lista Detalhada');
+        wsLista['!rows'] = [{ hpt: 26 }, { hpt: 16 }, { hpt: 20 }];
+        wsLista['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: nCol - 1 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: nCol - 1 } }
+        ];
+        const centradas = new Set([2, 3, 4, 8, 10]); // inicio, fim, duracao, turma, conflito
+        setStyle(wsLista, 0, 0, sTitulo);
+        setStyle(wsLista, 1, 0, sSub);
+        for (let c = 0; c < nCol; c++) setStyle(wsLista, 2, c, sHeader);
+        aulasFiltradas.forEach((a, ai) => {
+            const r = 3 + ai;
+            const conf = conflitantes.has(a.id);
+            const zebra = ai % 2 === 1;
+            for (let c = 0; c < nCol; c++) {
+                setStyle(wsLista, r, c, {
+                    font: { sz: 9, color: { rgb: conf ? COR.confText : COR.texto }, bold: conf && c === nCol - 1 },
+                    fill: { fgColor: { rgb: conf ? COR.confFill : zebra ? COR.zebra : COR.branco } },
+                    alignment: { horizontal: centradas.has(c) ? 'center' : 'left', vertical: 'center' },
+                    border: bordas
+                });
+            }
+        });
+        XLSX.utils.book_append_sheet(wb, wsLista, 'Lista de Aulas');
 
         XLSX.writeFile(wb, `MapaDeSalas_${format(inicioSemana, 'ddMMyyyy')}-${format(fimSemana, 'ddMMyyyy')}.xlsx`);
     }, [aulasFiltradas, salasUnicas, grade, diasDaSemana, conflitantes, inicioSemana, fimSemana, aulasAtivas, totalHoras, numConflitos]);
@@ -315,12 +452,14 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                 const ac = grade[salaId]?.[dStr] || [];
                 const cards = ac.length === 0
                     ? '<span style="color:#cbd5e1;font-size:10px">-</span>'
-                    : ac.map(a => {
-                        const isC = conflitantes.has(a.id);
-                        return `<div style="background:${isC ? '#fef2f2' : `${a.cor}18`};border-left:3px solid ${isC ? '#f87171' : a.cor};border-radius:4px;padding:3px 6px;margin-bottom:3px">
-                            <div style="font-size:8.5px;font-weight:700;color:${isC ? '#b91c1c' : '#0f172a'}">${a.horarioInicio}-${a.horarioFim}${isC ? ' âš ' : ''}</div>
-                            <div style="font-size:9.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:125px">${a.curso}</div>
-                            <div style="font-size:8px;color:#94a3b8">${a.instrutor.split(' ')[0]}</div>
+                    : consolidarSalaCelula(ac).map(b => {
+                        const isC = b.conflito;
+                        const cor = b.isProgram ? '#d97706' : getCourseColor(b.curso);
+                        const label = b.isProgram ? (b.origem || 'Programa') : b.curso;
+                        return `<div style="background:${isC ? '#fef2f2' : `${cor}18`};border-left:3px solid ${isC ? '#f87171' : cor};border-radius:4px;padding:3px 6px;margin-bottom:3px">
+                            <div style="font-size:8.5px;font-weight:700;color:${isC ? '#b91c1c' : '#0f172a'}">${(b.inicio || '').slice(0, 5)}-${(b.fim || '').slice(0, 5)}${isC ? ' âš ' : ''}</div>
+                            <div style="font-size:9.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:125px">${label}</div>
+                            <div style="font-size:8px;color:#94a3b8">${b.instrutor.split(' ')[0]}${b.numeroTurma ? ' · #' + b.numeroTurma : ''}</div>
                         </div>`;
                     }).join('');
                 return `<td style="border:1px solid #e2e8f0;padding:4px 5px;vertical-align:top;background:${isH ? 'rgba(219,234,254,0.3)' : bg}">${cards}</td>`;
@@ -562,7 +701,7 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                 >
                                     <table
                                         id="rmap-table"
-                                        style={{ borderCollapse: 'collapse', fontSize: '12px', minWidth: '1100px' }}
+                                        style={{ borderCollapse: 'collapse', fontSize: '12px', width: '100%', tableLayout: 'fixed', minWidth: '760px' }}
                                     >
                                         <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
                                             <tr>
@@ -589,7 +728,6 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                             key={diaStr}
                                                             style={{
                                                                 background: feriado ? '#fff1f2' : isHoje ? '#eff6ff' : '#f9fafb',
-                                                                width: '134px', minWidth: '134px',
                                                                 borderBottom: `2px solid ${feriado ? '#fca5a5' : isHoje ? '#93c5fd' : '#e5e7eb'}`,
                                                                 borderRight: '1px solid #e5e7eb',
                                                                 padding: '8px',
@@ -644,84 +782,44 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                                 key={diaStr}
                                                                 style={{
                                                                     verticalAlign: 'top',
-                                                                    padding: '6px',
-                                                                    minHeight: '60px',
-                                                                    borderBottom: '1px solid #e5e7eb',
-                                                                    borderRight: '1px solid #e5e7eb',
-                                                                    background: isHoje ? 'rgba(239,246,255,0.3)' : 'transparent',
-                                                                    width: '134px', minWidth: '134px'
+                                                                    padding: '3px',
+                                                                    borderBottom: '1px solid #f1f5f9',
+                                                                    borderRight: '1px solid #f1f5f9',
+                                                                    background: isHoje ? 'rgba(239,246,255,0.35)' : 'transparent'
                                                                 }}
                                                             >
-                                                                {aulasNaCelula.length === 0 ? (
-                                                                    <span style={{ color: '#e5e7eb', fontSize: '10px', display: 'block', paddingTop: '4px', paddingLeft: '4px', userSelect: 'none' }}>-</span>
-                                                                ) : (
+                                                                {aulasNaCelula.length === 0 ? null : (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                                        {aulasNaCelula.map(aula => {
-                                                                            const isConflito = conflitantes.has(aula.id);
-                                                                            const isCancelada = aula.status === 'cancelada';
-                                                                            const isProgram = aula.tipoAula === 'PROGRAMA';
-                                                                            
-                                                                            // Usa a cor hash sólida ou a cor do evento caso programa, se cancelada usa cinza.
-                                                                            const baseColor = isProgram ? '#c2410c' : getCourseColor(aula.curso);
-                                                                            const aulaCor = isConflito ? '#dc2626' : isCancelada ? '#f3f4f6' : baseColor;
-
+                                                                        {consolidarSalaCelula(aulasNaCelula).map(b => {
+                                                                            const isConflito = b.conflito;
+                                                                            const isCancelada = b.isCancelada;
+                                                                            const isProgram = b.isProgram;
+                                                                            const cor = isProgram ? '#d97706' : getCourseColor(b.curso);
+                                                                            const dim = filtroInstrutor && b.instrutor !== filtroInstrutor;
+                                                                            const bg = isConflito ? '#fef2f2' : isCancelada ? '#f1f5f9' : `${cor}18`;
+                                                                            const borda = isConflito ? '#ef4444' : isCancelada ? '#cbd5e1' : cor;
+                                                                            const label = isProgram ? (b.origem || 'Programa') : b.curso;
                                                                             return (
                                                                                 <button
-                                                                                    key={aula.id}
-                                                                                    onClick={() => handleClickAula(aula)}
-                                                                                    title={`${isProgram ? 'Programa' : aula.curso}\n${aula.instrutor}\n${aula.horarioInicio}-${aula.horarioFim}`}
+                                                                                    key={b.id}
+                                                                                    onClick={() => handleClickAula(b.aula)}
+                                                                                    title={`${label}\n${b.instrutor}\n${b.inicio}-${b.fim}${isConflito ? '\n⚠ Conflito de sala' : ''}`}
                                                                                     style={{
-                                                                                        width: '100%',
-                                                                                        textAlign: 'left',
-                                                                                        borderRadius: '6px',
-                                                                                        overflow: 'hidden',
-                                                                                        cursor: 'pointer',
-                                                                                        border: 'none',
-                                                                                        padding: 0,
-                                                                                        opacity: isCancelada ? 0.6 : (filtroInstrutor && aula.instrutor !== filtroInstrutor ? 0.3 : 1),
-                                                                                        outline: isConflito ? '2px solid #ef4444' : 'none',
-                                                                                        outlineOffset: '[-1px]',
-                                                                                        backgroundColor: aulaCor,
-                                                                                        color: isCancelada ? '#9ca3af' : '#ffffff',
-                                                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                                                                        width: '100%', textAlign: 'left', borderRadius: '4px',
+                                                                                        border: 'none', borderLeft: `3px solid ${borda}`,
+                                                                                        padding: '2px 5px', cursor: 'pointer', background: bg,
+                                                                                        opacity: isCancelada ? 0.6 : dim ? 0.35 : 1, overflow: 'hidden'
                                                                                     }}
                                                                                 >
-                                                                                    <div style={{ padding: '6px 8px' }}>
-                                                                                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                                                                                            {isConflito && <span style={{ color: '#ffffff', fontSize: '9px', fontWeight: '900', backgroundColor: '#991b1b', padding: '1px 3px', borderRadius: '3px' }}>!</span>}
-                                                                                            <span style={{
-                                                                                                fontSize: '11px', fontWeight: 800,
-                                                                                                color: isCancelada ? '#9ca3af' : '#ffffff',
-                                                                                                fontVariantNumeric: 'tabular-nums',
-                                                                                                lineHeight: 1, 
-                                                                                                textShadow: isCancelada ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
-                                                                                                opacity: 0.95
-                                                                                            }}>
-                                                                                                {aula.horarioInicio}-{aula.horarioFim}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                        <span style={{
-                                                                                            display: 'block', fontSize: '11px', fontWeight: 700,
-                                                                                            color: isCancelada ? '#9ca3af' : '#ffffff',
-                                                                                            textDecoration: isCancelada ? 'line-through' : 'none',
-                                                                                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                                                                            lineHeight: 1.3,
-                                                                                            textShadow: isCancelada ? 'none' : '0 1px 2px rgba(0,0,0,0.3)'
-                                                                                        }}>
-                                                                                            {aula.curso}
-                                                                                        </span>
-                                                                                        <span style={{
-                                                                                            display: 'block', fontSize: '10px',
-                                                                                            color: isCancelada ? '#d1d5db' : '#f3f4f6',
-                                                                                            fontWeight: 600,
-                                                                                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                                                                            lineHeight: 1.3,
-                                                                                            marginTop: '2px',
-                                                                                            opacity: 0.8
-                                                                                        }}>
-                                                                                            {aula.instrutor.split(' ')[0]}
-                                                                                        </span>
-                                                                                    </div>
+                                                                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: isConflito ? '#b91c1c' : '#0f172a', fontVariantNumeric: 'tabular-nums', lineHeight: 1.25, whiteSpace: 'nowrap' }}>
+                                                                                        {isConflito && '⚠ '}{(b.inicio || '').slice(0, 5)}–{(b.fim || '').slice(0, 5)}
+                                                                                    </span>
+                                                                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: '#1e293b', textDecoration: isCancelada ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.25 }}>
+                                                                                        {label}
+                                                                                    </span>
+                                                                                    <span style={{ display: 'block', fontSize: '9px', color: '#64748b', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+                                                                                        {b.instrutor?.split(' ')[0]}{b.numeroTurma ? ` · #${b.numeroTurma}` : ''}
+                                                                                    </span>
                                                                                 </button>
                                                                             );
                                                                         })}
@@ -797,14 +895,15 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                         <span className="text-[10px] font-bold text-gray-400 shrink-0 uppercase tracking-tighter">{ac.length} Aulas</span>
                                                     </div>
                                                     <div className="p-2 flex flex-col gap-2 overflow-y-auto">
-                                                        {ac.map(aula => {
-                                                            const isC = conflitantes.has(aula.id);
-                                                            const isProgram = aula.tipoAula === 'PROGRAMA';
-                                                            const aulaCor = isProgram ? '#D97706' : aula.cor;
+                                                        {consolidarSalaCelula(ac).map(b => {
+                                                            const isC = b.conflito;
+                                                            const isProgram = b.isProgram;
+                                                            const aulaCor = isProgram ? '#D97706' : getCourseColor(b.curso);
+                                                            const label = isProgram ? (b.origem || 'Programa') : b.curso;
                                                             return (
                                                                 <button
-                                                                    key={aula.id}
-                                                                    onClick={() => handleClickAula(aula)}
+                                                                    key={b.id}
+                                                                    onClick={() => handleClickAula(b.aula)}
                                                                     className="w-full text-left rounded-lg p-3 transition-all hover:brightness-95 active:scale-[0.99]"
                                                                     style={{
                                                                         background: isC ? '#fef2f2' : `${aulaCor}14`,
@@ -813,17 +912,17 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                                                                 >
                                                                     <div className="flex items-center gap-1.5 mb-1">
                                                                         <span className={`text-[11px] font-black font-mono uppercase tracking-tighter ${isProgram ? 'text-amber-700 dark:text-amber-500' : 'text-gray-700 dark:text-gray-200'}`}>
-                                                                             {aula.horarioInicio} - {aula.horarioFim}
+                                                                             {(b.inicio || '').slice(0, 5)} - {(b.fim || '').slice(0, 5)}
                                                                         </span>
                                                                         {isC && <span className="text-red-600 font-black text-[10px] ml-auto uppercase tracking-widest">! Conflito</span>}
                                                                     </div>
-                                                                    <p className={`text-xs font-semibold truncate ${isProgram ? 'text-amber-800 dark:text-amber-400' : 'text-gray-800 dark:text-gray-100'}`}>{isProgram ? `Programa: ${aula.origem}` : aula.curso}</p>
-                                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{isProgram ? 'Institucional' : aula.materia}</p>
+                                                                    <p className={`text-xs font-semibold truncate ${isProgram ? 'text-amber-800 dark:text-amber-400' : 'text-gray-800 dark:text-gray-100'}`}>{label}</p>
+                                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{isProgram ? 'Institucional' : (b.aula.materia || '')}</p>
                                                                     <div className="flex items-center gap-1 mt-1.5">
-                                                                        <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{aula.instrutor}</span>
+                                                                        <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{b.instrutor}{b.numeroTurma ? ` · #${b.numeroTurma}` : ''}</span>
                                                                     </div>
-                                                                    <span className={`mt-1.5 inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold ${statusBadge(aula.status)}`}>
-                                                                        {statusLabel(aula.status)}
+                                                                    <span className={`mt-1.5 inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold ${statusBadge(b.aula.status)}`}>
+                                                                        {statusLabel(b.aula.status)}
                                                                     </span>
                                                                 </button>
                                                             );
@@ -942,3 +1041,4 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
         </>
     );
 };
+

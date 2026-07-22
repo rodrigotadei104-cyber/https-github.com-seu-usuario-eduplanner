@@ -1456,4 +1456,5 @@ export interface AulaMapaSala {
     minutosPorHora: number;
     tipoAula?: string;
     origem?: string;
+    numeroTurma?: string;
 }
