@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { format, getDaysInMonth, startOfMonth, addDays, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Aula } from '../types';
 // Icons removed for minimalism
 
 interface JovemAprendizViewProps {
@@ -9,7 +10,7 @@ interface JovemAprendizViewProps {
 }
 
 export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly = false }) => {
-    const { aulas, addAulaPrograma, instrutores, currentDate, setCurrentDate, deleteAulaPrograma, feriados, feriadosSet } = useSchedule();
+    const { aulas, addAulaPrograma, updateAula, instrutores, currentDate, setCurrentDate, deleteAulaPrograma, feriados, feriadosSet } = useSchedule();
     const [isLoading, setIsLoading] = useState(false);
     const [isConfigOpen, setIsConfigOpen] = useState(false);
 
@@ -43,6 +44,21 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
     useEffect(() => {
         localStorage.setItem('eduplanner_programas', JSON.stringify(programs));
     }, [programs]);
+
+    // Sala PADRÃO por programa (persistida no navegador). Usada ao criar aulas e como sugestão.
+    const [salasPorPrograma, setSalasPorPrograma] = useState<Record<string, string>>(() => {
+        try {
+            const saved = localStorage.getItem('eduplanner_programas_salas');
+            const parsed = saved ? JSON.parse(saved) : {};
+            return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+        } catch { return {}; }
+    });
+    useEffect(() => {
+        localStorage.setItem('eduplanner_programas_salas', JSON.stringify(salasPorPrograma));
+    }, [salasPorPrograma]);
+
+    // Rascunho da sala em edição por aula (mantém o campo da célula controlado e sempre editável).
+    const [salaDraft, setSalaDraft] = useState<Record<string, string>>({});
 
     // SYNC: Mesclar programas do banco (origens das aulas PROGRAMA) com programas locais.
     // Garante que colunas criadas por outros usuários (ex: admin Wilson) apareçam para todos.
@@ -115,6 +131,31 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
         return { start: '08:00', end: '12:00' }; // Default
     };
 
+    // Salas já usadas no sistema — sugestões pro autocomplete (evita nomes divergentes).
+    const salasConhecidas = useMemo(() => {
+        const s = new Set<string>();
+        aulas.forEach(a => { if (a.sala && a.sala.trim()) s.add(a.sala.trim()); });
+        return Array.from(s).sort((a, b) => a.localeCompare(b));
+    }, [aulas]);
+
+    // Define a sala PADRÃO do programa e aplica retroativamente nas aulas já existentes daquele
+    // programa no mês visível (força a atualização — sala compartilhada é permitida, não bloqueia).
+    const aplicarSalaPrograma = async (programName: string, novaSala: string) => {
+        const sala = novaSala.trim();
+        setSalasPorPrograma(prev => ({ ...prev, [programName]: sala }));
+        const alvo = programAulas.filter(a => a.origem === programName && (a.sala || '') !== sala);
+        for (const a of alvo) {
+            await updateAula({ ...a, sala } as Aula, true);
+        }
+    };
+
+    // Override da sala de UMA aula (ex.: trocou de sala num dia específico). Força a atualização.
+    const setSalaAula = async (aula: Aula, novaSala: string) => {
+        const sala = novaSala.trim();
+        if ((aula.sala || '') === sala) return;
+        await updateAula({ ...aula, sala }, true);
+    };
+
     // Handle modification
     const handleCellChange = async (date: Date, programName: string, instructorId: string) => {
         // Encontrar aula existente (só assumimos 1 por programa/dia nesta view simplificada)
@@ -134,23 +175,30 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
         if (!instrutorObj) return;
 
         const time = guessTimeForProgram(programName);
+        const salaPadrao = (salasPorPrograma[programName] || '').trim();
 
-        const res = await addAulaPrograma({
+        const payload: Omit<Aula, 'id' | 'tenantId'> = {
             data: date,
             horarioInicio: time.start,
             horarioFim: time.end,
             instrutor: instrutorObj.nome,
             instrutorId: instrutorObj.id, // Enviar ID fixo para o sistema
-            curso: 'Institucional', 
-            materia: programName.replace(/\s*\[\d{2}:\d{2}-\d{2}:\d{2}\]/, ''),   
+            curso: 'Institucional',
+            materia: programName.replace(/\s*\[\d{2}:\d{2}-\d{2}:\d{2}\]/, ''),
             status: 'agendada',
             tipoAula: 'PROGRAMA',
             origem: programName,
-            contabilizaCarga: true
-        });
+            contabilizaCarga: true,
+            sala: salaPadrao || undefined
+        };
 
+        let res = await addAulaPrograma(payload);
+        // Sala compartilhada é permitida: se o único impedimento for conflito de sala, recria forçado.
+        if (res.warning === 'ROOM_CONFLICT') {
+            res = await addAulaPrograma(payload, true);
+        }
         if (res.warning === 'INSTRUCTOR_CONFLICT') {
-             alert('Atenção: Este instrutor já tem aula neste horário!');
+            alert('Atenção: Este instrutor já tem aula neste horário!');
         }
     };
 
@@ -260,6 +308,9 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
                 
                 <div className="flex-1 min-h-0 p-0 sm:p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-auto custom-scrollbar h-full">
+                        <datalist id="ja-salas">
+                            {salasConhecidas.map(s => <option key={s} value={s} />)}
+                        </datalist>
                         <table className="relative border-collapse text-left text-sm min-w-max">
                             <thead className="bg-slate-100 dark:bg-slate-900/80 sticky top-0 z-30">
                                 <tr>
@@ -271,6 +322,17 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
                                             <div className="text-[10px] text-amber-800 dark:text-amber-400/70 font-bold">
                                                 {guessTimeForProgram(p).start} - {guessTimeForProgram(p).end}
                                             </div>
+                                            <input
+                                                list="ja-salas"
+                                                value={salasPorPrograma[p] || ''}
+                                                onChange={e => setSalasPorPrograma(prev => ({ ...prev, [p]: e.target.value }))}
+                                                onBlur={e => !readOnly && aplicarSalaPrograma(p, e.target.value)}
+                                                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                                disabled={readOnly}
+                                                placeholder="+ sala"
+                                                title="Sala padrão deste programa — aplica nas aulas do mês visível"
+                                                className="mt-1 w-full text-[9px] font-bold text-center px-1 py-0.5 rounded border border-amber-300/70 dark:border-amber-800/50 bg-white/70 dark:bg-slate-800/60 text-amber-900 dark:text-amber-300 placeholder:text-amber-400/60 outline-none focus:ring-1 focus:ring-amber-400 normal-case tracking-normal"
+                                            />
                                         </th>
                                     ))}
                                 </tr>
@@ -322,13 +384,32 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
                                                                 value={aulaTarget?.instrutorId || ''}
                                                                 onChange={(e) => !readOnly && handleCellChange(date, prog, e.target.value)}
                                                                 disabled={readOnly}
-                                                                className={`w-full h-full text-[11px] p-2.5 bg-transparent outline-none appearance-none font-semibold ${readOnly ? 'cursor-default' : 'cursor-pointer'} ${aulaTarget ? 'text-amber-900 dark:text-amber-400 font-black bg-amber-50 dark:bg-amber-900/40' : 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 focus:opacity-100'} transition-all`}
+                                                                className={`w-full text-[11px] p-2.5 bg-transparent outline-none appearance-none font-semibold ${readOnly ? 'cursor-default' : 'cursor-pointer'} ${aulaTarget ? 'text-amber-900 dark:text-amber-400 font-black bg-amber-50 dark:bg-amber-900/40' : 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 focus:opacity-100'} transition-all`}
                                                             >
                                                                 <option value="">- Livre -</option>
                                                                 {instrutores.map(i => (
                                                                     <option key={i.id} value={i.id}>{i.nome}</option>
                                                                 ))}
                                                             </select>
+
+                                                            {/* Sala desta aula (override do dia). Vazio = usa a padrão do programa. */}
+                                                            {aulaTarget && !readOnly && (
+                                                                <input
+                                                                    list="ja-salas"
+                                                                    value={salaDraft[aulaTarget.id] ?? (aulaTarget.sala || '')}
+                                                                    onChange={e => { const v = e.target.value; setSalaDraft(d => ({ ...d, [aulaTarget.id]: v })); }}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                    onBlur={e => { setSalaAula(aulaTarget, e.target.value); setSalaDraft(d => { const n = { ...d }; delete n[aulaTarget.id]; return n; }); }}
+                                                                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                                                    placeholder={salasPorPrograma[prog] || 'sala'}
+                                                                    title="Sala desta aula (vazio = usa a sala padrão do programa)"
+                                                                    className="w-full text-[9px] px-1.5 py-0.5 border-t border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 placeholder:text-amber-400/50 placeholder:italic outline-none focus:bg-white dark:focus:bg-slate-800"
+                                                                />
+                                                            )}
+                                                            {aulaTarget && readOnly && aulaTarget.sala && (
+                                                                <span className="w-full text-[9px] px-1.5 py-0.5 border-t border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 truncate" title={aulaTarget.sala}>🚪 {aulaTarget.sala}</span>
+                                                            )}
+
                                                             {/* Botão Excluir: oculto para visualizadores */}
                                                             {!readOnly && (
                                                                 <button 

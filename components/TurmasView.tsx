@@ -3,6 +3,7 @@ import { useSchedule } from '../context/ScheduleContext';
 import { Aula } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Copy, Check } from 'lucide-react';
 
 const toMin = (t: string) => { const [h, m] = String(t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
 
@@ -27,6 +28,33 @@ export const TurmasView: React.FC = () => {
     const [statusFiltro, setStatusFiltro] = useState<'andamento' | 'planejada' | 'encerrada' | 'todas'>('andamento');
 
     const hoje = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
+
+    // Clique no Id da turma copia direto pra área de transferência (sem selecionar).
+    const [copiado, setCopiado] = useState<string | null>(null);
+    const copiarTurma = async (nt: string) => {
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(nt);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = nt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                document.execCommand('copy'); document.body.removeChild(ta);
+            }
+            setCopiado(nt);
+            window.setTimeout(() => setCopiado(c => (c === nt ? null : c)), 1200);
+        } catch { /* silencioso — sem quebrar a tela se o clipboard for bloqueado */ }
+    };
+    const turmaCopiavel = (nt: string) => (
+        <button type="button" onClick={() => copiarTurma(nt)}
+            title="Clique para copiar o Id da turma"
+            className="group inline-flex items-center gap-1 font-mono font-bold text-gray-700 dark:text-gray-200 hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer">
+            <span>{nt}</span>
+            {copiado === nt
+                ? <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-emerald-600 uppercase tracking-wide"><Check className="w-3 h-3" />copiado</span>
+                : <Copy className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />}
+        </button>
+    );
 
     const turmas = useMemo<ResumoTurma[]>(() => {
         const grupos = new Map<string, Aula[]>();
@@ -154,7 +182,7 @@ export const TurmasView: React.FC = () => {
                                         const pct = t.totalAulas > 0 ? Math.round((t.aulasDadas / t.totalAulas) * 100) : 0;
                                         return (
                                             <tr key={t.numeroTurma} className={`border-b border-gray-100 dark:border-slate-700/50 ${i % 2 ? 'bg-slate-50/40 dark:bg-slate-800/40' : ''}`}>
-                                                <td className="px-3 py-2 font-mono font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">{t.numeroTurma}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap">{turmaCopiavel(t.numeroTurma)}</td>
                                                 <td className="px-3 py-2 text-gray-700 dark:text-gray-200 max-w-[240px] truncate" title={t.curso}>{t.curso}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">{format(t.inicio, 'dd/MM/yy', { locale: ptBR })}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap font-semibold text-gray-800 dark:text-gray-100">{format(t.termino, 'dd/MM/yy', { locale: ptBR })}</td>

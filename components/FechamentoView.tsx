@@ -3,6 +3,7 @@ import { useSchedule } from '../context/ScheduleContext';
 import { Aula } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Copy, Check } from 'lucide-react';
 
 const toMin = (t: string) => { const [h, m] = String(t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -33,6 +34,48 @@ export const FechamentoView: React.FC = () => {
     const [mes, setMes] = useState(hoje.getMonth());
     const [corte, setCorte] = useState<5 | 25>(hoje.getDate() <= 15 ? 5 : 25);
     const [busca, setBusca] = useState('');
+    // "Conferido" por turma — auxílio visual na conferência do faturamento.
+    // Só na sessão: reseta ao recarregar a página (sem persistência).
+    const [conferidas, setConferidas] = useState<Set<string>>(new Set());
+    const toggleConferida = (nt: string) => setConferidas(prev => {
+        const n = new Set(prev);
+        if (n.has(nt)) n.delete(nt); else n.add(nt);
+        return n;
+    });
+    // "Conferido" por componente (linha da tabela de detalhe), chave turma||componente.
+    const [compConferidos, setCompConferidos] = useState<Set<string>>(new Set());
+    const toggleComp = (chave: string) => setCompConferidos(prev => {
+        const n = new Set(prev);
+        if (n.has(chave)) n.delete(chave); else n.add(chave);
+        return n;
+    });
+
+    // Clique no nº da turma copia direto pra área de transferência (sem selecionar).
+    const [copiado, setCopiado] = useState<string | null>(null);
+    const copiarTurma = async (nt: string) => {
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(nt);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = nt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                document.execCommand('copy'); document.body.removeChild(ta);
+            }
+            setCopiado(nt);
+            window.setTimeout(() => setCopiado(c => (c === nt ? null : c)), 1200);
+        } catch { /* silencioso — sem quebrar a tela se o clipboard for bloqueado */ }
+    };
+    const turmaCopiavel = (nt: string) => (
+        <button type="button" onClick={() => copiarTurma(nt)}
+            title="Clique para copiar o Nº da turma"
+            className="group inline-flex items-center gap-1 font-mono font-bold text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
+            <span>{nt}</span>
+            {copiado === nt
+                ? <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-emerald-600 uppercase tracking-wide"><Check className="w-3 h-3" />copiado</span>
+                : <Copy className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />}
+        </button>
+    );
 
     const dados = useMemo(() => {
         const { ini, fim } = janelaPeriodo(ano, mes, corte);
@@ -148,21 +191,35 @@ export const FechamentoView: React.FC = () => {
 
                 {/* Resumo por curso/turma */}
                 <div>
-                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Resumo por curso/turma ({resumo.length})</h3>
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                        Resumo por curso/turma ({resumo.length})
+                        {(() => { const n = resumo.filter(r => conferidas.has(r.numeroTurma)).length; return n > 0 ? <span className="text-emerald-600 dark:text-emerald-400 normal-case"> — {n} conferida{n !== 1 ? 's' : ''}</span> : null; })()}
+                    </h3>
                     <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm overflow-x-auto">
                         <table className="w-full text-sm" style={{ minWidth: 600 }}>
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500"><tr>{['Turma', 'Curso', 'Componentes concl.', 'Horas', 'Turma encerrada?'].map(h => <th key={h} className="px-3 py-2 text-left font-black uppercase tracking-wide text-[10px] whitespace-nowrap border-b border-gray-200 dark:border-slate-700">{h}</th>)}</tr></thead>
+                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500"><tr>
+                                <th className="px-3 py-2 text-center font-black uppercase tracking-wide text-[10px] whitespace-nowrap border-b border-gray-200 dark:border-slate-700 w-16">Conf.</th>
+                                {['Turma', 'Curso', 'Componentes concl.', 'Horas', 'Turma encerrada?'].map(h => <th key={h} className="px-3 py-2 text-left font-black uppercase tracking-wide text-[10px] whitespace-nowrap border-b border-gray-200 dark:border-slate-700">{h}</th>)}
+                            </tr></thead>
                             <tbody>
-                                {resumo.length === 0 ? <tr><td colSpan={5} className="px-3 py-6 text-center text-slate-400">Nenhuma conclusão neste período.</td></tr> :
-                                    resumo.map((t, i) => (
-                                        <tr key={t.numeroTurma} className={`border-b border-gray-100 dark:border-slate-700/50 ${i % 2 ? 'bg-slate-50/40 dark:bg-slate-800/40' : ''}`}>
-                                            <td className="px-3 py-2 font-mono font-bold whitespace-nowrap">{t.numeroTurma}</td>
+                                {resumo.length === 0 ? <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-400">Nenhuma conclusão neste período.</td></tr> :
+                                    resumo.map((t, i) => {
+                                        const conf = conferidas.has(t.numeroTurma);
+                                        return (
+                                        <tr key={t.numeroTurma} className={`border-b border-gray-100 dark:border-slate-700/50 transition-colors ${conf ? 'bg-emerald-50/70 dark:bg-emerald-900/15' : i % 2 ? 'bg-slate-50/40 dark:bg-slate-800/40' : ''}`}>
+                                            <td className="px-3 py-2 text-center">
+                                                <input type="checkbox" checked={conf} onChange={() => toggleConferida(t.numeroTurma)}
+                                                    title={conf ? 'Conferido — clique para desmarcar' : 'Marcar como conferido'}
+                                                    className="w-4 h-4 rounded accent-emerald-600 cursor-pointer align-middle" />
+                                            </td>
+                                            <td className="px-3 py-2 whitespace-nowrap">{turmaCopiavel(t.numeroTurma)}</td>
                                             <td className="px-3 py-2 max-w-[280px] truncate" title={t.curso}>{t.curso}</td>
                                             <td className="px-3 py-2 text-center font-bold">{t.qtd}</td>
                                             <td className="px-3 py-2 whitespace-nowrap">{t.horas}h</td>
                                             <td className="px-3 py-2">{t.encerrada ? <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Sim</span> : <span className="text-slate-400 text-xs">—</span>}</td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                             </tbody>
                         </table>
                     </div>
@@ -170,22 +227,37 @@ export const FechamentoView: React.FC = () => {
 
                 {/* Componentes concluídos (detalhe) */}
                 <div>
-                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Componentes concluídos no período ({compFiltrados.length})</h3>
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                        Componentes concluídos no período ({compFiltrados.length})
+                        {(() => { const n = compFiltrados.filter(c => compConferidos.has(`${c.numeroTurma}||${c.componente}`)).length; return n > 0 ? <span className="text-emerald-600 dark:text-emerald-400 normal-case"> — {n} conferido{n !== 1 ? 's' : ''}</span> : null; })()}
+                    </h3>
                     <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm overflow-x-auto">
                         <table className="w-full text-sm" style={{ minWidth: 800 }}>
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500"><tr>{['Turma', 'Curso', 'Componente', 'Concluído em', 'Horas', 'Instrutor(es)'].map(h => <th key={h} className="px-3 py-2 text-left font-black uppercase tracking-wide text-[10px] whitespace-nowrap border-b border-gray-200 dark:border-slate-700">{h}</th>)}</tr></thead>
+                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500"><tr>
+                                <th className="px-3 py-2 text-center font-black uppercase tracking-wide text-[10px] whitespace-nowrap border-b border-gray-200 dark:border-slate-700 w-16">Conf.</th>
+                                {['Turma', 'Curso', 'Componente', 'Concluído em', 'Horas', 'Instrutor(es)'].map(h => <th key={h} className="px-3 py-2 text-left font-black uppercase tracking-wide text-[10px] whitespace-nowrap border-b border-gray-200 dark:border-slate-700">{h}</th>)}
+                            </tr></thead>
                             <tbody>
-                                {compFiltrados.length === 0 ? <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-400">Nenhum componente concluído neste período.</td></tr> :
-                                    compFiltrados.map((c, i) => (
-                                        <tr key={i} className={`border-b border-gray-100 dark:border-slate-700/50 ${i % 2 ? 'bg-slate-50/40 dark:bg-slate-800/40' : ''}`}>
-                                            <td className="px-3 py-2 font-mono font-bold whitespace-nowrap">{c.numeroTurma}</td>
+                                {compFiltrados.length === 0 ? <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-400">Nenhum componente concluído neste período.</td></tr> :
+                                    compFiltrados.map((c, i) => {
+                                        const chave = `${c.numeroTurma}||${c.componente}`;
+                                        const conf = compConferidos.has(chave);
+                                        return (
+                                        <tr key={i} className={`border-b border-gray-100 dark:border-slate-700/50 transition-colors ${conf ? 'bg-emerald-50/70 dark:bg-emerald-900/15' : i % 2 ? 'bg-slate-50/40 dark:bg-slate-800/40' : ''}`}>
+                                            <td className="px-3 py-2 text-center">
+                                                <input type="checkbox" checked={conf} onChange={() => toggleComp(chave)}
+                                                    title={conf ? 'Conferido — clique para desmarcar' : 'Marcar como conferido'}
+                                                    className="w-4 h-4 rounded accent-emerald-600 cursor-pointer align-middle" />
+                                            </td>
+                                            <td className="px-3 py-2 whitespace-nowrap">{turmaCopiavel(c.numeroTurma)}</td>
                                             <td className="px-3 py-2 max-w-[200px] truncate" title={c.curso}>{c.curso}</td>
                                             <td className="px-3 py-2 max-w-[240px] truncate" title={c.componente}>{c.componente}</td>
                                             <td className="px-3 py-2 whitespace-nowrap font-semibold">{format(c.dataConclusao, 'dd/MM/yy', { locale: ptBR })}</td>
                                             <td className="px-3 py-2 whitespace-nowrap">{c.horas}h</td>
                                             <td className="px-3 py-2 max-w-[180px] truncate" title={c.instrutores.join(', ')}>{c.instrutores.join(', ') || '—'}</td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                             </tbody>
                         </table>
                     </div>

@@ -177,19 +177,16 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
                     const consolidatedAulas: Aula[] = [];
                     groupsMap.forEach((aulasGroup) => {
                       aulasGroup.sort((a: Aula, b: Aula) => a.horarioInicio.localeCompare(b.horarioInicio));
-                      
-                      let mergedBlock = { ...aulasGroup[0] };
+
+                      // Consolida TODAS as aulas do mesmo instrutor+curso+turma do dia num
+                      // card único: do primeiro início ao último fim (ex.: 07h–17h), mesmo
+                      // com intervalo de almoço — igual ao Mapa de Instrutores.
+                      const mergedBlock = { ...aulasGroup[0] };
+                      let maxFim = aulasGroup[0].horarioFim;
                       for (let i = 1; i < aulasGroup.length; i++) {
-                        const nextAula = aulasGroup[i];
-                        if (mergedBlock.horarioFim >= nextAula.horarioInicio) {
-                          if (nextAula.horarioFim > mergedBlock.horarioFim) {
-                             mergedBlock.horarioFim = nextAula.horarioFim;
-                          }
-                        } else {
-                          consolidatedAulas.push(mergedBlock);
-                          mergedBlock = { ...nextAula };
-                        }
+                        if (aulasGroup[i].horarioFim > maxFim) maxFim = aulasGroup[i].horarioFim;
                       }
+                      mergedBlock.horarioFim = maxFim;
                       consolidatedAulas.push(mergedBlock);
                     });
 
