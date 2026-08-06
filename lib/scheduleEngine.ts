@@ -8,6 +8,8 @@ export interface ScheduleEngineInput {
     cursoNome: string;
     instrutorId?: string;
     instrutorNome?: string;
+    // Instrutor por disciplina (opcional). Chave = disciplina.id. Quando ausente, usa o padrão (instrutorId/Nome).
+    instrutoresPorDisciplina?: Record<string, { id: string; nome: string }>;
     salaPadrao?: string;
     dataInicio: string;
     diasSemanaSelecionados: number[];
@@ -32,7 +34,8 @@ export function generateSchedule(input: ScheduleEngineInput): EngineResult {
         tenantId, numeroTurma, cursoId, cursoNome, instrutorId, instrutorNome, salaPadrao,
         dataInicio, diasSemanaSelecionados, horariosDoDia, disciplinas, diasBloqueados,
         datasBloqueadasTurma = new Set(),
-        minutosPorHora = 60
+        minutosPorHora = 60,
+        instrutoresPorDisciplina = {}
     } = input;
 
     if (diasSemanaSelecionados.length === 0) throw new Error('Nenhum dia da semana foi selecionado.');
@@ -90,6 +93,11 @@ export function generateSchedule(input: ScheduleEngineInput): EngineResult {
     };
 
     for (const disciplina of disciplinas) {
+        // Instrutor desta disciplina: override específico ou o padrão da turma.
+        const ovrInstrutor = instrutoresPorDisciplina[disciplina.id];
+        const instrutorIdDisc = ovrInstrutor?.id || instrutorId || '';
+        const instrutorNomeDisc = ovrInstrutor?.nome || instrutorNome || '';
+
         let cargaRestanteMilisegundos = disciplina.cargaHoras * minutosPorHora * 60 * 1000;
 
         while (cargaRestanteMilisegundos > 0) {
@@ -147,8 +155,8 @@ export function generateSchedule(input: ScheduleEngineInput): EngineResult {
                 data: new Date(currentDate),
                 horarioInicio: classStartStr,
                 horarioFim: classEndStr,
-                instrutor: instrutorId || '',
-                instrutorNome: instrutorNome || '',
+                instrutor: instrutorIdDisc,
+                instrutorNome: instrutorNomeDisc,
                 sala: salaPadrao || '',
                 status: 'agendada' as ClassStatus,
                 autoGerada: true,

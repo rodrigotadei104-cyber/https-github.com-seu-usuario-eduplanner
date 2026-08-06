@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { SalaSelect } from './SalaSelect';
 import { Aula } from '../types';
 import { useSchedule } from '../context/ScheduleContext';
 import { addMinutes, format, parseISO } from 'date-fns';
@@ -341,12 +342,13 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Sala</label>
                 <div className="space-y-2">
-                  <input
-                    type="text"
+                  <SalaSelect
+                    key={initialData?.id || 'novo'}
                     disabled={isReadOnly || isActionLoading}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:disabled:bg-slate-800"
                     value={formData.sala || ''}
-                    onChange={(e) => handleChange('sala', e.target.value)}
+                    onChange={(v) => handleChange('sala', v)}
+                    emptyLabel="— Sem sala —"
                   />
 
                   {initialData && formData.sala !== (initialData.sala || '') && (

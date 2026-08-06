@@ -35,7 +35,7 @@ const consolidarItens = (itens: Item[]): Item[] => {
 
     const grupos = new Map<string, Item[]>();
     for (const a of aulas) {
-        const chave = `${a.programa ? 'P' : 'A'}::${a.rotulo}`;
+        const chave = `${a.programa ? 'P' : 'A'}::${a.rotulo}::${a.aula?.numeroTurma || ''}`;
         if (!grupos.has(chave)) grupos.set(chave, []);
         grupos.get(chave)!.push(a);
     }
@@ -307,7 +307,7 @@ export const MapaInstrutoresView: React.FC<Props> = ({ onEditAula }) => {
                                                                     <button
                                                                         key={i}
                                                                         onClick={() => clickable && onEditAula!(it.aula!)}
-                                                                        title={`${it.inicio}-${it.fim} ${it.rotulo}`}
+                                                                        title={`${it.inicio}-${it.fim} ${it.rotulo}${it.tipo === 'aula' && it.aula?.numeroTurma ? ' • Turma ' + it.aula.numeroTurma : ''}`}
                                                                         style={{ textAlign: 'left', border: 'none', borderLeft: it.programa ? '3px solid #fbbf24' : 'none', borderRadius: 5, padding: '3px 6px', background: bg, color: fg, cursor: clickable ? 'pointer' : 'default', width: '100%' }}
                                                                     >
                                                                         <span style={{ display: 'block', fontSize: 10, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
@@ -315,6 +315,9 @@ export const MapaInstrutoresView: React.FC<Props> = ({ onEditAula }) => {
                                                                         </span>
                                                                         {it.tipo !== 'ferias' && (
                                                                             <span style={{ display: 'block', fontSize: 9.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 116 }}>{it.rotulo}</span>
+                                                                        )}
+                                                                        {it.tipo === 'aula' && it.aula?.numeroTurma && (
+                                                                            <span style={{ display: 'block', fontSize: 8.5, fontWeight: 700, opacity: 0.9, fontVariantNumeric: 'tabular-nums', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 116 }}>#{it.aula.numeroTurma}</span>
                                                                         )}
                                                                     </button>
                                                                 );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { SalaSelect } from './SalaSelect';
 import { useSchedule } from '../context/ScheduleContext';
 import { Instrutor, Curso, Materia, Evento, EventType, EventStatus } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -580,13 +581,13 @@ export const RegistrationView: React.FC = () => {
 
                                             <div className="md:col-span-1">
                                                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Sala (Opc)</label>
-                                                <input
-                                                    type="text"
+                                                <SalaSelect
+                                                    key={editingItem?.id || 'novo'}
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:opacity-50"
-                                                    placeholder="S-01"
                                                     value={formData.sala}
-                                                    onChange={(e) => setFormData({ ...formData, sala: e.target.value })}
+                                                    onChange={(v) => setFormData({ ...formData, sala: v })}
                                                     disabled={isActionLoading}
+                                                    emptyLabel="— Sem sala (opcional) —"
                                                 />
                                             </div>
 

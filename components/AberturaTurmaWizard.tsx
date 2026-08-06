@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { SalaSelect } from './SalaSelect';
 import { useSchedule } from '../context/ScheduleContext';
 import { aulaService } from '../services/aula.service';
 import { catalogoService } from '../services/catalogo.service';
@@ -13,8 +14,11 @@ interface AberturaTurmaWizardProps {
     onClose: () => void;
 }
 
+const toMin = (t: string): number => { const [h, m] = String(t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+const dataStr = (d: any): string => { const dt = d instanceof Date ? d : new Date(d); return format(dt, 'yyyy-MM-dd'); };
+
 export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen, onClose }) => {
-    const { refreshData, instrutores, userProfile } = useSchedule();
+    const { refreshData, instrutores, userProfile, aulas } = useSchedule();
     const tenantId = userProfile.tenantId; // Tenant real do usuário autenticado via ScheduleContext
 
     // Reference Data States
@@ -34,6 +38,8 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
     const cursoDropdownRef = useRef<HTMLDivElement>(null);
     const [nomeTurma, setNomeTurma] = useState('');
     const [selectedInstructorId, setSelectedInstructorId] = useState('');
+    // Instrutor por disciplina (disciplinaId -> instructorId). Vazio/ausente = usa o padrão acima.
+    const [instrutoresPorDisciplina, setInstrutoresPorDisciplina] = useState<Record<string, string>>({});
     const [selectedRoom, setSelectedRoom] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
@@ -51,6 +57,35 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
     // Output State (From Engine, mapped as Omit<Aula, 'id'>)
     const [generatedSchedule, setGeneratedSchedule] = useState<Omit<Aula, 'id'>[]>([]);
     const [diasPuladosFeriado, setDiasPuladosFeriado] = useState<Array<{ data: string; motivo: string }>>([]);
+
+    // Conflito de instrutor: aula gerada cujo professor já tem outra aula (existente no banco)
+    // na mesma data com sobreposição de horário. Checa em memória contra o contexto (todas as aulas).
+    const conflitosInstrutor = useMemo(() => {
+        const map: Record<number, { instrutorNome: string; existente: string }> = {};
+        if (generatedSchedule.length === 0) return map;
+        const existentes = (aulas as any[]).filter(e => e.status !== 'cancelada');
+        generatedSchedule.forEach((g: any, idx) => {
+            const gInstrId = g.instrutor; // a engine grava o ID do instrutor neste campo
+            if (!gInstrId) return;
+            const gDate = dataStr(g.data);
+            const gIni = toMin(g.horarioInicio), gFim = toMin(g.horarioFim);
+            for (const e of existentes) {
+                const mesmoInstrutor = (e.instrutorId && e.instrutorId === gInstrId) || (e.instrutor && g.instrutorNome && e.instrutor === g.instrutorNome);
+                if (!mesmoInstrutor) continue;
+                if (dataStr(e.data) !== gDate) continue;
+                if (gIni < toMin(e.horarioFim) && gFim > toMin(e.horarioInicio)) {
+                    map[idx] = {
+                        instrutorNome: g.instrutorNome || '',
+                        existente: `${e.curso || e.materia || 'Aula'} ${e.horarioInicio}-${e.horarioFim}${e.numeroTurma ? ' • Turma ' + e.numeroTurma : ''}`
+                    };
+                    break;
+                }
+            }
+        });
+        return map;
+    }, [generatedSchedule, aulas]);
+
+    const totalConflitos = Object.keys(conflitosInstrutor).length;
 
     useEffect(() => {
         if (isOpen) {
@@ -74,6 +109,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
     const handleCourseChange = async (cursoId: string) => {
         setSelectedCursoId(cursoId);
         setIsCursoDropdownOpen(false);
+        setInstrutoresPorDisciplina({}); // disciplinas mudam ao trocar de curso
         if (!cursoId) {
             setDisciplinasSelecionadas([]);
             return;
@@ -120,6 +156,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
         setCursoSearchText('');
         setNomeTurma('');
         setSelectedInstructorId('');
+        setInstrutoresPorDisciplina({});
         setSelectedRoom('');
         setStartDate(new Date().toISOString().split('T')[0]);
         setSelectedDays([1, 2, 3, 4, 5]);
@@ -165,6 +202,14 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
             const cursoObj = cursosBase.find(c => c.id === selectedCursoId);
             const instrutorObj = instrutores.find(i => i.id === selectedInstructorId);
 
+            // Resolve o instrutor por disciplina (só as que têm override) para {id, nome}.
+            const instrutoresPorDisciplinaResolvido: Record<string, { id: string; nome: string }> = {};
+            for (const [discId, instrId] of Object.entries(instrutoresPorDisciplina)) {
+                if (!instrId) continue;
+                const obj = instrutores.find(i => i.id === instrId);
+                instrutoresPorDisciplinaResolvido[discId] = { id: instrId, nome: obj?.nome || '' };
+            }
+
             const engineInput: ScheduleEngineInput = {
                 tenantId,
                 numeroTurma: nomeTurma,
@@ -172,6 +217,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                 cursoNome: cursoObj?.nomeCurso || 'Curso Desconhecido',
                 instrutorId: selectedInstructorId,
                 instrutorNome: instrutorObj?.nome || '',
+                instrutoresPorDisciplina: instrutoresPorDisciplinaResolvido,
                 salaPadrao: selectedRoom,
                 dataInicio: startDate,
                 diasSemanaSelecionados: selectedDays,
@@ -201,6 +247,13 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
 
     const handleConfirmAndSave = async () => {
         if (generatedSchedule.length === 0) return;
+
+        if (totalConflitos > 0) {
+            const ok = window.confirm(
+                `Atenção: ${totalConflitos} aula(s) têm o instrutor já ocupado em outro horário (marcadas em vermelho no preview).\n\nDeseja salvar mesmo assim?`
+            );
+            if (!ok) return;
+        }
 
         setIsSaving(true);
         try {
@@ -436,15 +489,43 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium mb-1 opacity-80">Sala Titular da Turma</label>
-                                                <input
-                                                    type="text"
+                                                <SalaSelect
                                                     value={selectedRoom}
-                                                    onChange={e => setSelectedRoom(e.target.value)}
-                                                    placeholder="Ex: Laboratório X"
+                                                    onChange={setSelectedRoom}
+                                                    emptyLabel="— Selecione a sala —"
                                                     className="w-full p-2.5 border rounded-lg text-sm bg-white dark:bg-slate-800 dark:border-slate-700"
                                                 />
                                             </div>
                                         </div>
+
+                                        {disciplinasSelecionadas.length > 0 && (
+                                            <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl dark:bg-slate-800/50 dark:border-slate-700">
+                                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">
+                                                    Instrutor por disciplina <span className="text-slate-400 normal-case font-normal">(opcional)</span>
+                                                </h4>
+                                                <p className="text-[11px] text-slate-400 mb-3">Deixe em "(usar padrão)" para herdar o professor padrão. Defina aqui só as disciplinas com professor diferente.</p>
+                                                <div className="space-y-2 max-h-56 overflow-auto pr-1 custom-scrollbar">
+                                                    {disciplinasSelecionadas.map(d => (
+                                                        <div key={d.id} className="flex items-center gap-2">
+                                                            <span className="flex-1 text-sm text-slate-700 dark:text-slate-200 truncate" title={d.nomeDisciplina}>
+                                                                {d.nomeDisciplina}
+                                                                <span className="text-[10px] text-slate-400 ml-1">{d.cargaHoras}h</span>
+                                                            </span>
+                                                            <select
+                                                                value={instrutoresPorDisciplina[d.id] || ''}
+                                                                onChange={e => setInstrutoresPorDisciplina(prev => ({ ...prev, [d.id]: e.target.value }))}
+                                                                className="w-44 shrink-0 p-1.5 border rounded-lg text-xs bg-white dark:bg-slate-800 dark:border-slate-700"
+                                                            >
+                                                                <option value="">(usar padrão)</option>
+                                                                {instrutores.map(i => (
+                                                                    <option key={i.id} value={i.id}>{i.nome}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <div className="bg-amber-50 p-4 border border-amber-200 rounded-xl dark:bg-amber-900/10 dark:border-amber-900/30">
                                             <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2 dark:text-amber-400">
@@ -519,6 +600,17 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                 </div>
                             </div>
 
+                            {totalConflitos > 0 && (
+                                <div className="shrink-0 bg-red-50 border border-red-200 rounded-xl p-3 dark:bg-red-900/15 dark:border-red-900/40">
+                                    <p className="text-sm font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
+                                        ⚠ {totalConflitos} aula(s) com instrutor já ocupado nesse horário
+                                    </p>
+                                    <p className="text-xs text-red-600/80 dark:text-red-400/70 mt-0.5">
+                                        Marcadas em vermelho abaixo. Volte para trocar o instrutor da disciplina, ou salve mesmo assim (será pedida confirmação).
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="border border-slate-200 rounded-xl overflow-hidden flex-1 overflow-y-auto bg-white custom-scrollbar dark:bg-slate-800 dark:border-slate-700 shadow-inner">
                                 <table className="w-full text-left text-sm relative">
                                     <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/90 dark:text-slate-400">
@@ -526,6 +618,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                             <th className="p-3 w-32 border-b dark:border-slate-700">Data</th>
                                             <th className="p-3 w-40 border-b dark:border-slate-700">Horário Previsto</th>
                                             <th className="p-3 border-b dark:border-slate-700">Disciplina Associada</th>
+                                            <th className="p-3 w-44 border-b dark:border-slate-700">Instrutor</th>
                                             <th className="p-3 w-40 border-b dark:border-slate-700 text-center">Acionamento</th>
                                         </tr>
                                     </thead>
@@ -556,7 +649,7 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                             <td className="p-2 font-mono text-xs font-bold text-red-700 dark:text-red-400">
                                                                 {format(new Date(row.data + 'T12:00:00'), 'dd/MM/yyyy')}
                                                             </td>
-                                                            <td colSpan={3} className="p-2">
+                                                            <td colSpan={4} className="p-2">
                                                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-full">
                                                                     [ BLOQUEADO ] {row.motivo} — Aula não realizada neste dia
                                                                 </span>
@@ -564,8 +657,9 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                         </tr>
                                                     );
                                                 }
+                                                const conf = conflitosInstrutor[row.idx];
                                                 return (
-                                                    <tr key={row.idx} className="hover:bg-slate-50 transition-colors dark:hover:bg-slate-750">
+                                                    <tr key={row.idx} className={`transition-colors ${conf ? 'bg-red-50 dark:bg-red-900/15 hover:bg-red-100/70 dark:hover:bg-red-900/25' : 'hover:bg-slate-50 dark:hover:bg-slate-750'}`}>
                                                         <td className="p-2 font-mono text-xs dark:text-slate-300">
                                                             {format(new Date(row.cls.data), 'dd/MM/yyyy')}
                                                         </td>
@@ -580,6 +674,16 @@ export const AberturaTurmaWizard: React.FC<AberturaTurmaWizardProps> = ({ isOpen
                                                             <div className="font-medium text-slate-800 text-sm dark:text-slate-200 truncate pr-4">
                                                                 {row.cls.materia}
                                                             </div>
+                                                        </td>
+                                                        <td className="p-2">
+                                                            <span className={`text-xs truncate block ${conf ? 'text-red-700 dark:text-red-400 font-semibold' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                                {(row.cls as any).instrutorNome || <span className="text-slate-400 italic">(definir depois)</span>}
+                                                            </span>
+                                                            {conf && (
+                                                                <span className="block text-[10px] text-red-600 dark:text-red-400 mt-0.5 truncate" title={`Já ocupado: ${conf.existente}`}>
+                                                                    ⚠ já ocupado: {conf.existente}
+                                                                </span>
+                                                            )}
                                                         </td>
                                                         <td className="p-2 text-center">
                                                             <button

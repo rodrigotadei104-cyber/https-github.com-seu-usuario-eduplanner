@@ -3,6 +3,7 @@ import { useSchedule } from '../context/ScheduleContext';
 import { format, getDaysInMonth, startOfMonth, addDays, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Aula } from '../types';
+import { SalaSelect } from './SalaSelect';
 // Icons removed for minimalism
 
 interface JovemAprendizViewProps {
@@ -130,13 +131,6 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
         if (p.includes('manhã') || p.includes('matutino') || p.includes('manha')) return { start: '08:00', end: '12:00' };
         return { start: '08:00', end: '12:00' }; // Default
     };
-
-    // Salas já usadas no sistema — sugestões pro autocomplete (evita nomes divergentes).
-    const salasConhecidas = useMemo(() => {
-        const s = new Set<string>();
-        aulas.forEach(a => { if (a.sala && a.sala.trim()) s.add(a.sala.trim()); });
-        return Array.from(s).sort((a, b) => a.localeCompare(b));
-    }, [aulas]);
 
     // Define a sala PADRÃO do programa e aplica retroativamente nas aulas já existentes daquele
     // programa no mês visível (força a atualização — sala compartilhada é permitida, não bloqueia).
@@ -308,9 +302,6 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
                 
                 <div className="flex-1 min-h-0 p-0 sm:p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-auto custom-scrollbar h-full">
-                        <datalist id="ja-salas">
-                            {salasConhecidas.map(s => <option key={s} value={s} />)}
-                        </datalist>
                         <table className="relative border-collapse text-left text-sm min-w-max">
                             <thead className="bg-slate-100 dark:bg-slate-900/80 sticky top-0 z-30">
                                 <tr>
@@ -322,16 +313,13 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
                                             <div className="text-[10px] text-amber-800 dark:text-amber-400/70 font-bold">
                                                 {guessTimeForProgram(p).start} - {guessTimeForProgram(p).end}
                                             </div>
-                                            <input
-                                                list="ja-salas"
+                                            <SalaSelect
                                                 value={salasPorPrograma[p] || ''}
-                                                onChange={e => setSalasPorPrograma(prev => ({ ...prev, [p]: e.target.value }))}
-                                                onBlur={e => !readOnly && aplicarSalaPrograma(p, e.target.value)}
-                                                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                                onChange={v => setSalasPorPrograma(prev => ({ ...prev, [p]: v }))}
+                                                onCommit={v => { if (!readOnly) aplicarSalaPrograma(p, v); }}
                                                 disabled={readOnly}
-                                                placeholder="+ sala"
-                                                title="Sala padrão deste programa — aplica nas aulas do mês visível"
-                                                className="mt-1 w-full text-[9px] font-bold text-center px-1 py-0.5 rounded border border-amber-300/70 dark:border-amber-800/50 bg-white/70 dark:bg-slate-800/60 text-amber-900 dark:text-amber-300 placeholder:text-amber-400/60 outline-none focus:ring-1 focus:ring-amber-400 normal-case tracking-normal"
+                                                emptyLabel="+ sala padrão"
+                                                className="mt-1 w-full text-[9px] font-bold text-center px-1 py-0.5 rounded border border-amber-300/70 dark:border-amber-800/50 bg-white/70 dark:bg-slate-800/60 text-amber-900 dark:text-amber-300 outline-none focus:ring-1 focus:ring-amber-400 normal-case tracking-normal"
                                             />
                                         </th>
                                     ))}
@@ -394,16 +382,12 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
 
                                                             {/* Sala desta aula (override do dia). Vazio = usa a padrão do programa. */}
                                                             {aulaTarget && !readOnly && (
-                                                                <input
-                                                                    list="ja-salas"
+                                                                <SalaSelect
                                                                     value={salaDraft[aulaTarget.id] ?? (aulaTarget.sala || '')}
-                                                                    onChange={e => { const v = e.target.value; setSalaDraft(d => ({ ...d, [aulaTarget.id]: v })); }}
-                                                                    onClick={e => e.stopPropagation()}
-                                                                    onBlur={e => { setSalaAula(aulaTarget, e.target.value); setSalaDraft(d => { const n = { ...d }; delete n[aulaTarget.id]; return n; }); }}
-                                                                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                                                                    placeholder={salasPorPrograma[prog] || 'sala'}
-                                                                    title="Sala desta aula (vazio = usa a sala padrão do programa)"
-                                                                    className="w-full text-[9px] px-1.5 py-0.5 border-t border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 placeholder:text-amber-400/50 placeholder:italic outline-none focus:bg-white dark:focus:bg-slate-800"
+                                                                    onChange={v => setSalaDraft(d => ({ ...d, [aulaTarget.id]: v }))}
+                                                                    onCommit={v => { setSalaAula(aulaTarget, v); setSalaDraft(d => { const n = { ...d }; delete n[aulaTarget.id]; return n; }); }}
+                                                                    emptyLabel={salasPorPrograma[prog] ? `↳ ${salasPorPrograma[prog]}` : '— sala —'}
+                                                                    className="w-full text-[9px] px-1 py-0.5 border-t border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 outline-none"
                                                                 />
                                                             )}
                                                             {aulaTarget && readOnly && aulaTarget.sala && (

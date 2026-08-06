@@ -759,24 +759,32 @@ export const aulaService = {
         }
 
         // --- PROPAGAÇÃO DE SALA EM LOTE ---
+        // "Atualizar para todas as aulas desta turma": aplica a nova sala em TODAS as aulas
+        // da mesma turma, independentemente da sala atual delas (antes só pegava as que tinham
+        // a mesma sala antiga — por isso a propagação parecia não funcionar).
         if (propagateRoom && input.sala && input.sala !== existing.sala) {
             try {
-                // Buscar todas as aulas do mesmo curso e turma (cohort) que possuem a SALA ANTIGA
-                // Limitamos ao mesmo curso e turma para evitar efeitos colaterais indesejados
-                let query = supabase
-                    .from('aulas')
-                    .select('id')
-                    .eq('curso_id', existing.curso_id)
-                    .eq('numero_turma', existing.numero_turma)
-                    .neq('id', id); // Excluir a aula que já acabamos de atualizar
+                // Identifica a turma de forma robusta: turma_id (arquitetura nova) tem prioridade;
+                // senão cai no par curso_id + numero_turma (cohort legado).
+                let relatedAulas: { id: string }[] | null = null;
 
-                if (existing.sala) {
-                    query = query.eq('sala', existing.sala);
-                } else {
-                    query = query.is('sala', null);
+                if (existing.turma_id) {
+                    const { data } = await supabase
+                        .from('aulas')
+                        .select('id')
+                        .eq('turma_id', existing.turma_id)
+                        .neq('id', id);
+                    relatedAulas = data as { id: string }[] | null;
+                } else if (existing.numero_turma) {
+                    const { data } = await supabase
+                        .from('aulas')
+                        .select('id')
+                        .eq('curso_id', existing.curso_id)
+                        .eq('numero_turma', existing.numero_turma)
+                        .neq('id', id);
+                    relatedAulas = data as { id: string }[] | null;
                 }
-
-                const { data: relatedAulas } = await query;
+                // Sem turma_id nem numero_turma não há como identificar a turma com segurança — não propaga.
 
                 if (relatedAulas && relatedAulas.length > 0) {
                     const idsToUpdate = relatedAulas.map(a => a.id);
@@ -793,7 +801,8 @@ export const aulaService = {
                             type: 'ROOM_PROPAGATION',
                             newRoom: input.sala,
                             affectedCount: idsToUpdate.length,
-                            cohort: existing.numero_turma
+                            cohort: existing.numero_turma,
+                            turmaId: existing.turma_id || null
                         },
                         result: 'success'
                     });

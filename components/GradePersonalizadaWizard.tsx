@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { SalaSelect } from './SalaSelect';
 import { useSchedule } from '../context/ScheduleContext';
 import { catalogoService } from '../services/catalogo.service';
 import { turmaService } from '../services/turma.service';
@@ -270,7 +271,7 @@ export const GradePersonalizadaWizard: React.FC<Props> = ({ isOpen, onClose }) =
                         {cursosBase.map(c => <option key={c.id} value={c.id}>{c.nomeCurso}</option>)}
                     </select>
                     <input value={nomeTurma} onChange={e => setNomeTurma(e.target.value)} placeholder="Nome/código da turma" className="p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 dark:border-slate-700" />
-                    <input value={salaPadrao} onChange={e => setSalaPadrao(e.target.value)} placeholder="Sala padrão (opcional)" className="p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 dark:border-slate-700" />
+                    <SalaSelect value={salaPadrao} onChange={setSalaPadrao} emptyLabel="Sala padrão (opcional)" className="p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 dark:border-slate-700" />
                     <select value={instrutorPadrao} onChange={e => setInstrutorPadrao(e.target.value)} className="p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 dark:border-slate-700">
                         <option value="">Instrutor padrão (opcional)</option>
                         {instrutores.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
@@ -384,7 +385,7 @@ export const GradePersonalizadaWizard: React.FC<Props> = ({ isOpen, onClose }) =
                                     {instrutores.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
                                 </select>
                             </div>
-                            <div><label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Sala</label><input value={form.sala} onChange={e => setForm(f => ({ ...f, sala: e.target.value }))} className="w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-700 dark:border-slate-600" /></div>
+                            <div><label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Sala</label><SalaSelect value={form.sala} onChange={v => setForm(f => ({ ...f, sala: v }))} emptyLabel="— Sem sala —" className="w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-700 dark:border-slate-600" /></div>
                         </div>
                         <label className="flex items-center gap-2 text-sm font-bold text-amber-700 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 cursor-pointer">
                             <input type="checkbox" checked={form.extra} onChange={e => setForm(f => ({ ...f, extra: e.target.checked }))} /> ⚡ Aula extra (prática / simulador)

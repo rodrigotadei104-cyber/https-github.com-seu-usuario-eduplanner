@@ -13,6 +13,13 @@ export const COLORS = {
   teal: '#14b8a6',
 };
 
+// Lista fixa de salas (padroniza o cadastro e evita duplicidade tipo "Sala 1" vs "Sala 01").
+// "Outro" NÃO entra aqui — é tratado no componente SalaSelect como campo de texto livre.
+export const SALAS_DISPONIVEIS: string[] = [
+  'Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 7', 'Sala 8',
+  'Estacionamento 1', 'Estacionamento 2', 'Auditório', 'Área Externa', 'Fora da Unidade',
+];
+
 export const MOCK_INSTRUTORES: Instrutor[] = [
   { id: '1', tenantId: DEMO_TENANT_ID, nome: 'Prof. Carlos Silva', email: 'carlos.silva@escola.com', telefone: '(11) 99999-1234' },
   { id: '2', tenantId: DEMO_TENANT_ID, nome: 'Dra. Ana Costa', email: 'ana.costa@escola.com', telefone: '(11) 98888-5678' },
