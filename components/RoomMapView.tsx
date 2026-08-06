@@ -57,6 +57,14 @@ const calcDurationHours = (aula: AulaMapaSala): number => {
     return mins > 0 ? Math.round((mins / (aula.minutosPorHora || 60)) * 100) / 100 : 0;
 };
 
+// Rótulo e cor por tipo de evento (para exibir eventos no Mapa de Salas).
+const EVENTO_LABEL: Record<string, string> = {
+    reuniao: 'Reunião', treinamento: 'Treinamento', feedback: 'Feedback', ferias: 'Férias', outro: 'Evento'
+};
+const EVENTO_COR: Record<string, string> = {
+    reuniao: '#4F46E5', treinamento: '#0891b2', feedback: '#7C3AED', ferias: '#e11d48', outro: '#64748b'
+};
+
 interface BlocoSalaConsolidado {
     id: string;
     inicio: string;
@@ -157,7 +165,7 @@ interface RoomMapViewProps {
 // ============================================
 
 export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
-    const { aulas: aulasGlobais, isLoading, feriadosSet, feriados } = useSchedule();
+    const { aulas: aulasGlobais, eventos, instrutores, isLoading, feriadosSet, feriados } = useSchedule();
     const [semanaBase, setSemanaBase] = useState<Date>(new Date());
     const [aba, setAba] = useState<'grade' | 'lista' | 'dia'>('grade');
     const [filtroBusca, setFiltroBusca] = useState('');
@@ -179,7 +187,7 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
         const diaInicioStr = format(inicioSemana, 'yyyy-MM-dd');
         const diaFimStr = format(fimSemana, 'yyyy-MM-dd');
 
-        return (aulasGlobais as Aula[])
+        const daAulas: AulaMapaSala[] = (aulasGlobais as Aula[])
             .filter(a => {
                 const dataStr = String(a.data).split('T')[0];
                 const realData = a.data instanceof Date ? format(a.data, 'yyyy-MM-dd') : dataStr;
@@ -205,7 +213,38 @@ export const RoomMapView: React.FC<RoomMapViewProps> = ({ onEditAula }) => {
                 numeroTurma: a.numeroTurma
                 };
             });
-    }, [aulasGlobais, inicioSemana, fimSemana]);
+
+        // Eventos COM sala também ocupam a sala — entram no Mapa de Salas.
+        const dosEventos: AulaMapaSala[] = (eventos || [])
+            .filter(e => {
+                if (!e.sala || !String(e.sala).trim()) return false;
+                const realData = e.data instanceof Date ? format(e.data, 'yyyy-MM-dd') : String(e.data).split('T')[0];
+                return realData >= diaInicioStr && realData <= diaFimStr;
+            })
+            .map(e => {
+                const realData = e.data instanceof Date ? format(e.data, 'yyyy-MM-dd') : String(e.data).split('T')[0];
+                const instrNome = e.instrutorId ? (instrutores.find(i => i.id === e.instrutorId)?.nome || '') : '';
+                return {
+                    id: e.id,
+                    data: realData,
+                    horarioInicio: e.horarioInicio,
+                    horarioFim: e.horarioFim,
+                    salaId: e.sala as string,
+                    sala: e.sala as string,
+                    curso: e.nome,
+                    materia: EVENTO_LABEL[e.tipo] || 'Evento',
+                    instrutor: instrNome,
+                    cor: EVENTO_COR[e.tipo] || '#64748b',
+                    status: e.status === 'cancelado' ? 'cancelada' : 'agendada',
+                    minutosPorHora: 60,
+                    tipoAula: 'EVENTO',
+                    origem: EVENTO_LABEL[e.tipo] || 'Evento',
+                    numeroTurma: undefined
+                } as AulaMapaSala;
+            });
+
+        return [...daAulas, ...dosEventos];
+    }, [aulasGlobais, eventos, instrutores, inicioSemana, fimSemana]);
 
     const conflitantes = useMemo(() => detectarConflitos(aulas), [aulas]);
     const aulasAtivas = useMemo(() => aulas.filter(a => a.status !== 'cancelada'), [aulas]);
