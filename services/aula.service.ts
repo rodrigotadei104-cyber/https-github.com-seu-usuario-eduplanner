@@ -640,10 +640,26 @@ export const aulaService = {
             }
         }
 
-        // 3.5. Verificar conflito de instrutor (se não forçado)
-        // Só verifica se a aula enviada é ativa (não cancelada/concluída) ou se o status original era ativo
+        // 3.5. Verificar conflito de instrutor/sala (se não forçado)
+        // IMPORTANTE: só checa conflito quando a AGENDA realmente muda (instrutor, data ou horário).
+        // Trocar apenas a sala (ou observações etc.) NÃO pode disparar conflito — a aula já ocupa
+        // aquele horário legitimamente. Antes, a checagem rodava sempre e um falso "conflito de
+        // instrutor" abortava o update (e, por tabela, a propagação "todas as aulas da turma").
         const targetStatus = input.status || existing.status;
-        if (!forceUpdate && targetStatus !== 'cancelada' && targetStatus !== 'concluida') {
+        const _norm = (v: any) => (v == null ? '' : String(v));
+        const _mudou = (inVal: any, exVal: any, sliceLen?: number) => {
+            if (inVal === undefined) return false; // campo não enviado = não mudou
+            const a = sliceLen ? _norm(inVal).slice(0, sliceLen) : _norm(inVal);
+            const b = sliceLen ? _norm(exVal).slice(0, sliceLen) : _norm(exVal);
+            return a !== b;
+        };
+        const agendaMudou =
+            _mudou((input as any).instrutor_id, existing.instrutor_id) ||
+            _mudou(input.data, existing.data, 10) ||
+            _mudou(input.horario_inicio, existing.horario_inicio, 5) ||
+            _mudou(input.horario_fim, existing.horario_fim, 5);
+
+        if (!forceUpdate && agendaMudou && targetStatus !== 'cancelada' && targetStatus !== 'concluida') {
             const checkData = {
                 instructorId: (input as any).instrutor_id || existing.instrutor_id,
                 date: input.data || existing.data,
@@ -764,9 +780,10 @@ export const aulaService = {
         // a mesma sala antiga — por isso a propagação parecia não funcionar).
         if (propagateRoom && input.sala && input.sala !== existing.sala) {
             try {
-                // Identifica a turma de forma robusta: turma_id (arquitetura nova) tem prioridade;
-                // senão cai no par curso_id + numero_turma (cohort legado).
-                let relatedAulas: { id: string }[] | null = null;
+                // UNIÃO de identificadores: uma turma grande pode ter aulas com turma_id preenchido
+                // e outras identificadas só pelo numero_turma (código que o usuário enxerga). Pegamos
+                // TODAS por qualquer um dos dois e deduplicamos — assim a grade inteira é atualizada.
+                const ids = new Set<string>();
 
                 if (existing.turma_id) {
                     const { data } = await supabase
@@ -774,24 +791,32 @@ export const aulaService = {
                         .select('id')
                         .eq('turma_id', existing.turma_id)
                         .neq('id', id);
-                    relatedAulas = data as { id: string }[] | null;
-                } else if (existing.numero_turma) {
-                    const { data } = await supabase
+                    (data || []).forEach((a: any) => ids.add(a.id));
+                }
+
+                if (existing.numero_turma) {
+                    let q = supabase
                         .from('aulas')
                         .select('id')
-                        .eq('curso_id', existing.curso_id)
                         .eq('numero_turma', existing.numero_turma)
                         .neq('id', id);
-                    relatedAulas = data as { id: string }[] | null;
+                    if (existing.curso_id) q = q.eq('curso_id', existing.curso_id);
+                    const { data } = await q;
+                    (data || []).forEach((a: any) => ids.add(a.id));
                 }
                 // Sem turma_id nem numero_turma não há como identificar a turma com segurança — não propaga.
 
-                if (relatedAulas && relatedAulas.length > 0) {
-                    const idsToUpdate = relatedAulas.map(a => a.id);
-                    await supabase
-                        .from('aulas')
-                        .update({ sala: input.sala })
-                        .in('id', idsToUpdate);
+                if (ids.size > 0) {
+                    const idsToUpdate = Array.from(ids);
+                    // Atualiza em lotes (evita URL/payload gigante em turmas muito grandes).
+                    const LOTE = 200;
+                    for (let i = 0; i < idsToUpdate.length; i += LOTE) {
+                        const fatia = idsToUpdate.slice(i, i + LOTE);
+                        await supabase
+                            .from('aulas')
+                            .update({ sala: input.sala })
+                            .in('id', fatia);
+                    }
 
                     await auditService.log({
                         action: 'UPDATE',

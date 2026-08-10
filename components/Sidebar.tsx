@@ -100,16 +100,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
                         </div>
                     </div>
 
-                    {/* Botão + Nova Aula Azul Clássico */}
-                    {canCreateClass && (
-                        <button
-                            onClick={onNewClass}
-                            className="w-full bg-[#2563eb] hover:bg-blue-600 text-white py-3.5 rounded-xl font-bold text-[14px] transition-colors mb-6 active:scale-95"
-                        >
-                            + Aula Avulsa
-                        </button>
-                    )}
-
                     {/* Navegação Completa - Sem Ícones */}
                     <nav className="flex-1 overflow-y-auto space-y-0.5 custom-scrollbar pr-2">
                         <SectionTitle label="Agenda" />
@@ -124,7 +114,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onN
                         <NavItem view="fechamento" label="Fechamento (5/25)" />
                         <NavItem view="jovem-aprendiz" label="Jovem Aprendiz" />
                         <NavItem view="catalog" label="Catálogo Base" />
-                        <NavItem view="calendar" label="Calendário Institucional" />
                         <NavItem view="registrations" label="Cadastros Rápidos" />
                         
                         {isAdmin && (

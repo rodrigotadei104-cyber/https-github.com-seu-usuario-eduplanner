@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Ativa o modo escuro por CLASSE (.dark no <html>), em vez do padrão do Tailwind v4
+   que segue o sistema operacional (prefers-color-scheme). O contexto adiciona/remove
+   a classe .dark conforme a configuração de tema do usuário. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #2563eb;
   --color-secondary: #475569;

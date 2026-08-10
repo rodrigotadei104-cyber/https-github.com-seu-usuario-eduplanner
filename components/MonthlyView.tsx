@@ -40,7 +40,7 @@ interface MonthlyViewProps {
 }
 
 export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, onSelectDate, onEditAula }) => {
-  const { isLoading, filters, eventos, instrutores, feriadosSet, feriados, cursos } = useSchedule();
+  const { isLoading, filters, eventos, instrutores, feriadosSet, feriados, datasBloqueadasSet, datasBloqueadas, cursos } = useSchedule();
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
@@ -54,6 +54,13 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
     const iso = format(day, 'yyyy-MM-dd');
     if (!feriadosSet.has(iso)) return null;
     return feriados.find(f => f.data === iso) || { data: iso, descricao: 'Feriado', tipo: 'nacional' };
+  };
+
+  // Helper: buscar bloqueio/recesso de um dia específico (só exibição — não impede aula)
+  const getBloqueio = (day: Date) => {
+    const iso = format(day, 'yyyy-MM-dd');
+    if (!datasBloqueadasSet.has(iso)) return null;
+    return datasBloqueadas.find(b => b.data === iso) || { data: iso, motivo: 'Bloqueio' };
   };
 
   // Empty State Logic
@@ -112,16 +119,18 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
             const isCurrentMonth = isSameMonth(day, monthStart);
             const isDayToday = isToday(day);
             const feriado = getFeriado(day);
+            const bloqueio = getBloqueio(day);
 
             return (
               <div
                 key={day.toString()}
                 onClick={() => onSelectDate(day)}
-                title={feriado ? `FERIADO: ${feriado.descricao}` : undefined}
+                title={feriado ? `FERIADO: ${feriado.descricao}` : bloqueio ? `RECESSO/BLOQUEIO: ${bloqueio.motivo}` : undefined}
                 className={`
                 min-h-[160px] border-b border-r relative group cursor-pointer transition-colors flex flex-col
                 ${feriado ? 'bg-[#fff8e1] border-amber-200 dark:bg-amber-900/20 dark:border-amber-900/40' :
                     !isCurrentMonth ? 'bg-gray-50/50 text-gray-400 border-gray-100' : 'bg-white border-gray-100'}
+                ${bloqueio && !feriado ? 'bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/30' : ''}
                 ${isDayToday && !feriado ? 'bg-blue-50/30' : ''}
                 ${!feriado ? 'hover:bg-gray-50' : 'hover:bg-amber-100/50'}
               `}
@@ -137,7 +146,14 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({ currentDate, aulas, on
 
                 {/* Área de conteúdo do dia */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar px-1.5 pb-1 flex flex-col gap-1">
-                  
+
+                  {/* Badge de recesso/bloqueio (só informa — NÃO esconde as aulas) */}
+                  {bloqueio && !feriado && (
+                    <div className="shrink-0 flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300 bg-indigo-100/70 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded mb-0.5" title={bloqueio.motivo}>
+                      <span>🚫</span><span className="truncate">{bloqueio.motivo}</span>
+                    </div>
+                  )}
+
                   {/* Tratamento Isolado para Feriado */}
                   {feriado && (
                     <div className="flex-1 flex flex-col items-center justify-center pt-2">

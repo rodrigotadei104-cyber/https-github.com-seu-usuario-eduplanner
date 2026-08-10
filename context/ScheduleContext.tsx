@@ -60,6 +60,8 @@ interface ScheduleContextType {
   eventos: Evento[];
   feriadosSet: Set<string>;                              // YYYY-MM-DD para lookup rápido
   feriados: Array<{ data: string; descricao: string; tipo: string }>; // para tooltip/label
+  datasBloqueadasSet: Set<string>;                       // YYYY-MM-DD dos bloqueios/recessos
+  datasBloqueadas: Array<{ data: string; motivo: string }>; // para tooltip/label
 
   filteredAulas: Aula[];
   currentDate: Date;
@@ -170,6 +172,8 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [feriadosSet, setFeriadosSet] = useState<Set<string>>(new Set());
   const [feriados, setFeriados] = useState<Array<{ data: string; descricao: string; tipo: string }>>([]);
+  const [datasBloqueadasSet, setDatasBloqueadasSet] = useState<Set<string>>(new Set());
+  const [datasBloqueadas, setDatasBloqueadas] = useState<Array<{ data: string; motivo: string }>>([]);
 
   // --- UI State ---
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -219,13 +223,14 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       setIsLoading(true);
       // Load ALL data in parallel (including feriados) for maximum speed
-      const [aulasData, instrutoresData, cursosData, materiasData, eventsData, feriadosData] = await Promise.all([
+      const [aulasData, instrutoresData, cursosData, materiasData, eventsData, feriadosData, bloqueiosData] = await Promise.all([
         aulaService.list({ includeRelations: true }).catch(() => []),
         instrutorService.list().catch(() => []),
         cursoService.list().catch(() => []),
         materiaService.list().catch(() => []),
         eventService.list().catch(() => []),
-        calendarioService.getFeriados().catch(() => [])
+        calendarioService.getFeriados().catch(() => []),
+        calendarioService.getDatasBloqueadas().catch(() => [])
       ]);
 
       // Fire-and-forget: sync statuses in background AFTER data is loaded
@@ -241,6 +246,14 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         data: String(f.data || f.dataReferencia || '').substring(0, 10),
         descricao: f.descricao || f.nome || 'Feriado',
         tipo: f.tipo || 'nacional',
+      })));
+
+      // Process datas bloqueadas (recessos / bloqueios avulsos)
+      const novoBloqueadasSet = new Set((bloqueiosData as any[]).map((b: any) => String(b.data || b.dataBloqueio || '').substring(0, 10)));
+      setDatasBloqueadasSet(novoBloqueadasSet);
+      setDatasBloqueadas((bloqueiosData as any[]).map((b: any) => ({
+        data: String(b.data || b.dataBloqueio || '').substring(0, 10),
+        motivo: b.motivo || 'Bloqueio',
       })));
 
 
@@ -1200,9 +1213,11 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         refreshData: loadAllData,
         feriadosSet,
         feriados,
+        datasBloqueadasSet,
+        datasBloqueadas,
       }), [
         isAuthenticated, isLoading, isDemo, login, logout, enterDemoMode, activateAccount, resetPassword,
-        aulas, instrutores, cursos, materias, users, systemLogs, eventos, feriadosSet, feriados,
+        aulas, instrutores, cursos, materias, users, systemLogs, eventos, feriadosSet, feriados, datasBloqueadasSet, datasBloqueadas,
         filteredAulas, currentDate, viewMode, filters,
         addAula, updateAula, addAulaPrograma, deleteAula, deleteAulaPrograma, deleteAulasTurma,
         addInstrutor, deleteInstrutor, addCurso, updateCurso, deleteCurso, addMateria, deleteMateria,

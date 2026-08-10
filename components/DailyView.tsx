@@ -43,13 +43,18 @@ interface ProcessedItem {
 }
 
 export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit }) => {
-    const { isLoading, eventos, instrutores, canManageClasses, deleteEvento, userProfile, cursos, feriadosSet, feriados } = useSchedule();
+    const { isLoading, eventos, instrutores, canManageClasses, deleteEvento, userProfile, cursos, feriadosSet, feriados, datasBloqueadasSet, datasBloqueadas } = useSchedule();
     const [hoveredAulaId, setHoveredAulaId] = useState<string | null>(null);
 
     // Verificar se o dia atual é feriado
     const dataISO = format(currentDate, 'yyyy-MM-dd');
     const feriadoDoDia = feriadosSet.has(dataISO)
         ? (feriados.find(f => f.data === dataISO) || { descricao: 'Feriado', tipo: 'nacional' })
+        : null;
+
+    // Recesso/bloqueio do dia (só informa — não impede aula)
+    const bloqueioDoDia = datasBloqueadasSet.has(dataISO)
+        ? (datasBloqueadas.find(b => b.data === dataISO) || { motivo: 'Bloqueio' })
         : null;
 
     // Instrutores de férias no dia — exibidos numa faixa no topo (não ocupam a grade)
@@ -426,6 +431,15 @@ export const DailyView: React.FC<DailyViewProps> = ({ currentDate, aulas, onEdit
                         <span className="ml-2 text-xs text-red-500 dark:text-red-400 capitalize bg-red-100 dark:bg-red-900/40 px-1.5 py-0.5 rounded-full">{feriadoDoDia.tipo}</span>
                     </div>
                     <span className="ml-auto text-xs text-red-500 dark:text-red-400 italic">Aulas não realizadas neste dia</span>
+                </div>
+            )}
+
+            {/* Banner de Recesso / Bloqueio (só informativo) */}
+            {bloqueioDoDia && (
+                <div className="px-4 py-2 bg-indigo-50 border-b border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-900/40 flex items-center gap-2">
+                    <span className="text-lg">🚫</span>
+                    <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">Recesso / Bloqueio: {bloqueioDoDia.motivo}</span>
+                    <span className="ml-auto text-xs text-indigo-500 dark:text-indigo-400 italic">Data marcada como bloqueada</span>
                 </div>
             )}
 

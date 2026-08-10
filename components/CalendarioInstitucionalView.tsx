@@ -52,7 +52,7 @@ function parseDataParaISO(valor: any): string | null {
 // Componente principal
 // ──────────────────────────────────────────────────────────
 export const CalendarioInstitucionalView: React.FC = () => {
-    const { userProfile } = useSchedule();
+    const { userProfile, refreshData } = useSchedule();
     const isAdmin = userProfile.role === 'admin';
 
     const [feriados, setFeriados] = useState<Feriado[]>([]);
@@ -114,6 +114,7 @@ export const CalendarioInstitucionalView: React.FC = () => {
             setIsFeriadoModalOpen(false);
             setFeriadoForm({ dataReferencia: '', nome: '', tipo: 'nacional', recorrenteAnualmente: false });
             await carregarCalendario();
+            await refreshData(); // atualiza o contexto → feriado reflete na agenda
         } catch (error: any) {
             alert('Erro ao salvar feriado: ' + error.message);
         } finally {
@@ -131,6 +132,7 @@ export const CalendarioInstitucionalView: React.FC = () => {
             setIsBlockModalOpen(false);
             setBlockForm({ dataBloqueio: '', motivo: '' });
             await carregarCalendario();
+            await refreshData(); // atualiza o contexto → bloqueio reflete na agenda
         } catch (error: any) {
             alert('Erro ao salvar bloqueio: ' + error.message);
         } finally {
@@ -147,6 +149,7 @@ export const CalendarioInstitucionalView: React.FC = () => {
                 await calendarioService.deleteBloqueio(deleteModal.id);
             }
             await carregarCalendario();
+            await refreshData(); // atualiza o contexto → agenda reflete a remoção
         } catch (error: any) {
             alert('Erro ao remover: ' + error.message);
         } finally {
@@ -248,6 +251,7 @@ export const CalendarioInstitucionalView: React.FC = () => {
             setImportResult({ importados: result.importados, duplicatas: importPreview.filter(f => f.status === 'duplicata').length });
             setImportStatus('done');
             await carregarCalendario();
+            await refreshData(); // atualiza o contexto → feriados importados refletem na agenda
         } catch (err: any) {
             alert('Erro na importação: ' + err.message);
             setImportStatus('preview');

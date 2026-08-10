@@ -4,8 +4,9 @@ import { useSchedule } from '../context/ScheduleContext';
 import { Instrutor, Curso, Materia, Evento, EventType, EventStatus } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 import { ImportModal } from './ImportModal';
+import { CalendarioInstitucionalView } from './CalendarioInstitucionalView';
 
-type Tab = 'instrutores' | 'cursos' | 'materias' | 'eventos';
+type Tab = 'instrutores' | 'cursos' | 'materias' | 'eventos' | 'calendario';
 
 type EventoListItem = Evento & {
     ids: string[];
@@ -76,6 +77,9 @@ export const RegistrationView: React.FC = () => {
         a.getMonth() === b.getMonth() &&
         a.getDate() === b.getDate();
 
+    // Paginação da lista de eventos (evita lista "infinita" com o passar dos anos).
+    const [eventosLimite, setEventosLimite] = useState(30);
+
     const groupedEventos = useMemo<EventoListItem[]>(() => {
         const regularEvents: EventoListItem[] = [];
         const ferias = eventos
@@ -123,7 +127,8 @@ export const RegistrationView: React.FC = () => {
             }
         }
 
-        return [...regularEvents, ...groups].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+        // Mais recente primeiro (topo da lista).
+        return [...regularEvents, ...groups].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
     }, [eventos]);
 
     const resetForm = () => {
@@ -277,9 +282,8 @@ export const RegistrationView: React.FC = () => {
 
     const tabs = [
         { id: 'instrutores', label: 'Instrutores', color: 'text-blue-700', bg: 'bg-blue-50' },
-        { id: 'cursos', label: 'Cursos', color: 'text-purple-700', bg: 'bg-purple-50' },
-        { id: 'materias', label: 'Matérias', color: 'text-amber-700', bg: 'bg-amber-50' },
         { id: 'eventos', label: 'Eventos', color: 'text-emerald-700', bg: 'bg-emerald-50' },
+        { id: 'calendario', label: 'Calendário', color: 'text-indigo-700', bg: 'bg-indigo-50' },
     ];
 
     const formatEventType = (type: EventType) => {
@@ -323,6 +327,9 @@ export const RegistrationView: React.FC = () => {
                     })}
                 </div>
 
+                {activeTab === 'calendario' ? (
+                    <CalendarioInstitucionalView />
+                ) : (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 dark:bg-slate-800 dark:border-slate-700">
                     {/* Add/Edit Form (HIDDEN for Readers) */}
                     {canManage && (
@@ -768,7 +775,7 @@ export const RegistrationView: React.FC = () => {
                                     );
                                 })}
 
-                                {activeTab === 'eventos' && groupedEventos.map((item) => (
+                                {activeTab === 'eventos' && groupedEventos.slice(0, eventosLimite).map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-200">
                                             {item.nome}
@@ -824,6 +831,22 @@ export const RegistrationView: React.FC = () => {
                                     </tr>
                                 ))}
 
+                                {activeTab === 'eventos' && groupedEventos.length > eventosLimite && (
+                                    <tr>
+                                        <td colSpan={canManage ? 6 : 5} className="px-6 py-4 text-center">
+                                            <button
+                                                onClick={() => setEventosLimite(l => l + 30)}
+                                                className="text-xs font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                                            >
+                                                Mostrar mais ({groupedEventos.length - eventosLimite} restantes)
+                                            </button>
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-2">
+                                                Mostrando {eventosLimite} de {groupedEventos.length}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                )}
+
                                 {((activeTab === 'instrutores' && instrutores.length === 0) ||
                                     (activeTab === 'cursos' && cursos.length === 0) ||
                                     (activeTab === 'materias' && materias.length === 0) ||
@@ -842,6 +865,7 @@ export const RegistrationView: React.FC = () => {
                         </table>
                     </div>
                 </div>
+                )}
             </div>
 
             {/* Confirmation Modal Layer */}
