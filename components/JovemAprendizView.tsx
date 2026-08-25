@@ -1,42 +1,55 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { format, getDaysInMonth, startOfMonth, addDays, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Aula } from '../types';
 import { SalaSelect } from './SalaSelect';
+import { programaJovemAprendizService, ProgramaJovemAprendiz } from '../services/programa-jovem-aprendiz.service';
 // Icons removed for minimalism
+
+const DEFAULT_PROGRAMS = ['Assist. Adm Integral', 'Assist. Adm Manhã', 'Assist. Adm Tarde', 'Assist. Log', 'Aprendiz'];
+
+const loadLegacyPrograms = (): string[] => {
+    try {
+        const saved = localStorage.getItem('eduplanner_programas');
+        if (!saved) return DEFAULT_PROGRAMS;
+
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed)) return DEFAULT_PROGRAMS;
+        return parsed.map(p => {
+            if (typeof p === 'object' && p !== null) return String(p.name || p.id || p);
+            return String(p);
+        });
+    } catch (e) {
+        console.error('Erro ao carregar programas locais:', e);
+        return DEFAULT_PROGRAMS;
+    }
+};
+
+const loadLegacySalas = (): Record<string, string> => {
+    try {
+        const saved = localStorage.getItem('eduplanner_programas_salas');
+        const parsed = saved ? JSON.parse(saved) : {};
+        return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+    } catch {
+        return {};
+    }
+};
 
 interface JovemAprendizViewProps {
     readOnly?: boolean;
 }
 
 export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly = false }) => {
-    const { aulas, addAulaPrograma, updateAula, instrutores, currentDate, setCurrentDate, deleteAulaPrograma, feriados, feriadosSet } = useSchedule();
+    const { aulas, addAulaPrograma, updateAula, instrutores, currentDate, setCurrentDate, deleteAulaPrograma, feriados, feriadosSet, userProfile } = useSchedule();
     const [isLoading, setIsLoading] = useState(false);
     const [isConfigOpen, setIsConfigOpen] = useState(false);
 
-    // Estado local de programas (persistido no localStorage)
-    const defaultPrograms = ['Assist. Adm Integral', 'Assist. Adm Manhã', 'Assist. Adm Tarde', 'Assist. Log', 'Aprendiz'];
-    const [programs, setPrograms] = useState<string[]>(() => {
-        try {
-            const saved = localStorage.getItem('eduplanner_programas');
-            if (!saved) return defaultPrograms;
-            
-            const parsed = JSON.parse(saved);
-            if (!Array.isArray(parsed)) return defaultPrograms;
-
-            // MIGRATION: Convert old object format {id, name} to string if necessary
-            return parsed.map(p => {
-                if (typeof p === 'object' && p !== null) {
-                    return p.name || p.id || String(p);
-                }
-                return String(p);
-            });
-        } catch (e) {
-            console.error('Erro ao carregar programas:', e);
-            return defaultPrograms;
-        }
-    });
+    // localStorage agora e apenas cache/fonte de migracao. A autoridade e o Supabase.
+    const [programs, setPrograms] = useState<string[]>(loadLegacyPrograms);
+    const [programRecords, setProgramRecords] = useState<ProgramaJovemAprendiz[]>([]);
+    const [sharedConfigLoaded, setSharedConfigLoaded] = useState(false);
+    const legacyProgramsRef = useRef<string[]>(programs);
 
     const [newProgramName, setNewProgramName] = useState('');
     const [newProgramStart, setNewProgramStart] = useState('08:00');
@@ -46,14 +59,8 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
         localStorage.setItem('eduplanner_programas', JSON.stringify(programs));
     }, [programs]);
 
-    // Sala PADRÃO por programa (persistida no navegador). Usada ao criar aulas e como sugestão.
-    const [salasPorPrograma, setSalasPorPrograma] = useState<Record<string, string>>(() => {
-        try {
-            const saved = localStorage.getItem('eduplanner_programas_salas');
-            const parsed = saved ? JSON.parse(saved) : {};
-            return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
-        } catch { return {}; }
-    });
+    const [salasPorPrograma, setSalasPorPrograma] = useState<Record<string, string>>(loadLegacySalas);
+    const legacySalasRef = useRef<Record<string, string>>(salasPorPrograma);
     useEffect(() => {
         localStorage.setItem('eduplanner_programas_salas', JSON.stringify(salasPorPrograma));
     }, [salasPorPrograma]);
@@ -61,9 +68,53 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
     // Rascunho da sala em edição por aula (mantém o campo da célula controlado e sempre editável).
     const [salaDraft, setSalaDraft] = useState<Record<string, string>>({});
 
-    // SYNC: Mesclar programas do banco (origens das aulas PROGRAMA) com programas locais.
-    // Garante que colunas criadas por outros usuários (ex: admin Wilson) apareçam para todos.
+    const loadSharedPrograms = useCallback(async () => {
+        const shared = await programaJovemAprendizService.list();
+        setProgramRecords(shared);
+        setPrograms(shared.map(p => p.nome));
+        setSalasPorPrograma(Object.fromEntries(shared.map(p => [p.nome, p.salaPadrao])));
+        setSharedConfigLoaded(true);
+    }, []);
+
+    // Migra uma vez as colunas que existiam somente neste navegador e passa a ouvir
+    // alteracoes feitas por qualquer administrador/editor do mesmo tenant.
     useEffect(() => {
+        let channel: Awaited<ReturnType<typeof programaJovemAprendizService.subscribe>> | undefined;
+        let mounted = true;
+
+        const startSharedSync = async () => {
+            setIsLoading(true);
+            try {
+                const migrationKey = `eduplanner_programas_shared_v1_${userProfile.tenantId}`;
+                if (!readOnly && userProfile.tenantId && !localStorage.getItem(migrationKey)) {
+                    await programaJovemAprendizService.importLegacy(legacyProgramsRef.current, legacySalasRef.current);
+                    localStorage.setItem(migrationKey, 'ok');
+                }
+
+                await loadSharedPrograms();
+                if (!mounted) return;
+                channel = await programaJovemAprendizService.subscribe(() => {
+                    if (mounted) void loadSharedPrograms();
+                });
+            } catch (error) {
+                // Mantem compatibilidade durante deploys em que o frontend chega antes da migration.
+                console.error('[Jovem Aprendiz] Falha ao carregar configuração compartilhada:', error);
+                setSharedConfigLoaded(false);
+            } finally {
+                if (mounted) setIsLoading(false);
+            }
+        };
+
+        void startSharedSync();
+        return () => {
+            mounted = false;
+            if (channel) void channel.unsubscribe();
+        };
+    }, [loadSharedPrograms, readOnly, userProfile.tenantId]);
+
+    // Fallback legado: so descobre origens das aulas quando a tabela compartilhada nao esta acessivel.
+    useEffect(() => {
+        if (sharedConfigLoaded) return;
         const origensNoBanco = new Set<string>();
         aulas.forEach(a => {
             if (a.tipoAula === 'PROGRAMA' && a.origem) {
@@ -85,22 +136,42 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
             if (!changed) return prev; // evita re-render desnecessário
             return Array.from(merged);
         });
-    }, [aulas]);
+    }, [aulas, sharedConfigLoaded]);
 
-    const addProgram = () => {
+    const addProgram = async () => {
         if (newProgramName.trim()) {
             const finalName = `${newProgramName.trim()} [${newProgramStart}-${newProgramEnd}]`;
             if (!programs.includes(finalName)) {
-                setPrograms([...programs, finalName]);
-                setNewProgramName('');
-                setNewProgramStart('08:00');
-                setNewProgramEnd('12:00');
+                setIsLoading(true);
+                try {
+                    await programaJovemAprendizService.add(finalName);
+                    await loadSharedPrograms();
+                    setNewProgramName('');
+                    setNewProgramStart('08:00');
+                    setNewProgramEnd('12:00');
+                } catch (error) {
+                    console.error('Erro ao adicionar coluna compartilhada:', error);
+                    alert('Não foi possível salvar a coluna para os demais usuários. Tente novamente.');
+                } finally {
+                    setIsLoading(false);
+                }
             }
         }
     };
 
-    const removeProgram = (prog: string) => {
-        setPrograms(programs.filter(p => p !== prog));
+    const removeProgram = async (prog: string) => {
+        const record = programRecords.find(p => p.nome === prog);
+        if (!record) return;
+        setIsLoading(true);
+        try {
+            await programaJovemAprendizService.remove(record.id);
+            await loadSharedPrograms();
+        } catch (error) {
+            console.error('Erro ao remover coluna compartilhada:', error);
+            alert('Não foi possível remover a coluna para os demais usuários. Tente novamente.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Dates generation for the month
@@ -137,6 +208,15 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
     const aplicarSalaPrograma = async (programName: string, novaSala: string) => {
         const sala = novaSala.trim();
         setSalasPorPrograma(prev => ({ ...prev, [programName]: sala }));
+        const record = programRecords.find(p => p.nome === programName);
+        if (record) {
+            try {
+                await programaJovemAprendizService.updateSala(record.id, sala);
+            } catch (error) {
+                console.error('Erro ao salvar sala padrão compartilhada:', error);
+                alert('A sala foi aplicada às aulas, mas não foi salva como padrão compartilhado.');
+            }
+        }
         const alvo = programAulas.filter(a => a.origem === programName && (a.sala || '') !== sala);
         for (const a of alvo) {
             await updateAula({ ...a, sala } as Aula, true);

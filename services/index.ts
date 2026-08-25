@@ -26,3 +26,6 @@ export type { InstrutorInput, CursoInput, MateriaInput, ServiceResult } from './
 export { eventService } from './event.service';
 export type { EventInput } from './event.service';
 
+export { programaJovemAprendizService } from './programa-jovem-aprendiz.service';
+export type { ProgramaJovemAprendiz } from './programa-jovem-aprendiz.service';
+
