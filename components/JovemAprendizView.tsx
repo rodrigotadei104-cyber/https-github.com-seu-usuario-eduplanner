@@ -8,6 +8,17 @@ import { programaJovemAprendizService, ProgramaJovemAprendiz } from '../services
 // Icons removed for minimalism
 
 const DEFAULT_PROGRAMS = ['Assist. Adm Integral', 'Assist. Adm Manhã', 'Assist. Adm Tarde', 'Assist. Log', 'Aprendiz'];
+const PROGRAM_TIME_SUFFIX = /\s*(\[\d{2}:\d{2}-\d{2}:\d{2}\])\s*$/;
+
+const getProgramTitle = (programName: string): string => programName.replace(PROGRAM_TIME_SUFFIX, '').trim();
+const getProgramTimeSuffix = (programName: string): string => programName.match(PROGRAM_TIME_SUFFIX)?.[1] || '';
+const sortProgramRecords = (records: ProgramaJovemAprendiz[]): ProgramaJovemAprendiz[] =>
+    [...records].sort((a, b) =>
+        getProgramTitle(a.nome).localeCompare(getProgramTitle(b.nome), 'pt-BR', {
+            sensitivity: 'base',
+            numeric: true,
+        }) || a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base', numeric: true })
+    );
 
 const loadLegacyPrograms = (): string[] => {
     try {
@@ -41,7 +52,7 @@ interface JovemAprendizViewProps {
 }
 
 export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly = false }) => {
-    const { aulas, addAulaPrograma, updateAula, instrutores, currentDate, setCurrentDate, deleteAulaPrograma, feriados, feriadosSet, userProfile } = useSchedule();
+    const { aulas, addAulaPrograma, updateAula, instrutores, currentDate, setCurrentDate, deleteAulaPrograma, feriados, feriadosSet, userProfile, refreshData } = useSchedule();
     const [isLoading, setIsLoading] = useState(false);
     const [isConfigOpen, setIsConfigOpen] = useState(false);
 
@@ -69,7 +80,7 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
     const [salaDraft, setSalaDraft] = useState<Record<string, string>>({});
 
     const loadSharedPrograms = useCallback(async () => {
-        const shared = await programaJovemAprendizService.list();
+        const shared = sortProgramRecords(await programaJovemAprendizService.list());
         setProgramRecords(shared);
         setPrograms(shared.map(p => p.nome));
         setSalasPorPrograma(Object.fromEntries(shared.map(p => [p.nome, p.salaPadrao])));
@@ -134,7 +145,9 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
                 }
             });
             if (!changed) return prev; // evita re-render desnecessário
-            return Array.from(merged);
+            return Array.from(merged).sort((a, b) =>
+                getProgramTitle(a).localeCompare(getProgramTitle(b), 'pt-BR', { sensitivity: 'base', numeric: true })
+            );
         });
     }, [aulas, sharedConfigLoaded]);
 
@@ -169,6 +182,34 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
         } catch (error) {
             console.error('Erro ao remover coluna compartilhada:', error);
             alert('Não foi possível remover a coluna para os demais usuários. Tente novamente.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const renameProgram = async (prog: string) => {
+        const record = programRecords.find(p => p.nome === prog);
+        if (!record) return;
+
+        const currentTitle = getProgramTitle(prog);
+        const newTitle = window.prompt('Novo título da coluna:', currentTitle)?.trim();
+        if (!newTitle || newTitle === currentTitle) return;
+
+        const suffix = getProgramTimeSuffix(prog);
+        const finalName = suffix ? `${newTitle} ${suffix}` : newTitle;
+        if (programRecords.some(p => p.id !== record.id && p.nome === finalName)) {
+            alert('Já existe uma coluna com esse título e horário.');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await programaJovemAprendizService.rename(record.id, finalName);
+            await refreshData();
+            await loadSharedPrograms();
+        } catch (error) {
+            console.error('Erro ao renomear coluna compartilhada:', error);
+            alert('Não foi possível renomear a coluna. Verifique se o título já existe e tente novamente.');
         } finally {
             setIsLoading(false);
         }
@@ -336,8 +377,9 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
                             {programs.map(p => (
                                 <div key={p} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-700/50 px-3 py-1.5 rounded-md shadow-sm group">
                                     <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">
-                                        {p.replace(/\s*\[\d{2}:\d{2}-\d{2}:\d{2}\]/, '')}
+                                        {getProgramTitle(p)}
                                     </span>
+                                    <button onClick={() => renameProgram(p)} className="text-blue-500 hover:text-blue-700 font-bold text-[9px] p-1">[EDITAR]</button>
                                     <button onClick={() => removeProgram(p)} className="text-slate-400 hover:text-red-600 font-bold text-[10px] p-1">[X]</button>
                                 </div>
                             ))}
@@ -389,7 +431,16 @@ export const JovemAprendizView: React.FC<JovemAprendizViewProps> = ({ readOnly =
                                     <th className="p-3 w-20 min-w-[80px] border-b border-r border-slate-300 dark:border-slate-700 font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider text-xs text-center sticky left-[96px] z-40 bg-slate-100 dark:bg-slate-900">Dia</th>
                                     {programs.map(p => (
                                         <th key={p} className="px-1.5 py-2 min-w-[85px] max-w-[110px] border-b border-r border-amber-300 dark:border-amber-900/50 font-black text-amber-900 dark:text-amber-400 uppercase tracking-wider text-[10px] text-center bg-amber-100/50 dark:bg-amber-900/20">
-                                            {p.replace(/\s*\[\d{2}:\d{2}-\d{2}:\d{2}\]/, '')}
+                                            <button
+                                                type="button"
+                                                onClick={() => { if (!readOnly) void renameProgram(p); }}
+                                                disabled={readOnly}
+                                                title={readOnly ? undefined : 'Clique para editar o título'}
+                                                className={`block w-full uppercase font-black leading-tight ${readOnly ? 'cursor-default' : 'cursor-pointer hover:text-blue-700 dark:hover:text-blue-300'}`}
+                                            >
+                                                {getProgramTitle(p)}
+                                                {!readOnly && <span className="block text-[8px] font-semibold normal-case tracking-normal opacity-60">editar título</span>}
+                                            </button>
                                             <div className="text-[10px] text-amber-800 dark:text-amber-400/70 font-bold">
                                                 {guessTimeForProgram(p).start} - {guessTimeForProgram(p).end}
                                             </div>

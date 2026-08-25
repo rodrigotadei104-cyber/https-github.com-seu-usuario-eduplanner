@@ -116,6 +116,14 @@ export const programaJovemAprendizService = {
         if (error) throw error;
     },
 
+    async rename(id: string, novoNome: string): Promise<void> {
+        const { error } = await supabase.rpc('renomear_jovem_aprendiz_programa', {
+            p_programa_id: id,
+            p_novo_nome: novoNome.trim(),
+        });
+        if (error) throw error;
+    },
+
     async updateSala(id: string, salaPadrao: string): Promise<void> {
         const { userId } = await getAuthContext();
         const { error } = await supabase
