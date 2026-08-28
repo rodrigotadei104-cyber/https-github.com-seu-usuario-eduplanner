@@ -3,11 +3,13 @@ import { useSchedule } from '../context/ScheduleContext';
 import { Aula } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, ChevronRight, ArrowLeft, Clock3, MapPin } from 'lucide-react';
 
 const toMin = (t: string) => { const [h, m] = String(t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+const horarioCurto = (horario: string) => String(horario || '').slice(0, 5);
 
 interface ResumoTurma {
+    chave: string;
     numeroTurma: string;
     curso: string;
     inicio: Date;
@@ -17,6 +19,10 @@ interface ResumoTurma {
     horas: number;
     instrutores: string[];
     status: 'planejada' | 'andamento' | 'encerrada';
+    recorrencia: string;
+    proxima?: Aula;
+    totalDias: number;
+    aulas: Aula[];
 }
 
 type Ordenacao = 'termino' | 'inicio' | 'curso';
@@ -26,6 +32,7 @@ export const TurmasView: React.FC = () => {
     const [busca, setBusca] = useState('');
     const [ordem, setOrdem] = useState<Ordenacao>('termino');
     const [statusFiltro, setStatusFiltro] = useState<'andamento' | 'planejada' | 'encerrada' | 'todas'>('andamento');
+    const [turmaSelecionada, setTurmaSelecionada] = useState<ResumoTurma | null>(null);
 
     const hoje = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
 
@@ -61,19 +68,23 @@ export const TurmasView: React.FC = () => {
         (aulas as Aula[]).forEach(a => {
             const nt = a.numeroTurma || a.numeroCurso;
             if (!nt) return;
-            if (!(a.data instanceof Date)) return;
-            if (!grupos.has(nt)) grupos.set(nt, []);
-            grupos.get(nt)!.push(a);
+            if (!(a.data instanceof Date) || Number.isNaN(a.data.getTime())) return;
+            // turmaId é a identidade para o novo modelo; o fallback preserva registros legados.
+            const chave = a.turmaId ? `turma:${a.turmaId}` : `legado:${a.cursoId || a.curso}:${nt}`;
+            if (!grupos.has(chave)) grupos.set(chave, []);
+            grupos.get(chave)!.push(a);
         });
 
         const lista: ResumoTurma[] = [];
-        for (const [nt, arr] of grupos) {
+        for (const [chave, arr] of grupos) {
+            const nt = arr.find(a => a.numeroTurma)?.numeroTurma || arr.find(a => a.numeroCurso)?.numeroCurso || 'Sem identificação';
             const ativas = arr.filter(a => a.status !== 'cancelada');
             if (ativas.length === 0) continue;
             const datas = ativas.map(a => a.data.getTime());
             const inicio = new Date(Math.min(...datas));
             const termino = new Date(Math.max(...datas));
-            const aulasDadas = ativas.filter(a => { const d = new Date(a.data); d.setHours(0, 0, 0, 0); return d < hoje; }).length;
+            const diasComAula = new Set(ativas.map(a => format(a.data, 'yyyy-MM-dd')));
+            const aulasDadas = new Set(ativas.filter(a => { const d = new Date(a.data); d.setHours(0, 0, 0, 0); return a.status === 'concluida' || d < hoje; }).map(a => format(a.data, 'yyyy-MM-dd'))).size;
             const horas = ativas.reduce((acc, a) => acc + Math.max(0, (toMin(a.horarioFim) - toMin(a.horarioInicio)) / 60), 0);
             const instrutores = Array.from(new Set(ativas.map(a => a.instrutor).filter(Boolean)));
             // curso mais frequente do grupo
@@ -85,7 +96,26 @@ export const TurmasView: React.FC = () => {
             if (hoje < new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate())) status = 'planejada';
             else if (hoje > new Date(termino.getFullYear(), termino.getMonth(), termino.getDate())) status = 'encerrada';
 
-            lista.push({ numeroTurma: nt, curso, inicio, termino, totalAulas: ativas.length, aulasDadas, horas: Math.round(horas * 10) / 10, instrutores, status });
+            const aulasPorDia = new Map<string, Aula[]>();
+            ativas.forEach(aula => {
+                const data = format(aula.data, 'yyyy-MM-dd');
+                aulasPorDia.set(data, [...(aulasPorDia.get(data) || []), aula]);
+            });
+            // Uma turma pode ter várias disciplinas dentro do mesmo turno. Para o resumo,
+            // o compromisso é o intervalo total do dia, não cada fragmento pedagógico.
+            const turnosPorDia = Array.from(aulasPorDia.values()).map(aulasDoDia => ({
+                dia: aulasDoDia[0].data.getDay(),
+                inicio: horarioCurto(aulasDoDia.sort((a, b) => toMin(a.horarioInicio) - toMin(b.horarioInicio))[0].horarioInicio),
+                fim: horarioCurto(aulasDoDia.sort((a, b) => toMin(b.horarioFim) - toMin(a.horarioFim))[0].horarioFim),
+            }));
+            const dias = Array.from(new Set(turnosPorDia.map(turno => turno.dia))).sort((a, b) => a - b);
+            const slots = Array.from(new Set(turnosPorDia.map(turno => `${turno.inicio}–${turno.fim}`)));
+            const datasCurtas = Array.from(new Set(ativas.map(a => format(a.data, 'dd MMM', { locale: ptBR }))));
+            const recorrencia = diasComAula.size <= 3
+                ? `${datasCurtas.join(', ').replace(/, ([^,]*)$/, ' e $1')}${slots.length === 1 ? ` · ${slots[0]}` : ''}`
+                : slots.length === 1 ? `${dias.map(d => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d]).join(' · ')} · ${slots[0]}` : 'Agenda personalizada';
+            const proxima = ativas.filter(a => { const d = new Date(a.data); d.setHours(0, 0, 0, 0); return d >= hoje && a.status !== 'concluida'; }).sort((a, b) => a.data.getTime() - b.data.getTime() || toMin(a.horarioInicio) - toMin(b.horarioInicio))[0];
+            lista.push({ chave, numeroTurma: nt, curso, inicio, termino, totalAulas: diasComAula.size, totalDias: diasComAula.size, aulasDadas, diasConcluidos: aulasDadas, horas: Math.round(horas * 10) / 10, instrutores, status, recorrencia, proxima, aulas: [...arr].sort((a, b) => a.data.getTime() - b.data.getTime() || toMin(a.horarioInicio) - toMin(b.horarioInicio)) });
         }
         return lista;
     }, [aulas, hoje]);
@@ -115,6 +145,10 @@ export const TurmasView: React.FC = () => {
         });
     }, [turmas, busca, ordem, statusFiltro]);
 
+    // Este retorno precisa ficar depois de todos os hooks da tela. Retornar antes
+    // fazia o React executar uma quantidade diferente de hooks após o clique.
+    if (turmaSelecionada) return <AgendaDetalhada turma={turmaSelecionada} onBack={() => setTurmaSelecionada(null)} />;
+
     const badge = (s: ResumoTurma['status']) => {
         if (s === 'planejada') return { txt: 'Planejada', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' };
         if (s === 'encerrada') return { txt: 'Encerrada', cls: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400' };
@@ -127,7 +161,7 @@ export const TurmasView: React.FC = () => {
             <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h1 className="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter border-b-2 border-teal-600 inline-block">Turmas</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Início, previsão de término e progresso de cada turma — calculado das aulas.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Agenda efetiva, próxima aula e progresso calculados a partir das aulas da turma.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar Id da turma, curso ou instrutor..."
@@ -168,10 +202,10 @@ export const TurmasView: React.FC = () => {
                 ) : (
                     <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm" style={{ minWidth: 900 }}>
+                            <table className="w-full text-sm" style={{ minWidth: 820 }}>
                                 <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 sticky top-0">
                                     <tr>
-                                        {['Id Turma', 'Curso', 'Início', 'Término (prev.)', 'Progresso', 'Horas', 'Instrutor(es)', 'Status'].map(h => (
+                                        {['Id Turma', 'Curso', 'Período efetivo', 'Progresso', 'Próxima aula', 'Status', ''].map(h => (
                                             <th key={h} className="px-3 py-2.5 text-left font-black uppercase tracking-wide text-[10px] whitespace-nowrap border-b border-gray-200 dark:border-slate-700">{h}</th>
                                         ))}
                                     </tr>
@@ -181,11 +215,10 @@ export const TurmasView: React.FC = () => {
                                         const b = badge(t.status);
                                         const pct = t.totalAulas > 0 ? Math.round((t.aulasDadas / t.totalAulas) * 100) : 0;
                                         return (
-                                            <tr key={t.numeroTurma} className={`border-b border-gray-100 dark:border-slate-700/50 ${i % 2 ? 'bg-slate-50/40 dark:bg-slate-800/40' : ''}`}>
+                                            <tr key={t.chave} className={`border-b border-gray-100 dark:border-slate-700/50 ${i % 2 ? 'bg-slate-50/40 dark:bg-slate-800/40' : ''}`}>
                                                 <td className="px-3 py-2 whitespace-nowrap">{turmaCopiavel(t.numeroTurma)}</td>
                                                 <td className="px-3 py-2 text-gray-700 dark:text-gray-200 max-w-[240px] truncate" title={t.curso}>{t.curso}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">{format(t.inicio, 'dd/MM/yy', { locale: ptBR })}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap font-semibold text-gray-800 dark:text-gray-100">{format(t.termino, 'dd/MM/yy', { locale: ptBR })}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">{format(t.inicio, 'dd MMM yy', { locale: ptBR })} <span className="text-slate-400">→</span> {format(t.termino, 'dd MMM yy', { locale: ptBR })}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-20 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -194,9 +227,9 @@ export const TurmasView: React.FC = () => {
                                                         <span className="text-[11px] text-slate-500 tabular-nums">{t.aulasDadas}/{t.totalAulas}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">{t.horas}h</td>
-                                                <td className="px-3 py-2 text-gray-600 dark:text-gray-300 max-w-[200px] truncate" title={t.instrutores.join(', ')}>{t.instrutores.join(', ') || '—'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-[12px]">{t.proxima ? <><span className="font-semibold text-gray-800 dark:text-gray-100">{format(t.proxima.data, 'dd MMM', { locale: ptBR })}</span><span className="text-slate-500"> · {horarioCurto(t.proxima.horarioInicio)}</span></> : <span className="text-slate-400">—</span>}</td>
                                                 <td className="px-3 py-2"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${b.cls}`}>{b.txt}</span></td>
+                                                <td className="px-3 py-2 text-right"><button onClick={() => setTurmaSelecionada(t)} className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 dark:text-teal-300 hover:text-teal-900">Ver agenda <ChevronRight className="w-4 h-4" /></button></td>
                                             </tr>
                                         );
                                     })}
@@ -211,3 +244,24 @@ export const TurmasView: React.FC = () => {
 };
 
 export default TurmasView;
+
+const AgendaDetalhada: React.FC<{ turma: ResumoTurma; onBack: () => void }> = ({ turma, onBack }) => {
+    const aulasPorMes = turma.aulas.reduce((grupos, aula) => {
+        const chave = format(aula.data, 'MMMM yyyy', { locale: ptBR });
+        grupos.set(chave, [...(grupos.get(chave) || []), aula]);
+        return grupos;
+    }, new Map<string, Aula[]>());
+
+    return <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 rounded-lg overflow-hidden">
+        <header className="px-6 py-5 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
+            <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-teal-700 dark:text-slate-400 dark:hover:text-teal-300"><ArrowLeft className="w-4 h-4" /> Voltar para Turmas</button>
+            <div className="mt-5 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+                <div><p className="text-xs uppercase tracking-[0.16em] font-bold text-teal-700 dark:text-teal-300">Agenda da turma</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900 dark:text-white">{turma.curso}</h1><p className="mt-1 font-mono text-sm text-slate-500 dark:text-slate-400">{turma.numeroTurma}</p></div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-3 text-sm"><InfoAgenda label="Período" valor={`${format(turma.inicio, 'dd MMM', { locale: ptBR })} → ${format(turma.termino, 'dd MMM yy', { locale: ptBR })}`} /><InfoAgenda label="Agenda" valor={turma.recorrencia} /><InfoAgenda label="Dias com aula" valor={String(turma.totalDias)} /></div>
+            </div>
+        </header>
+        <main className="flex-1 overflow-auto p-4 sm:p-6 custom-scrollbar"><div className="max-w-4xl mx-auto space-y-8">{Array.from(aulasPorMes.entries()).map(([mes, aulas]) => <section key={mes}><h2 className="mb-3 capitalize text-sm font-black tracking-wide text-slate-500 dark:text-slate-400">{mes}</h2><div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">{aulas.map(aula => <article key={aula.id} className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center"><div className="min-w-32"><div className="text-xs font-black uppercase tracking-wide text-slate-500">{format(aula.data, 'EEE, dd MMM', { locale: ptBR })}</div><div className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-slate-800 dark:text-white"><Clock3 className="w-3.5 h-3.5 text-teal-600" />{horarioCurto(aula.horarioInicio)}–{horarioCurto(aula.horarioFim)}</div></div><div className="flex-1"><div className="font-semibold text-slate-800 dark:text-slate-100">{aula.materia || turma.curso}</div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">{aula.instrutor && <span>{aula.instrutor}</span>}{aula.sala && <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{aula.sala}</span>}</div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-bold ${aula.status === 'cancelada' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : aula.status === 'concluida' ? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' : aula.aulaExtra ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200' : 'bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200'}`}>{aula.aulaExtra ? 'Aula extra' : aula.status === 'em-andamento' ? 'Em andamento' : aula.status.charAt(0).toUpperCase() + aula.status.slice(1)}</span></article>)}</div></section>)}</div></main>
+    </div>;
+};
+
+const InfoAgenda: React.FC<{ label: string; valor: string }> = ({ label, valor }) => <div><div className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</div><div className="mt-0.5 max-w-56 truncate font-semibold text-slate-700 dark:text-slate-200" title={valor}>{valor}</div></div>;
