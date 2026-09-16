@@ -155,6 +155,36 @@ export const catalogoService = {
         };
     },
 
+    async updateDisciplina(id: string, updates: Partial<Omit<DisciplinaCurso, 'id' | 'tenantId' | 'cursoId' | 'createdAt'>>): Promise<void> {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) throw new Error('Não autenticado');
+
+        const payload: any = {};
+        if (updates.nomeDisciplina !== undefined) payload.nome_disciplina = updates.nomeDisciplina;
+        if (updates.cargaHoras !== undefined) payload.carga_horas = updates.cargaHoras;
+        if (updates.tipoDisciplina !== undefined) payload.tipo_disciplina = updates.tipoDisciplina;
+        if (updates.ordem !== undefined) payload.ordem = updates.ordem;
+
+        const { error } = await supabase
+            .from('disciplinas_curso')
+            .update(payload)
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
+    async deleteDisciplina(id: string): Promise<void> {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) throw new Error('Não autenticado');
+
+        const { error } = await supabase
+            .from('disciplinas_curso')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
     // Envia texto e/ou imagem (print) para o endpoint de IA e recebe a matriz estruturada.
     // Não grava nada — apenas interpreta. A gravação continua sendo feita por importarCatalogoLote.
     async interpretarMatriz(payload: {

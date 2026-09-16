@@ -177,17 +177,36 @@ export const CatalogoView: React.FC = () => {
 
         try {
             if (editingDisciplina) {
-                // Not implemented update in service yet, just simulate or add the method backend later
-                alert('Atualização em breve');
+                await catalogoService.updateDisciplina(editingDisciplina.id, disciplinaForm);
             } else {
                 await catalogoService.createDisciplina(targetCursoIdParaDisciplina, disciplinaForm);
-                // Refresh list
-                const dicList = await catalogoService.getDisciplinasPorCurso(targetCursoIdParaDisciplina);
-                setDisciplinasPorCurso(prev => ({ ...prev, [targetCursoIdParaDisciplina]: dicList }));
             }
+            // Refresh list
+            const dicList = await catalogoService.getDisciplinasPorCurso(targetCursoIdParaDisciplina);
+            setDisciplinasPorCurso(prev => ({ ...prev, [targetCursoIdParaDisciplina]: dicList }));
             setIsDisciplinaModalOpen(false);
         } catch (error) {
-            alert('Erro ao cadastrar disciplina.');
+            alert('Erro ao salvar disciplina.');
+        }
+    };
+
+    // Correção rápida do tipo direto na lista: alterna Teórica ↔ Prática em 1 clique.
+    // Atualização otimista (reverte se o salvamento falhar).
+    const handleToggleTipoDisciplina = async (disc: DisciplinaCurso, cursoId: string) => {
+        const novoTipo: DisciplinaCurso['tipoDisciplina'] = disc.tipoDisciplina === 'pratica' ? 'teorica' : 'pratica';
+        setDisciplinasPorCurso(prev => ({
+            ...prev,
+            [cursoId]: (prev[cursoId] || []).map(d => d.id === disc.id ? { ...d, tipoDisciplina: novoTipo } : d)
+        }));
+        try {
+            await catalogoService.updateDisciplina(disc.id, { tipoDisciplina: novoTipo });
+        } catch (error) {
+            // Reverte em caso de erro
+            setDisciplinasPorCurso(prev => ({
+                ...prev,
+                [cursoId]: (prev[cursoId] || []).map(d => d.id === disc.id ? { ...d, tipoDisciplina: disc.tipoDisciplina } : d)
+            }));
+            alert('Não foi possível atualizar o tipo. Tente novamente.');
         }
     };
 
@@ -522,10 +541,14 @@ export const CatalogoView: React.FC = () => {
                                                             <div className="flex items-center gap-3">
                                                                 <span className="text-gray-400 font-mono text-xs w-4">{(disc.ordem || idx + 1)}Âº</span>
                                                                 <span className="font-medium text-sm text-gray-800 dark:text-gray-200">{disc.nomeDisciplina}</span>
-                                                                <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded 
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleToggleTipoDisciplina(disc, curso.id)}
+                                                                    title="Clique para alternar Teórica / Prática"
+                                                                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded cursor-pointer transition hover:ring-2 hover:ring-offset-1 hover:ring-current
                                                                     ${disc.tipoDisciplina === 'teorica' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}`}>
                                                                     {disc.tipoDisciplina}
-                                                                </span>
+                                                                </button>
                                                             </div>
                                                             <div className="flex items-center gap-3">
                                                                 <span className="font-bold text-sm text-gray-600 dark:text-gray-400">{disc.cargaHoras}h</span>
