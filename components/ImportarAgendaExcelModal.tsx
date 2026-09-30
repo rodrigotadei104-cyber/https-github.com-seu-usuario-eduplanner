@@ -28,27 +28,47 @@ type Stage = 'upload' | 'parsing' | 'preview' | 'saving' | 'done';
 const norm = (s: string) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const normKey = (s: string) => norm(s).replace(/\s+/g, '');
 
+const dataValida = (ano: number, mes: number, dia: number) => {
+    const data = new Date(Date.UTC(ano, mes - 1, dia));
+    return data.getUTCFullYear() === ano && data.getUTCMonth() === mes - 1 && data.getUTCDate() === dia;
+};
+
+const dataIso = (ano: number, mes: number, dia: number) =>
+    `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+
 // "01/07/2026" ou "7/8/26" -> "2026-07-01" (tolerante a ano de 2 dígitos e Excel serial)
 const parseData = (v: any): string | null => {
     if (v == null) return null;
+    // Com raw:true, datas reais do Excel chegam como serial numérico. Isso evita
+    // depender da formatação local (dd/mm vs. mm/dd) aplicada pelo Excel.
+    if (typeof v === 'number' && Number.isFinite(v)) {
+        const partes = XLSX.SSF.parse_date_code(v);
+        if (partes && dataValida(partes.y, partes.m, partes.d)) return dataIso(partes.y, partes.m, partes.d);
+        return null;
+    }
     const s = String(v).trim();
     if (!s) return null;
     // DD/MM/YYYY ou D/M/AA
     const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
     if (m) {
-        const ano = m[3].length === 2 ? '20' + m[3] : m[3];
-        return `${ano}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+        const ano = Number(m[3].length === 2 ? '20' + m[3] : m[3]);
+        const mes = Number(m[2]);
+        const dia = Number(m[1]);
+        return dataValida(ano, mes, dia) ? dataIso(ano, mes, dia) : null;
     }
     // ISO
     const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    if (iso) {
+        const ano = Number(iso[1]);
+        const mes = Number(iso[2]);
+        const dia = Number(iso[3]);
+        return dataValida(ano, mes, dia) ? dataIso(ano, mes, dia) : null;
+    }
     // Serial do Excel (dias desde 1899-12-30)
     if (/^\d+(\.\d+)?$/.test(s)) {
         const serial = parseFloat(s);
-        if (serial > 59) {
-            const d = new Date(Math.round((serial - 25569) * 86400 * 1000));
-            if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
-        }
+        const partes = XLSX.SSF.parse_date_code(serial);
+        if (partes && dataValida(partes.y, partes.m, partes.d)) return dataIso(partes.y, partes.m, partes.d);
     }
     return null;
 };
@@ -56,9 +76,18 @@ const parseData = (v: any): string | null => {
 // "07:30:00:000" -> "07:30"
 const parseHora = (v: any): string | null => {
     if (v == null) return null;
+    // Horas armazenadas como valor nativo do Excel são frações de um dia.
+    if (typeof v === 'number' && Number.isFinite(v)) {
+        const fracao = ((v % 1) + 1) % 1;
+        const minutosTotais = Math.round(fracao * 24 * 60) % (24 * 60);
+        return `${String(Math.floor(minutosTotais / 60)).padStart(2, '0')}:${String(minutosTotais % 60).padStart(2, '0')}`;
+    }
     const m = String(v).trim().match(/^(\d{1,2}):(\d{2})/);
     if (!m) return null;
-    return `${m[1].padStart(2, '0')}:${m[2]}`;
+    const hora = Number(m[1]);
+    const minuto = Number(m[2]);
+    if (hora > 23 || minuto > 59) return null;
+    return `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`;
 };
 
 export const ImportarAgendaExcelModal: React.FC<Props> = ({ isOpen, onClose }) => {
@@ -97,7 +126,9 @@ export const ImportarAgendaExcelModal: React.FC<Props> = ({ isOpen, onClose }) =
             const buf = await file.arrayBuffer();
             const wb = XLSX.read(buf, { cellDates: false });
             const ws = wb.Sheets[wb.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json<any>(ws, { defval: null, raw: false });
+            // raw:true preserva datas do Excel como seriais numéricos. Com raw:false,
+            // a mesma data pode virar mm/dd e ser interpretada como dd/mm.
+            const rows = XLSX.utils.sheet_to_json<any>(ws, { defval: null, raw: true });
             if (rows.length === 0) throw new Error('Planilha vazia.');
 
             // Mapa flexível de colunas (nomes podem variar um pouco)
