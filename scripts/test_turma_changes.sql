@@ -11,9 +11,10 @@ create function auth.uid() returns uuid language sql stable as
 create table public.users (id uuid primary key, tenant_id uuid not null, email text, role text, status text);
 create table public.instrutores (id uuid primary key, tenant_id uuid not null, nome text, active boolean default true);
 create table public.cursos (id uuid primary key, tenant_id uuid not null, nome text);
+create type public.test_aula_status as enum ('agendada','em_andamento','concluida','cancelada');
 create table public.aulas (id uuid primary key, tenant_id uuid not null, turma_id uuid, numero_turma text,
     curso_id uuid, materia_id uuid, disciplina_id uuid, instrutor_id uuid, sala text, data date,
-    horario_inicio time, horario_fim time, status text, carga_horaria_materia numeric, nome_curso text);
+    horario_inicio time, horario_fim time, status public.test_aula_status, carga_horaria_materia numeric, nome_curso text);
 create table public.events (id uuid primary key, tenant_id uuid, instructor_id uuid, room text,
     name text, date date, start_time time, end_time time, type text, status text);
 create table public.audit_logs (id uuid default gen_random_uuid(), tenant_id uuid, user_id uuid,
@@ -54,6 +55,7 @@ insert into public.aulas (id,tenant_id,turma_id,numero_turma,curso_id,materia_id
 \ir ../supabase/migrations/20261108145103_alterar_recursos_turma.sql
 \ir ../supabase/migrations/20261108151456_alterar_recursos_turma_legado.sql
 \ir ../supabase/migrations/20261108152450_reagendar_aulas_turma.sql
+\ir ../supabase/migrations/20261108200201_reagendamento_corrigir_datas_passadas.sql
 create function pg_temp.assert_ok(ok boolean, message text) returns void language plpgsql as
     $$ begin if ok is distinct from true then raise exception 'TESTE: %', message; end if; end $$;
 create function pg_temp.expect_failure(command text, message_part text) returns void language plpgsql as $$
@@ -175,6 +177,6 @@ begin
 end $$;
 reset role;
 select pg_temp.assert_ok(not has_function_privilege('anon','public.alterar_recursos_turma(uuid[],text,text,jsonb,boolean)','EXECUTE'),'anon não executa a função');
-select pg_temp.assert_ok(not has_function_privilege('anon','public.reagendar_aulas_turma(jsonb,jsonb,boolean)','EXECUTE'),'anon não reagenda');
+select pg_temp.assert_ok(not has_function_privilege('anon','public.reagendar_aulas_turma(jsonb,jsonb,boolean,text)','EXECUTE'),'anon não reagenda');
 rollback;
 \echo 'OK: SQL real validou prévia, troca, RLS, permissões, conflitos, férias, dados obsoletos e rollback integral.'

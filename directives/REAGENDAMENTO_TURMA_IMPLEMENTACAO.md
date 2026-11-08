@@ -1,6 +1,6 @@
 # Reagendamento de aulas por turma
 
-Implementação local de 08/11/2026, base de produção `9ff5554`. Ainda não instalada nem publicada.
+Implementação de 08/11/2026, inicialmente publicada no commit `bba3563`. Extensão de correção de aulas passadas descrita abaixo.
 
 ## Fluxo
 
@@ -12,7 +12,7 @@ Implementação local de 08/11/2026, base de produção `9ff5554`. Ainda não in
 - Revisar antes/depois e conflitos; somente depois confirmar.
 - Atualizar a agenda detalhada após a gravação.
 
-Somente aulas futuras agendadas identificadas por turma_id, curso_id + numero_turma ou nome_curso legado + numero_turma, sempre na mesma unidade. Até 500 aulas por operação. Suporta o formato legado reportado nas turmas 706794/706254.
+Aulas identificadas por turma_id, curso_id + numero_turma ou nome_curso legado + numero_turma, sempre na mesma unidade. Até 500 aulas por operação. Suporta o formato legado reportado nas turmas 706794/706254. A extensão abaixo inclui aulas antigas; as novas datas continuam obrigatoriamente no futuro.
 
 ## Banco
 
@@ -47,3 +47,17 @@ Conferência visual automatizada pendente: a ferramenta já bloqueou a navegaç�
 Seguir `directives/DEPLOY_SAFETY_PROTOCOL.md` com aprovação explícita de destino e branch antes do push desta nova funcionalidade. Produção: Supabase `ubhtibihkpwocgazwtur`; GitHub `rodrigotadei104-cyber/https-github.com-seu-usuario-eduplanner`, main, autor `lenono95@gmail.com`; Vercel `rodrigo-tadeis-projects/eduplanner`.
 
 Após aprovação, executar somente a nova migração em transação, validar prévia no esquema real sem reagendar aulas, publicar via Git e acompanhar o deploy. Não usar db push de todo o histórico legado: esse banco não tem histórico de migrações Supabase conciliado. Não reagendar aulas reais para testar sem seleção explícita do usuário.
+
+## Extensão — corrigir aulas de datas passadas
+
+Solicitada após aprovação da versão publicada. Caso real: turma 718319, aula 05/11/2026 18:40–22:00, ainda Agendada, deveria estar em 13/11/2026. O pedido é disponibilizar a correção, sem mover esse registro automaticamente durante o desenvolvimento.
+
+- Aulas Agendadas passam a ser selecionáveis também em datas passadas. Troca de instrutor/sala mantém seu filtro original de aulas futuras; esta regra é específica do reagendamento.
+- Como syncClassStatuses pode concluir aulas antigas automaticamente, existe uma opção explícita para incluir aulas Concluídas cujo fim já passou. Concluídas futuras, Canceladas e Em andamento permanecem excluídas.
+- Toda seleção com datas/horários originais já iniciados exige justificativa de 10–1000 caracteres e confirmação na interface de que as aulas não ocorreram na data registrada.
+- A prévia indica as aulas Concluídas que voltarão para Agendada. Só essas mudam de status; salas, instrutores, disciplinas, horários, carga e IDs continuam preservados.
+- A justificativa é vinculada ao snapshot e registrada junto do status/data anteriores na auditoria. Destino passado continua bloqueado.
+- Migração incremental criada pela CLI: `20261108200201_reagendamento_corrigir_datas_passadas.sql`. Substitui a assinatura de três argumentos por quatro, com `p_motivo text default ''`. Chamadas antigas de três argumentos continuam válidas para aulas futuras; prévias antigas sem o novo snapshot devem ser refeitas. Privilégios de execução são concedidos apenas a authenticated; a política de auditoria existente é mantida.
+- A sincronização de status agora revalida data, horário e status no UPDATE, evitando concluir/iniciar uma aula que foi reagendada ou cancelada depois da leitura inicial.
+
+Testes adicionais: passado Agendado, Concluído passado com opt-in, concluído futuro bloqueado, justificativa obrigatória/vinculada à prévia, reabertura para Agendada, histórico antes/depois, enum de status real no fixture PostgreSQL e concorrência do sincronizador (`scripts/test_sync_rescheduled_status.mjs`). Prévia real 05/11→13/11 validada em transação revertida, com hash da aula preservado. Nenhuma aula real reagendada para teste.

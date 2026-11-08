@@ -29,6 +29,16 @@ assert.throws(() => helper.turmaDateChanges(selected, { '2026-11-14': '' }, now)
 assert.throws(() => helper.turmaDateChanges(selected, { '2026-11-14': '2026-11-14' }, now), /nova data/);
 assert.throws(() => helper.turmaDateChanges(selected, { '2026-11-14': '2026-11-08' }, now), /futuro/);
 assert.deepEqual(aulas, original);
+const past = { ...base, numeroTurma: '718319', data: new Date(2026, 10, 5) };
+assert.equal(helper.canRescheduleTurmaLesson(past, now), true);
+assert.equal(turma.canChangeTurmaLesson(past, now), false);
+assert.equal(helper.canRescheduleTurmaLesson({ ...past, status: 'concluida' }, now), false);
+assert.equal(helper.canRescheduleTurmaLesson({ ...past, status: 'concluida' }, now, true), true);
+assert.equal(helper.canRescheduleTurmaLesson({ ...base, status: 'concluida' }, now, true), false);
+assert.equal(helper.canRescheduleTurmaLesson({ ...past, status: 'cancelada' }, now, true), false);
+assert.equal(helper.canRescheduleTurmaLesson({ ...past, status: 'em-andamento' }, now, true), false);
+assert.equal(helper.isHistoricalTurmaLesson(past, now), true);
+assert.deepEqual(helper.turmaDateChanges([past], { '2026-11-05': '2026-11-13' }, now), [{ id: 'a', nova_data: '2026-11-13' }]);
 let allowed = true, calls = [], reply, rpcError;
 globalThis.rescheduleDeps = { supabase: { rpc: async (name, args) => { calls.push({ name, args }); return { data: reply, error: rpcError }; } },
     permissionService: { checkPermission: async () => allowed }, tenantService: { getCurrentTenantId: () => 'T' }, turmaLessonExpectation: turma.turmaLessonExpectation };
@@ -36,10 +46,16 @@ const { turmaRescheduleService: service } = await load('../services/turmaResched
 const changes = [{ id: 'a', nova_data: '2026-11-28' }];
 reply = { snapshot: [{ ...turma.turmaLessonExpectation(base), nova_data: changes[0].nova_data }], conflicts: [], changedCount: 1, applied: false };
 const preview = await service.preview([base], changes);
+assert.equal(calls[0].args.p_motivo, '');
 assert.equal(calls[0].name, 'reagendar_aulas_turma'); assert.equal(calls[0].args.p_aplicar, false);
 assert.equal(calls[0].args.p_expected[0].nova_data, '2026-11-28');
 reply = { ...preview, applied: true }; await service.apply(preview);
 assert.deepEqual(calls[1].args.p_changes, changes); assert.deepEqual(calls[1].args.p_expected, preview.snapshot);
+reply = { ...reply, snapshot: [{ ...reply.snapshot[0], motivo_reagendamento: 'Aula adiada por erro de registro.' }] };
+const historicalPreview = await service.preview([past], changes, 'Aula adiada por erro de registro.');
+assert.equal(calls.at(-1).args.p_motivo, 'Aula adiada por erro de registro.');
+await service.apply(historicalPreview);
+assert.equal(calls.at(-1).args.p_motivo, 'Aula adiada por erro de registro.');
 allowed = false; const before = calls.length;
 await assert.rejects(() => service.preview([base], changes), /permissão/); assert.equal(calls.length, before);
 allowed = true; rpcError = { code: 'PGRST202' };

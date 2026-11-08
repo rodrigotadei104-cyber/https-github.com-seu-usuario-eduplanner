@@ -8,10 +8,10 @@ import type { Aula } from '../types';
 
 export interface TurmaRescheduleRow extends TurmaChangeRow { nova_data: string }
 export interface TurmaReschedulePreview extends TurmaChangePreview { snapshot: TurmaRescheduleRow[] }
-async function call(changes: TurmaDateChange[], expected: unknown[], apply: boolean): Promise<TurmaReschedulePreview> {
+async function call(changes: TurmaDateChange[], expected: unknown[], apply: boolean, reason: string): Promise<TurmaReschedulePreview> {
     tenantService.getCurrentTenantId();
     if (!await permissionService.checkPermission('EDIT_CLASS', 'ReagendamentoTurma')) throw new Error('Você não tem permissão para reagendar aulas.');
-    const { data, error } = await supabase.rpc('reagendar_aulas_turma', { p_changes: changes, p_expected: expected, p_aplicar: apply });
+    const { data, error } = await supabase.rpc('reagendar_aulas_turma', { p_changes: changes, p_expected: expected, p_aplicar: apply, p_motivo: reason.trim() });
     if (error) {
         if (['PGRST202', '42883'].includes(error.code)) throw new Error('O reagendamento em lote ainda não está habilitado no banco. Nenhuma aula foi alterada.');
         if (error.code === '23505') throw new Error('Uma reserva impede o reagendamento. Nenhuma aula foi alterada. Atualize a agenda e gere outra prévia.');
@@ -26,11 +26,12 @@ async function call(changes: TurmaDateChange[], expected: unknown[], apply: bool
     return data as TurmaReschedulePreview;
 }
 export const turmaRescheduleService = {
-    preview(aulas: Aula[], changes: TurmaDateChange[]) {
+    preview(aulas: Aula[], changes: TurmaDateChange[], reason = '') {
         const byId = new Map(changes.map(c => [c.id, c.nova_data]));
-        return call(changes, aulas.map(a => ({ ...turmaLessonExpectation(a), nova_data: byId.get(a.id) })), false);
+        return call(changes, aulas.map(a => ({ ...turmaLessonExpectation(a), nova_data: byId.get(a.id) })), false, reason);
     },
     apply(preview: TurmaReschedulePreview) {
-        return call(preview.snapshot.map(a => ({ id: a.id, nova_data: a.nova_data })), preview.snapshot, true);
+        return call(preview.snapshot.map(a => ({ id: a.id, nova_data: a.nova_data })), preview.snapshot, true,
+            String(preview.snapshot[0]?.motivo_reagendamento || ''));
     }
 };

@@ -1217,15 +1217,20 @@ export const aulaService = {
 
         // Execute batch updates (max 2 requests instead of N)
         const batchOps: PromiseLike<any>[] = [];
+        const nowTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
         if (toComplete.length > 0) {
             batchOps.push(
-                supabase.from('aulas').update({ status: 'concluida' }).in('id', toComplete).then()
+                supabase.from('aulas').update({ status: 'concluida' }).in('id', toComplete)
+                    .in('status', ['agendada', 'em_andamento'])
+                    .or(`data.lt.${todayStr},and(data.eq.${todayStr},horario_fim.lte.${nowTime})`).then()
             );
         }
         if (toInProgress.length > 0) {
             batchOps.push(
-                supabase.from('aulas').update({ status: 'em_andamento' }).in('id', toInProgress).then()
+                supabase.from('aulas').update({ status: 'em_andamento' }).in('id', toInProgress)
+                    .eq('status', 'agendada').eq('data', todayStr)
+                    .lte('horario_inicio', nowTime).gt('horario_fim', nowTime).then()
             );
         }
 

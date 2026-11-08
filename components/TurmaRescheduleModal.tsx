@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { useSchedule } from '../context/ScheduleContext';
-import { canChangeTurmaLesson, localDateKey } from '../utils/turmaChanges';
-import { selectTurmaReschedule, shiftDateKey, turmaDateChanges } from '../utils/turmaReschedule';
+import { localDateKey } from '../utils/turmaChanges';
+import { canRescheduleTurmaLesson, isHistoricalTurmaLesson, selectTurmaReschedule, shiftDateKey, turmaDateChanges } from '../utils/turmaReschedule';
 import { turmaRescheduleService } from '../services/turmaReschedule.service';
 import type { TurmaReschedulePreview } from '../services/turmaReschedule.service';
 import type { Aula } from '../types';
@@ -24,6 +24,8 @@ export const TurmaRescheduleModal: React.FC<Props> = ({ isOpen, onClose, onAppli
     const [preview, setPreview] = useState<TurmaReschedulePreview | null>(null);
     const [busy, setBusy] = useState(false), [error, setError] = useState('');
     const [saved, setSaved] = useState<number | null>(null);
+    const [includeConcluded, setIncludeConcluded] = useState(false);
+    const [reason, setReason] = useState(''), [historyConfirmed, setHistoryConfirmed] = useState(false);
     const now = useMemo(() => new Date(), [isOpen]);
     const allowed = ['admin', 'editor'].includes(userProfile.role);
     useEffect(() => {
@@ -31,28 +33,33 @@ export const TurmaRescheduleModal: React.FC<Props> = ({ isOpen, onClose, onAppli
         if (isOpen) {
             setDates({}); setExcluded([]); setPreview(null); setSaved(null); setError('');
             setFrom(''); setTo(''); setOffset('7'); applying.current = false;
+            setIncludeConcluded(false); setReason(''); setHistoryConfirmed(false);
             if (!element?.open) element?.showModal();
         } else element?.close();
         return () => element?.close();
     }, [isOpen]);
-    const eligible = turma.aulas.filter(a => canChangeTurmaLesson(a, now));
+    const eligible = turma.aulas.filter(a => canRescheduleTurmaLesson(a, now, includeConcluded));
     const originalDates = [...new Set(eligible.map(a => localDateKey(a.data)))].sort();
-    const selected = selectTurmaReschedule(turma.aulas, dates, excluded, now);
+    const selected = selectTurmaReschedule(turma.aulas, dates, excluded, now, includeConcluded);
+    const historical = selected.filter(a => isHistoricalTurmaLesson(a, now));
     const candidates = eligible.filter(a => Object.hasOwn(dates, localDateKey(a.data)));
     const previewRows = preview ? [...preview.snapshot].sort((a, b) => a.data.localeCompare(b.data) || a.horario_inicio.localeCompare(b.horario_inicio)) : [];
     let validation = '', changes: ReturnType<typeof turmaDateChanges> = [];
     try { changes = turmaDateChanges(selected, dates, now); }
     catch (err) { validation = err instanceof Error ? err.message : 'Revise as novas datas.'; }
+    if (!validation && historical.length && (reason.trim().length < 10 || reason.trim().length > 1000 || !historyConfirmed)) {
+        validation = 'Para corrigir aulas passadas, preencha a justificativa e confirme que não foram realizadas nas datas registradas.';
+    }
     const changeDate = (key: string, value?: string) => {
-        setError(''); setDates(previous => {
+        setError(''); setHistoryConfirmed(false); setDates(previous => {
             const next = { ...previous }; if (value === undefined) delete next[key]; else next[key] = value; return next;
         });
     };
-    const selectDates = (keys: string[]) => { setError(''); setDates(previous => Object.fromEntries(keys.map(d => [d, previous[d] || '']))); };
+    const selectDates = (keys: string[]) => { setError(''); setHistoryConfirmed(false); setDates(previous => Object.fromEntries(keys.map(d => [d, previous[d] || '']))); };
     const review = async () => {
         if (busy || !allowed || validation || !changes.length || changes.length > 500) return;
         setBusy(true); setError('');
-        try { setPreview(await turmaRescheduleService.preview(selected, changes)); }
+        try { setPreview(await turmaRescheduleService.preview(selected, changes, historical.length ? reason : '')); }
         catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível gerar a prévia.'); }
         finally { setBusy(false); }
     };
@@ -79,7 +86,8 @@ export const TurmaRescheduleModal: React.FC<Props> = ({ isOpen, onClose, onAppli
                     <div role="status" className="rounded-xl bg-teal-50 p-6 dark:bg-teal-950"><h3 className="text-lg font-bold">{saved} aulas reagendadas</h3><p className="mt-2 text-sm">Disciplinas, horários, salas, instrutores e carga horária foram mantidos.</p></div>
                     : !preview ? <>
                         <p className="mb-4 text-sm text-slate-500">Selecione os dias e escolha as novas datas. Depois, revise a prévia antes de confirmar.</p>
-                        {eligible.length === 0 ? <p>Não há aulas futuras agendadas disponíveis para reagendamento.</p> : <fieldset disabled={busy} className="space-y-5 disabled:opacity-60">
+                        <label className="mb-4 flex items-start gap-2 text-sm"><input type="checkbox" disabled={busy} checked={includeConcluded} onChange={e => { setIncludeConcluded(e.target.checked); setDates({}); setExcluded([]); setHistoryConfirmed(false); setError(''); }} /><span>Incluir aulas passadas marcadas como concluídas, para corrigir um registro incorreto.</span></label>
+                        {eligible.length === 0 ? <p>Não há aulas disponíveis. Para corrigir uma aula antiga marcada como concluída, ative a opção acima.</p> : <fieldset disabled={busy} className="space-y-5 disabled:opacity-60">
                             <legend className="sr-only">Escolher aulas e novas datas</legend>
                             <section aria-label="Seleção de datas">
                                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold">Dias que serão reagendados</h3><div className="flex gap-3 text-sm"><button type="button" onClick={() => selectDates(originalDates)} className="text-teal-700 dark:text-teal-300">Selecionar todos</button><button type="button" onClick={() => selectDates([])}>Limpar</button></div></div>
@@ -93,15 +101,17 @@ export const TurmaRescheduleModal: React.FC<Props> = ({ isOpen, onClose, onAppli
                                         onClick={() => setDates(previous => Object.fromEntries(Object.keys(previous).map(d => [d, shiftDateKey(d, Number(offset))])))}>Preencher novas datas</button></div>
                                 <p className="mt-2 text-xs text-slate-500">Exemplo: 7 adia uma semana; -7 antecipa uma semana. O cálculo parte das datas originais. Feriados e bloqueios serão conferidos na prévia.</p>
                             </section>
-                            {candidates.length > 0 && <section><h3 className="mb-2 font-bold">Aulas selecionadas</h3><p className="mb-2 text-xs text-slate-500">Desmarque as disciplinas que devem permanecer na data original.</p><div className="max-h-52 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-slate-50 dark:bg-slate-800"><tr><th className="p-2">Reagendar</th><th className="p-2">Data / horário</th><th className="p-2">Disciplina</th><th className="p-2">Instrutor / sala</th></tr></thead><tbody>{candidates.map(a => <tr key={a.id} className="border-t border-slate-100 dark:border-slate-800"><td className="p-2"><input type="checkbox" aria-label={`Reagendar ${a.materia} em ${format(a.data, 'dd/MM/yyyy')} às ${a.horarioInicio.slice(0, 5)}`} checked={!excluded.includes(a.id)} onChange={e => setExcluded(previous => e.target.checked ? previous.filter(id => id !== a.id) : [...previous, a.id])} /></td><td className="whitespace-nowrap p-2">{format(a.data, 'dd/MM/yyyy')}<br />{a.horarioInicio.slice(0, 5)}–{a.horarioFim.slice(0, 5)}</td><td className="p-2">{a.materia}</td><td className="p-2">{a.instrutor || 'Sem instrutor'}<br />{a.sala || 'Sem sala'}</td></tr>)}</tbody></table></div></section>}
+                            {candidates.length > 0 && <section><h3 className="mb-2 font-bold">Aulas selecionadas</h3><p className="mb-2 text-xs text-slate-500">Desmarque as disciplinas que devem permanecer na data original.</p><div className="max-h-52 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-slate-50 dark:bg-slate-800"><tr><th className="p-2">Reagendar</th><th className="p-2">Data / horário</th><th className="p-2">Disciplina</th><th className="p-2">Instrutor / sala</th></tr></thead><tbody>{candidates.map(a => <tr key={a.id} className="border-t border-slate-100 dark:border-slate-800"><td className="p-2"><input type="checkbox" aria-label={`Reagendar ${a.materia} em ${format(a.data, 'dd/MM/yyyy')} às ${a.horarioInicio.slice(0, 5)}`} checked={!excluded.includes(a.id)} onChange={e => setExcluded(previous => e.target.checked ? previous.filter(id => id !== a.id) : [...previous, a.id])} /></td><td className="whitespace-nowrap p-2">{format(a.data, 'dd/MM/yyyy')}<br />{a.horarioInicio.slice(0, 5)}–{a.horarioFim.slice(0, 5)}</td><td className="p-2">{a.materia}{a.status === "concluida" && <span className="mt-1 block text-xs text-amber-800 dark:text-amber-200">Concluída → Agendada</span>}</td><td className="p-2">{a.instrutor || 'Sem instrutor'}<br />{a.sala || 'Sem sala'}</td></tr>)}</tbody></table></div></section>}
                         </fieldset>}
                         <p role="status" className="mt-4 text-sm font-semibold">{selected.length} aulas selecionadas.</p>
                         {selected.length > 500 && <p className="mt-2 text-sm text-rose-700">Selecione até 500 aulas por operação.</p>}
                         {selected.length > 0 && validation && <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">{validation}</p>}
-                        <p className="mt-2 text-xs text-slate-500">Apenas aulas futuras agendadas. As disciplinas desmarcadas e as demais aulas mantêm suas datas.</p>
+                        {historical.length > 0 && <fieldset disabled={busy} className="mt-4 space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950"><legend className="sr-only">Correção de aulas passadas</legend><p className="font-semibold">Correção de {historical.length} aulas de datas passadas</p><p>Se alguma estiver marcada como concluída, voltará para Agendada na nova data.</p><label className="block">Justificativa<textarea minLength={10} maxLength={1000} rows={2} value={reason} onChange={e => setReason(e.target.value)} className={`${inputClass} mt-1 block w-full`} placeholder="Ex.: Aula adiada para 13/11; a agenda não foi atualizada." /></label><label className="flex items-start gap-2"><input type="checkbox" checked={historyConfirmed} onChange={e => setHistoryConfirmed(e.target.checked)} /><span>Confirmo que estas aulas não foram realizadas nas datas registradas.</span></label></fieldset>}
+                        <p className="mt-2 text-xs text-slate-500">As novas datas devem estar no futuro. Aulas canceladas e em andamento ficam fora desta operação.</p>
                     </> : <>
                         <h3 className="text-lg font-bold">Revisar {preview.changedCount} aulas</h3><p className="mt-1 text-sm text-slate-500">Confira cada nova data. Horários, instrutores, salas e carga horária serão mantidos.</p>
-                        <div className="mt-4 max-h-80 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-slate-50 dark:bg-slate-800"><tr><th className="p-3">Antes</th><th className="p-3">Depois</th><th className="p-3">Horário</th><th className="p-3">Disciplina</th></tr></thead><tbody>{previewRows.map(a => <tr key={a.id} className="border-t border-slate-100 dark:border-slate-800"><td className="whitespace-nowrap p-3">{dateLabel(a.data)}</td><td className="whitespace-nowrap p-3 font-bold text-teal-700 dark:text-teal-300">{dateLabel(a.nova_data)}</td><td className="whitespace-nowrap p-3">{a.horario_inicio}–{a.horario_fim}</td><td className="p-3">{turma.aulas.find(row => row.id === a.id)?.materia || 'Disciplina'}</td></tr>)}</tbody></table></div>
+                        {!!preview.snapshot[0]?.motivo_reagendamento && <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">Justificativa: {String(preview.snapshot[0].motivo_reagendamento)}. {preview.snapshot.filter(a => a.status === 'concluida').length} aulas marcadas como concluídas voltarão para Agendada.</p>}
+                        <div className="mt-4 max-h-80 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-slate-50 dark:bg-slate-800"><tr><th className="p-3">Antes</th><th className="p-3">Depois</th><th className="p-3">Horário</th><th className="p-3">Disciplina</th></tr></thead><tbody>{previewRows.map(a => <tr key={a.id} className="border-t border-slate-100 dark:border-slate-800"><td className="whitespace-nowrap p-3">{dateLabel(a.data)}</td><td className="whitespace-nowrap p-3 font-bold text-teal-700 dark:text-teal-300">{dateLabel(a.nova_data)}</td><td className="whitespace-nowrap p-3">{a.horario_inicio}–{a.horario_fim}</td><td className="p-3">{turma.aulas.find(row => row.id === a.id)?.materia || 'Disciplina'}{a.status === "concluida" && <span className="mt-1 block text-xs text-amber-800 dark:text-amber-200">Concluída → Agendada</span>}</td></tr>)}</tbody></table></div>
                         {preview.conflicts.length ? <div role="alert" className="mt-4 rounded-lg bg-rose-50 p-4 text-sm text-rose-900 dark:bg-rose-950 dark:text-rose-100"><p className="font-bold">Há conflitos. Nenhuma aula foi reagendada.</p><ul className="mt-2 space-y-1">{preview.conflicts.map(c => <li key={`${c.id}:${c.data}:${c.descricao}`}>{dateLabel(c.data)} · {c.inicio.slice(0, 5)}–{c.fim.slice(0, 5)} · {c.descricao}</li>)}</ul><p className="mt-2">Volte à seleção para escolher outras datas ou retirar aulas.</p></div>
                             : <p role="status" className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-teal-900 dark:bg-teal-950 dark:text-teal-100">Nenhum conflito encontrado. A agenda será conferida novamente ao confirmar.</p>}
                     </>}
