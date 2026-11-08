@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { Aula } from '../types';
+import { TurmaChangesModal } from './TurmaChangesModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Copy, Check, ChevronRight, ArrowLeft, Clock3, MapPin } from 'lucide-react';
@@ -115,7 +116,7 @@ export const TurmasView: React.FC = () => {
                 ? `${datasCurtas.join(', ').replace(/, ([^,]*)$/, ' e $1')}${slots.length === 1 ? ` · ${slots[0]}` : ''}`
                 : slots.length === 1 ? `${dias.map(d => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d]).join(' · ')} · ${slots[0]}` : 'Agenda personalizada';
             const proxima = ativas.filter(a => { const d = new Date(a.data); d.setHours(0, 0, 0, 0); return d >= hoje && a.status !== 'concluida'; }).sort((a, b) => a.data.getTime() - b.data.getTime() || toMin(a.horarioInicio) - toMin(b.horarioInicio))[0];
-            lista.push({ chave, numeroTurma: nt, curso, inicio, termino, totalAulas: diasComAula.size, totalDias: diasComAula.size, aulasDadas, diasConcluidos: aulasDadas, horas: Math.round(horas * 10) / 10, instrutores, status, recorrencia, proxima, aulas: [...arr].sort((a, b) => a.data.getTime() - b.data.getTime() || toMin(a.horarioInicio) - toMin(b.horarioInicio)) });
+            lista.push({ chave, numeroTurma: nt, curso, inicio, termino, totalAulas: diasComAula.size, totalDias: diasComAula.size, aulasDadas, horas: Math.round(horas * 10) / 10, instrutores, status, recorrencia, proxima, aulas: [...arr].sort((a, b) => a.data.getTime() - b.data.getTime() || toMin(a.horarioInicio) - toMin(b.horarioInicio)) });
         }
         return lista;
     }, [aulas, hoje]);
@@ -147,7 +148,7 @@ export const TurmasView: React.FC = () => {
 
     // Este retorno precisa ficar depois de todos os hooks da tela. Retornar antes
     // fazia o React executar uma quantidade diferente de hooks após o clique.
-    if (turmaSelecionada) return <AgendaDetalhada turma={turmaSelecionada} onBack={() => setTurmaSelecionada(null)} />;
+    if (turmaSelecionada) return <AgendaDetalhada turma={turmas.find(t => t.chave === turmaSelecionada.chave) || turmaSelecionada} onBack={() => setTurmaSelecionada(null)} />;
 
     const badge = (s: ResumoTurma['status']) => {
         if (s === 'planejada') return { txt: 'Planejada', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' };
@@ -246,6 +247,8 @@ export const TurmasView: React.FC = () => {
 export default TurmasView;
 
 const AgendaDetalhada: React.FC<{ turma: ResumoTurma; onBack: () => void }> = ({ turma, onBack }) => {
+    const { refreshData, userProfile } = useSchedule();
+    const [changeOpen, setChangeOpen] = useState(false);
     const aulasPorMes = turma.aulas.reduce((grupos, aula) => {
         const chave = format(aula.data, 'MMMM yyyy', { locale: ptBR });
         grupos.set(chave, [...(grupos.get(chave) || []), aula]);
@@ -259,7 +262,9 @@ const AgendaDetalhada: React.FC<{ turma: ResumoTurma; onBack: () => void }> = ({
                 <div><p className="text-xs uppercase tracking-[0.16em] font-bold text-teal-700 dark:text-teal-300">Agenda da turma</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900 dark:text-white">{turma.curso}</h1><p className="mt-1 font-mono text-sm text-slate-500 dark:text-slate-400">{turma.numeroTurma}</p></div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-3 text-sm"><InfoAgenda label="Período" valor={`${format(turma.inicio, 'dd MMM', { locale: ptBR })} → ${format(turma.termino, 'dd MMM yy', { locale: ptBR })}`} /><InfoAgenda label="Agenda" valor={turma.recorrencia} /><InfoAgenda label="Dias com aula" valor={String(turma.totalDias)} /></div>
             </div>
+            {['admin', 'editor'].includes(userProfile.role) && <button type="button" onClick={() => setChangeOpen(true)} className="mt-4 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Alterar instrutor ou sala</button>}
         </header>
+        <TurmaChangesModal isOpen={changeOpen} onClose={() => setChangeOpen(false)} onApplied={refreshData} turma={turma} />
         <main className="flex-1 overflow-auto p-4 sm:p-6 custom-scrollbar"><div className="max-w-4xl mx-auto space-y-8">{Array.from(aulasPorMes.entries()).map(([mes, aulas]) => <section key={mes}><h2 className="mb-3 capitalize text-sm font-black tracking-wide text-slate-500 dark:text-slate-400">{mes}</h2><div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">{aulas.map(aula => <article key={aula.id} className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center"><div className="min-w-32"><div className="text-xs font-black uppercase tracking-wide text-slate-500">{format(aula.data, 'EEE, dd MMM', { locale: ptBR })}</div><div className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-slate-800 dark:text-white"><Clock3 className="w-3.5 h-3.5 text-teal-600" />{horarioCurto(aula.horarioInicio)}–{horarioCurto(aula.horarioFim)}</div></div><div className="flex-1"><div className="font-semibold text-slate-800 dark:text-slate-100">{aula.materia || turma.curso}</div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">{aula.instrutor && <span>{aula.instrutor}</span>}{aula.sala && <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{aula.sala}</span>}</div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-bold ${aula.status === 'cancelada' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : aula.status === 'concluida' ? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' : aula.aulaExtra ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200' : 'bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200'}`}>{aula.aulaExtra ? 'Aula extra' : aula.status === 'em-andamento' ? 'Em andamento' : aula.status.charAt(0).toUpperCase() + aula.status.slice(1)}</span></article>)}</div></section>)}</div></main>
     </div>;
 };
