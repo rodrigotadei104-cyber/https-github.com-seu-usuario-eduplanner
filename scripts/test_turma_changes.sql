@@ -56,6 +56,7 @@ insert into public.aulas (id,tenant_id,turma_id,numero_turma,curso_id,materia_id
 \ir ../supabase/migrations/20261108151456_alterar_recursos_turma_legado.sql
 \ir ../supabase/migrations/20261108152450_reagendar_aulas_turma.sql
 \ir ../supabase/migrations/20261108200201_reagendamento_corrigir_datas_passadas.sql
+\ir ../supabase/migrations/20261108202152_rotina_habitual_instrutores.sql
 create function pg_temp.assert_ok(ok boolean, message text) returns void language plpgsql as
     $$ begin if ok is distinct from true then raise exception 'TESTE: %', message; end if; end $$;
 create function pg_temp.expect_failure(command text, message_part text) returns void language plpgsql as $$
@@ -155,6 +156,11 @@ reset role;
 -- Simula uma falha durante a atualização da segunda linha. O lote e o log devem ser revertidos.
 set role authenticated;
 \ir test_turma_reschedule.sql
+reset role;
+alter table public.aulas add column nome_instrutor text;
+alter table public.aulas add column nome_materia text;
+set role authenticated;
+\ir test_instructor_planning.sql
 reset role;
 create function pg_temp.fail_second_row() returns trigger language plpgsql as $$ begin
     if new.id='40000000-0000-0000-0000-000000000002' then raise exception 'Falha de armazenamento simulada'; end if;

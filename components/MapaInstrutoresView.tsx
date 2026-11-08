@@ -3,6 +3,7 @@ import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from 'dat
 import { ptBR } from 'date-fns/locale';
 import { useSchedule } from '../context/ScheduleContext';
 import { Aula } from '../types';
+import { PlanejamentoInstrutorModal } from './PlanejamentoInstrutorModal';
 
 interface Props {
     onEditAula?: (aula: Aula) => void;
@@ -74,6 +75,7 @@ export const MapaInstrutoresView: React.FC<Props> = ({ onEditAula }) => {
     const [semanaBase, setSemanaBase] = useState<Date>(new Date());
     const [busca, setBusca] = useState('');
     const [soLivres, setSoLivres] = useState(false);
+    const [planningOpen, setPlanningOpen] = useState(false);
 
     const inicioSemana = useMemo(() => startOfWeek(semanaBase, { weekStartsOn: 1 }), [semanaBase]);
     const fimSemana = useMemo(() => endOfWeek(semanaBase, { weekStartsOn: 1 }), [semanaBase]);
@@ -207,6 +209,7 @@ export const MapaInstrutoresView: React.FC<Props> = ({ onEditAula }) => {
 
     return (
         <div style={{ height: 'calc(100vh - 150px)', minHeight: 560 }} className="flex flex-col gap-3">
+            <PlanejamentoInstrutorModal isOpen={planningOpen} onClose={() => setPlanningOpen(false)} />
             {/* Controles */}
             <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-1">
@@ -216,6 +219,7 @@ export const MapaInstrutoresView: React.FC<Props> = ({ onEditAula }) => {
                     <button onClick={() => setSemanaBase(new Date())} className="ml-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 border border-blue-200 rounded-md hover:bg-blue-50 transition dark:text-blue-400 dark:border-blue-800">Hoje</button>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setPlanningOpen(true)} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-800">Simular planejamento</button>
                     <input
                         type="text" value={busca} onChange={e => setBusca(e.target.value)}
                         placeholder="Buscar instrutor..."

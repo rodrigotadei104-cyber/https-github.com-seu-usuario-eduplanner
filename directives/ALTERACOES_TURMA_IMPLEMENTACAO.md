@@ -48,7 +48,7 @@ Foi removida uma propriedade redundante e não declarada (`diasConcluidos`) do r
 - A prévia pode ser regenerada com `node scripts/fixtures/turma-changes-review/build-offline.mjs`. As fixtures e o servidor local ficam em `scripts/fixtures/turma-changes-review/` e não chamam APIs de produção.
 - A automação visual ficou pendente: a ferramenta não acessou o servidor local e bloqueou navegação em arquivo local. Nenhum contorno dessa política foi realizado. Revisar manualmente a prévia antes de publicar.
 
-Para repetir os testes SQL no Windows com PostgreSQL 18, preparar um cluster descartável em `.tmp/turma-change-postgres` com `initdb` (usuário postgres, autenticação trust, UTF-8). Manter o servidor parado. Executar `node scripts/run_turma_changes_sql_test.mjs`; o runner usa o backend single-user, sem rede, e reverte todos os dados de teste ao final. O script SQL recusa banco com nome diferente de `eduplanner_turma_changes_test`.
+Para repetir os testes SQL no Windows com PostgreSQL 18, preparar um cluster descartável em `.tmp/turma-change-postgres` com `initdb` (usuário postgres, autenticação trust, UTF-8). Manter o servidor parado. Executar `node scripts/run_turma_changes_sql_test.mjs`; o runner inicia um servidor normal apenas em 127.0.0.1, reverte todos os dados de teste e encerra o servidor no final. O script SQL recusa banco com nome diferente de `eduplanner_turma_changes_test`. O executor antigo single-user ignorava RLS; a suíte foi repetida com políticas efetivamente ativas durante a implementação do simulador de instrutores.
 
 ## Instalação pendente — não publicar parcialmente
 
