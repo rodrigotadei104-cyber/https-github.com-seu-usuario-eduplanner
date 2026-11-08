@@ -4,7 +4,7 @@ import { validDateKey } from './turmaReschedule';
 export interface RoutineWindow { dia: number; inicio: string; fim: string }
 export interface PlanningBooking { id: string; data: string; inicio: string; fim: string; descricao: string; diaInteiro?: boolean }
 export interface PlanningBlock { data: string; descricao: string }
-export interface PlanningSlot { data: string; inicio: string; fim: string; habitual: boolean }
+export interface PlanningSlot { data: string; inicio: string; fim: string; habitual: boolean; comportaBloco?: boolean }
 export interface PlanningDay { data: string; livres: PlanningSlot[]; alternativas: PlanningSlot[]; ocupacoes: PlanningBooking[]; bloqueios: string[] }
 export const planningMinutes = (value: string): number => {
     if (!/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value)) return NaN;
@@ -59,7 +59,7 @@ export function computeInstructorPlanning(input: { from:string;to:string;routine
         busy.push(...simulated.filter(b=>b.data===data).map(b=>[planningMinutes(b.inicio),planningMinutes(b.fim)] as Interval));
         if(data===today)busy.push([0,Math.min(1440,now.getHours()*60+now.getMinutes()+1)]);
         const routineDay:Interval[]=routine.filter(w=>w.dia===day.getDay()).map(w=>[planningMinutes(w.inicio),planningMinutes(w.fim)]);
-        const make=(parts:Interval[],habitual:boolean)=>parts.filter(([a,b])=>b-a>=duration).map(([a,b])=>({data,inicio:planningTime(a),fim:planningTime(b),habitual}));
+        const make=(parts:Interval[],habitual:boolean)=>parts.map(([a,b])=>({data,inicio:planningTime(a),fim:planningTime(b),habitual,comportaBloco:b-a>=duration}));
         return {data,ocupacoes,bloqueios,livres:bloqueios.length?[]:make(subtract(routineDay,busy),true),
             alternativas:bloqueios.length?[]:make(subtract([explore],[...busy,...routineDay]),false)};
     });

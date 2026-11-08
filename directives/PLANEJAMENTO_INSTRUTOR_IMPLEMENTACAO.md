@@ -24,7 +24,7 @@ A simulação não grava aulas nem reserva horários; rotinas não são inferida
 - Aulas e eventos não cancelados são ocupações. ID de instrutor prevalece sobre nome; registros sem ID são considerados pelo nome atual exato e identificados como legados.
 - Férias bloqueiam o dia inteiro, mesmo com horário 00:00–00:00. Feriados/recessos ativos bloqueiam tanto a rotina quanto alternativas.
 - Compromisso com horário inválido bloqueia o dia para conferência, em vez de produzir falso horário livre. Horários com segundos são arredondados de forma conservadora na ocupação.
-- Intervalos sobrepostos/adjacentes são mesclados. Só aparecem faixas que comportam a duração informada. O tempo já passado de hoje é excluído.
+- Intervalos sobrepostos/adjacentes são mesclados. Todas as faixas livres aparecem; as menores que o bloco escolhido são identificadas e não podem ser adicionadas até reduzir a duração. O tempo já passado de hoje é excluído.
 - Fora da rotina significa alternativa a confirmar com o instrutor, não disponibilidade contratual garantida.
 
 ## Banco e permissões
@@ -57,3 +57,9 @@ Consulta somente leitura localizou `Deivid Diniz da Silva` ativo (`cda79d01-95ff
 Antes de publicar, seguir `directives/DEPLOY_SAFETY_PROTOCOL.md` com aprovação específica. Destinos: Supabase `ubhtibihkpwocgazwtur`; GitHub `rodrigotadei104-cyber/https-github.com-seu-usuario-eduplanner`, main, autor `lenono95@gmail.com`; Vercel `rodrigo-tadeis-projects/eduplanner`.
 
 Instalar somente esta migração em transação, validar a consulta no esquema real e rodar advisors. Não salvar rotina inferida real sem revisão explícita do usuário; não criar aulas para testar. Publicar via Git e confirmar o deploy/URL pública antes de anunciar disponibilidade.
+
+## Correção de apresentação — caso Giovanna
+
+Usuário informou ausência de disponibilidade de janeiro a maio. Consulta somente leitura confirmou zero aulas de 01/01 a 31/05/2027. A rotina salva tem intervalos de 3h/3h20 em vários dias, enquanto o bloco inicial era de 240 minutos. O cálculo filtrava essas faixas e a interface apresentava uma mensagem genérica, escondendo disponibilidade real.
+
+A correção mantém todas as faixas livres, separa o total de faixas das que comportam o bloco e informa a duração disponível. Faixas menores exibem orientação e botão desabilitado; diminuir para 180 minutos libera os intervalos 13:00–16:20 e 19:00–22:00. Nenhum ajuste automático na rotina salva nem na agenda. Teste de regressão e comparação minuto a minuto cobrem também lacunas menores que o bloco.
