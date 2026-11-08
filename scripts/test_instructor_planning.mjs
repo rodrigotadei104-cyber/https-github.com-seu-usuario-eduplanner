@@ -60,6 +60,23 @@ for(let test=0;test<80;test++){
  const actual=new Set();for(const s of output.livres)for(let m=h.planningMinutes(s.inicio);m<h.planningMinutes(s.fim);m++){assert.equal(occupied.has(m),false);actual.add(m);}
  assert.deepEqual(actual,expected);
 }
+globalThis.turnDeps=h;
+const turns=await load('../utils/instructorTurns.ts','const {computeInstructorPlanning,mergePlanningIntervals,planningMinutes,planningTime,suggestInstructorRoutine}=globalThis.turnDeps;\n');
+const turnsInput={from:'2027-01-11',to:'2027-01-11',windows:realJourney,pauses:turns.protectedWorkBreaks(realJourney,meal),bookings:[],blocks:[],simulated:[],now:base.now};
+assert.deepEqual(turns.computeInstructorTurns(turnsInput)[0].turnos.map(t=>[t.inicio,t.fim,t.status]),[['13:00','17:00','disponivel'],['19:00','22:00','disponivel']]);
+const booked=turns.computeInstructorTurns({...turnsInput,bookings:[{id:'class50',data:'2027-01-11',inicio:'13:00',fim:'16:20',descricao:'Aulas de 50 minutos'}]})[0];
+assert.equal(booked.turnos[0].status,'ocupado');
+assert.equal(booked.turnos.some(t=>t.inicio==='16:20'),false,'não oferece a sobra de 40 minutos como turno');
+const draft=[{data:'2027-01-11',inicio:'13:00',fim:'17:00',habitual:true}];
+assert.equal(turns.computeInstructorTurns({...turnsInput,simulated:draft})[0].turnos[0].status,'simulado');
+assert.equal(turns.computeInstructorTurns({...turnsInput,simulated:draft,bookings:[{id:'new',data:'2027-01-11',inicio:'14:00',fim:'15:00',descricao:'Nova reserva'}]})[0].turnos[0].status,'ocupado','atualização não esconde conflito de um rascunho');
+assert.equal(turns.computeInstructorTurns({...turnsInput,windows:[{dia:1,inicio:'07:00',fim:'11:00'}]})[0].turnos[0].status,'disponivel','pode escolher horário fora da sugestão');
+assert.deepEqual(turns.computeInstructorTurns({...turnsInput,windows:[{dia:1,inicio:'18:00',fim:'22:00'}],pauses:[]})[0].turnos.map(t=>[t.inicio,t.fim]),[['18:00','22:00']],'exceção explícita usa exatamente o período escolhido');
+assert.deepEqual(turns.computeInstructorTurns({...turnsInput,windows:[{dia:1,inicio:'18:00',fim:'22:00'}]})[0].turnos.map(t=>[t.inicio,t.fim]),[['19:00','22:00']],'por padrão refeições continuam consideradas');
+assert.equal(turns.computeInstructorTurns({...turnsInput,blocks:[{data:'2027-01-11',descricao:'Feriado'}]})[0].turnos.every(t=>t.status==='ocupado'),true);
+assert.equal(turns.suggestedWorkPeriods(realJourney,history,'2026-10-01','2026-10-31').windows,realJourney);
+assert.equal(turns.suggestedWorkPeriods([],history,'2026-10-01','2026-10-31').source,'Sugestão pelo histórico · ajustável');
+assert.equal(turns.suggestedWorkPeriods([],[],'2026-10-01','2026-10-31').windows.length,10,'sem histórico não exige um cadastro para consultar');
 let calls=[],allowed=true,error=null;
 const reply={loaded_at:'2026-11-08T12:00:00Z',history_from:'2026-08-16',history_to:'2026-11-07',routine:null,aulas:[],historico:[],eventos:[],feriados:[],bloqueios:[]};
 globalThis.planningServiceDeps={validateRoutine:h.validateRoutine,planningDates:h.planningDates,validDateKey:dateUtils.validDateKey,

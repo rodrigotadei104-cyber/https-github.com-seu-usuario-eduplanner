@@ -77,3 +77,17 @@ A alteração acima resolveu a visibilidade das lacunas, mas não a origem do pr
 - RLS, controle de versão e auditoria são mantidos. Migração criada pela CLI: `20261108211704_planejamento_pausas_protegidas.sql`.
 
 Testes cobrem janta dentro/fora da jornada, almoço entre turnos, aulas de 50 minutos, preservação de pausas por clientes antigos, consulta, permissões e auditoria. O ajuste real da Giovanna é feito via RPC, sob a identidade do solicitante identificado como Rodrigo Tadei (admin ativo e autor atual da rotina), com versão bloqueada e preservação de sábado/domingo. O usuário confirmou expressamente essa configuração; nenhuma aula deve ser alterada.
+
+## Simplificação confirmada pelo usuário — dias e turnos úteis
+
+O usuário rejeitou a configuração obrigatória e as sobras de minutos. Confirmou explicitamente: manter a sugestão do sistema e permitir escolher livremente o período de trabalho quando necessário. Esta seção substitui o fluxo anterior de edição/salvamento de jornada e pausas na tela principal.
+
+- Consulta por instrutor/período já retorna dias e turnos, com horários e status Disponível/Ocupado/Na simulação. Não há campo de duração em minutos, formulário semanal de refeições ou confirmação de revisão obrigatória.
+- Referência salva é usada automaticamente; sem ela, usa sugestão pelo histórico; sem histórico suficiente, apresenta referência inicial explicitamente ajustável, sem exigir cadastro.
+- O botão **Escolher meus horários** permite definir dias da semana e até quatro períodos apenas para a simulação. Não modifica o cadastro compartilhado nem requer salvar uma jornada.
+- Pausas cadastradas continuam consideradas por padrão. Uma opção explícita de exceção permite usar exatamente os períodos escolhidos, sem editar refeições. Mesmo em exceção, aulas/eventos/férias/feriados/recessos continuam respeitados.
+- O resultado avalia o turno inteiro: uma aula 13:00–16:20 ocupa o turno 13:00–17:00. A sobra 16:20–17:00 não vira uma sugestão de aula. Quem quiser outro período pode escolhê-lo diretamente.
+- Adicionar à simulação inclui o turno inteiro. Atualizar a agenda preserva o rascunho e sinaliza conflitos novos. Mudar o horário considerado não apaga os períodos já selecionados. Fechar a tela/trocar instrutor encerra o rascunho.
+- Não há migração ou alteração real de rotina/aulas nesta simplificação. API, isolamento e dados existentes são preservados.
+
+`utils/instructorTurns.ts` e testes adicionais validam turnos inteiros, ausência de sobras de aulas de 50 minutos, período escolhido fora da sugestão, exceção explícita de intervalos, bloqueios, sobreposição de rascunhos e conflitos após atualização.
