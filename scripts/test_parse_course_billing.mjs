@@ -8,9 +8,9 @@ let providerError, lastParts, calls = 0;
 globalThis.parseCourseAbortError = GoogleGenerativeAIAbortError;
 globalThis.parseCourseProvider = class {
     getGenerativeModel(config) {
-        assert.equal(config.model, 'gemini-3.8-flash');
+        assert.equal(config.model, 'gemini-3.5-flash-lite');
         assert.equal(config.generationConfig.responseMimeType, 'application/json');
-        assert.equal(config.generationConfig.thinkingConfig.thinkingLevel, 'low');
+        assert.equal(config.generationConfig.thinkingConfig.thinkingLevel, 'minimal');
         return { generateContent: async (parts, requestOptions) => {
             assert.equal(requestOptions.timeout, 45000);
             lastParts = parts;
@@ -65,4 +65,4 @@ try {
     if (oldKey === undefined) delete process.env.GEMINI_API_KEY;
     else process.env.GEMINI_API_KEY = oldKey;
 }
-console.log('OK: usa Gemini 3.8 Flash, encaminha texto e imagem e preserva normalização, validação e aviso de créditos.');
+console.log('OK: usa Gemini 3.5 Flash-Lite, encaminha texto e imagem e preserva normalização, validação e aviso de créditos.');

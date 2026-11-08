@@ -5,7 +5,7 @@ export const config = {
     maxDuration: 60,
 };
 
-const PRIMARY_MODEL = 'gemini-3.8-flash';
+const PRIMARY_MODEL = 'gemini-3.5-flash-lite';
 
 // ---------------------------------------------------------------------------
 // Helpers de normalização (rede de segurança caso a IA devolva formatos crus)
@@ -90,7 +90,7 @@ export default async function handler(req: any, res: any) {
         // Extração de matriz não precisa do nível de raciocínio padrão do modelo.
         const generationConfig = {
             responseMimeType: 'application/json',
-            thinkingConfig: { thinkingLevel: 'low' }
+            thinkingConfig: { thinkingLevel: 'minimal' }
         };
         const model = genAI.getGenerativeModel({
             model: PRIMARY_MODEL,
