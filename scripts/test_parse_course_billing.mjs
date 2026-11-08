@@ -1,14 +1,18 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
+import { GoogleGenerativeAIAbortError } from '@google/generative-ai';
 
 // Testa o handler real com provedor simulado, sem rede ou alteração de faturamento.
 let providerError, lastParts, calls = 0;
+globalThis.parseCourseAbortError = GoogleGenerativeAIAbortError;
 globalThis.parseCourseProvider = class {
     getGenerativeModel(config) {
         assert.equal(config.model, 'gemini-3.8-flash');
         assert.equal(config.generationConfig.responseMimeType, 'application/json');
-        return { generateContent: async parts => {
+        assert.equal(config.generationConfig.thinkingConfig.thinkingLevel, 'low');
+        return { generateContent: async (parts, requestOptions) => {
+            assert.equal(requestOptions.timeout, 45000);
             lastParts = parts;
             calls++;
             if (providerError) throw providerError;
@@ -19,7 +23,7 @@ globalThis.parseCourseProvider = class {
 };
 const source = readFileSync(new URL('../api/parse-course.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const code = 'const GoogleGenerativeAI = globalThis.parseCourseProvider;\n' + compiled.replace(/^import .*;\r?\n/gm, '');
+const code = 'const GoogleGenerativeAI = globalThis.parseCourseProvider; const GoogleGenerativeAIAbortError = globalThis.parseCourseAbortError;\n' + compiled.replace(/^import .*;\r?\n/gm, '');
 const { default: handler } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 const invoke = async body => {
     const res = { setHeader() {}, status(code) { this.statusCode = code; return this; }, json(value) { this.body = value; return this; } };
@@ -41,6 +45,10 @@ try {
     }
     providerError = new Error('Falha diferente');
     assert.equal((await invoke({ text: 'Matriz fictícia' })).statusCode, 500);
+    providerError = new GoogleGenerativeAIAbortError('Timeout simulado');
+    const timeout = await invoke({ text: 'Matriz fictícia' });
+    assert.equal(timeout.statusCode, 504);
+    assert.equal(timeout.body.code, 'AI_TIMEOUT');
     providerError = null;
     const success = await invoke({ text: 'Matriz fictícia' });
     assert.equal(success.statusCode, 200);

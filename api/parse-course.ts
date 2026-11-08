@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, GoogleGenerativeAIAbortError } from '@google/generative-ai';
 
 // Node.js runtime, região IAD1 (via vercel.json). Mesma config do generate-schedule.
 export const config = {
@@ -87,9 +87,14 @@ export default async function handler(req: any, res: any) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
+        // Extração de matriz não precisa do nível de raciocínio padrão do modelo.
+        const generationConfig = {
+            responseMimeType: 'application/json',
+            thinkingConfig: { thinkingLevel: 'low' }
+        };
         const model = genAI.getGenerativeModel({
             model: PRIMARY_MODEL,
-            generationConfig: { responseMimeType: 'application/json' }
+            generationConfig
         });
 
         const prompt = `
@@ -128,7 +133,7 @@ ${temTexto ? `TEXTO DA MATRIZ:\n${text}` : 'A matriz está na imagem anexa.'}
             parts.push({ inlineData: { data: image.data, mimeType: image.mimeType } });
         }
 
-        const result = await model.generateContent(parts);
+        const result = await model.generateContent(parts, { timeout: 45000 });
         const responseText = result.response.text();
         const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
@@ -169,6 +174,12 @@ ${temTexto ? `TEXTO DA MATRIZ:\n${text}` : 'A matriz está na imagem anexa.'}
 
     } catch (err: any) {
         console.error('[parse-course] Erro:', err);
+        if (err instanceof GoogleGenerativeAIAbortError) {
+            return res.status(504).json({
+                error: 'O serviço de IA demorou para responder. Aguarde um momento e tente novamente; nenhum curso foi salvo.',
+                code: 'AI_TIMEOUT'
+            });
+        }
         if (err?.status === 402 || /\[402 Payment Required\]/i.test(err?.message || '')) {
             return res.status(402).json({
                 error: 'Importação com IA indisponível: o serviço está sem créditos. Solicite ao administrador a regularização para continuar.',
