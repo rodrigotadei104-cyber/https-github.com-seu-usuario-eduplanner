@@ -94,7 +94,8 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
       if (initialData) {
         setFormData({
           ...initialData,
-          numeroTurma: initialData.numeroTurma || initialData.numeroCurso || '',
+          // Código do curso não identifica a turma. Preservar o vínculo ao editar a sala.
+          numeroTurma: initialData.numeroTurma,
           aulaExtra: initialData.aulaExtra || false
         });
       } else {
@@ -230,7 +231,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
       materia: '',
       cor: selectedCurso ? selectedCurso.cor : prev.cor,
       numeroCurso: selectedCurso?.numeroCurso || '',
-      numeroTurma: selectedCurso?.numeroCurso || '' // Auto-fill cohort with course number
+      numeroTurma: initialData ? prev.numeroTurma : selectedCurso?.numeroCurso || ''
     }));
   };
 
@@ -273,6 +274,12 @@ export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSave,
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {initialData && (
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="font-semibold">Turma: </span>
+                {formData.numeroTurma || 'Sem número informado'}
+              </p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               <div>

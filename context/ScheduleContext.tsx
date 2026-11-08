@@ -24,6 +24,7 @@ import {
 } from '../services';
 import { calendarioService } from '../services/calendario.service';
 import { supabase } from '../lib/supabase';
+import { resolveAulaTurmas } from '../utils/resolveAulaTurmas';
 
 // ============================================
 // TYPES (Backward Compatible)
@@ -258,7 +259,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
 
       // Transform to legacy format if needed
-      setAulas(aulasData.map((a: any) => ({
+      setAulas(resolveAulaTurmas(aulasData as any[]).map((a: any) => ({
         id: a.id,
         tenantId: a.tenant_id,
         data: a.data instanceof Date ? a.data : new Date(a.data + 'T00:00:00'),
