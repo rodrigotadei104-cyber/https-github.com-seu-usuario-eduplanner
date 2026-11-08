@@ -19,14 +19,16 @@ export const useSchedule = () => {
 };
 export const tenantService = { getCurrentTenantId: () => 'T' };
 export const permissionService = { checkPermission: async () => mode !== 'viewer' };
-export const supabase = { rpc: async (_name: string, args: any) => {
-  const selected = state.aulas.filter(a => args.p_ids.includes(a.id));
-  const snapshot = selected.map(turmaLessonExpectation);
+export const supabase = { rpc: async (name: string, args: any) => {
+  const reschedule = name === 'reagendar_aulas_turma';
+  const ids = reschedule ? args.p_changes.map((c: any) => c.id) : args.p_ids;
+  const selected = state.aulas.filter(a => ids.includes(a.id));
+  const snapshot: Array<Record<string, any>> = selected.map(a => ({ ...turmaLessonExpectation(a), ...(reschedule ? { nova_data: args.p_changes.find((c: any) => c.id === a.id).nova_data } : {}) }));
   state = { ...state, trace: [...state.trace, args.p_aplicar ? 'CONFIRMAÇÃO' : 'PRÉVIA'] }; emit();
   if (mode === 'stale' && args.p_aplicar) return { error: { message: 'A agenda foi alterada. Atualize a tela e gere uma nova prévia.' }, data: null };
-  const conflicts = mode === 'conflict' ? [{ id: 'evento', data: snapshot[0]?.data, inicio: '08:00', fim: '12:00', descricao: 'Instrutor ocupado em outra turma' }] : [];
+  const conflicts = mode === 'conflict' ? [{ id: 'evento', data: (snapshot[0] as any)?.nova_data || snapshot[0]?.data, inicio: '08:00', fim: '12:00', descricao: 'Instrutor ocupado em outra turma' }] : [];
   if (args.p_aplicar && !conflicts.length) {
-    state = { ...state, aulas: state.aulas.map(a => !args.p_ids.includes(a.id) ? a : args.p_tipo === 'sala' ? { ...a, sala: args.p_destino } : { ...a, instrutorId: args.p_destino, instrutor: teachers.find(t => t.id === args.p_destino)?.nome || '' }) }; emit();
+    state = { ...state, aulas: state.aulas.map(a => !ids.includes(a.id) ? a : reschedule ? { ...a, data: new Date(args.p_changes.find((c: any) => c.id === a.id).nova_data + 'T00:00:00') } : args.p_tipo === 'sala' ? { ...a, sala: args.p_destino } : { ...a, instrutorId: args.p_destino, instrutor: teachers.find(t => t.id === args.p_destino)?.nome || '' }) }; emit();
   }
   return { error: null, data: { snapshot, conflicts, changedCount: selected.length, applied: args.p_aplicar && !conflicts.length } };
 } };

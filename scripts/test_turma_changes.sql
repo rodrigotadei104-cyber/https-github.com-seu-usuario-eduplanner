@@ -18,6 +18,13 @@ create table public.events (id uuid primary key, tenant_id uuid, instructor_id u
     name text, date date, start_time time, end_time time, type text, status text);
 create table public.audit_logs (id uuid default gen_random_uuid(), tenant_id uuid, user_id uuid,
     user_email text, user_role text, action text, entity text, entity_id uuid, details jsonb, result text);
+create table public.feriados(id uuid,tenant_id uuid,data date,descricao text,ativo boolean);
+create table public.datas_bloqueadas(id uuid,tenant_id uuid,data date,motivo text,ativo boolean);
+grant select,insert,update,delete on public.feriados,public.datas_bloqueadas to authenticated;
+alter table public.feriados enable row level security;
+create policy tenant on public.feriados to authenticated using (tenant_id=(select tenant_id from public.users where id=auth.uid()));
+alter table public.datas_bloqueadas enable row level security;
+create policy tenant on public.datas_bloqueadas to authenticated using (tenant_id=(select tenant_id from public.users where id=auth.uid()));
 grant usage on schema public, auth to authenticated, anon;
 grant select on public.users, public.instrutores, public.cursos to authenticated;
 grant select, insert, update, delete on public.aulas, public.events to authenticated;
@@ -46,6 +53,7 @@ insert into public.aulas (id,tenant_id,turma_id,numero_turma,curso_id,materia_id
 ('40000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-000000000002','50000000-0000-0000-0000-000000000003','703601','30000000-0000-0000-0000-000000000001',null,'20000000-0000-0000-0000-000000000003','Sala 4','2099-11-14','08:00','10:00','agendada',2);
 \ir ../supabase/migrations/20261108145103_alterar_recursos_turma.sql
 \ir ../supabase/migrations/20261108151456_alterar_recursos_turma_legado.sql
+\ir ../supabase/migrations/20261108152450_reagendar_aulas_turma.sql
 create function pg_temp.assert_ok(ok boolean, message text) returns void language plpgsql as
     $$ begin if ok is distinct from true then raise exception 'TESTE: %', message; end if; end $$;
 create function pg_temp.expect_failure(command text, message_part text) returns void language plpgsql as $$
@@ -143,6 +151,9 @@ select pg_temp.expect_failure($q$select public.alterar_recursos_turma(array['400
 select set_config('test.user_id','00000000-0000-0000-0000-000000000001',false);
 reset role;
 -- Simula uma falha durante a atualização da segunda linha. O lote e o log devem ser revertidos.
+set role authenticated;
+\ir test_turma_reschedule.sql
+reset role;
 create function pg_temp.fail_second_row() returns trigger language plpgsql as $$ begin
     if new.id='40000000-0000-0000-0000-000000000002' then raise exception 'Falha de armazenamento simulada'; end if;
     return new;
@@ -157,8 +168,13 @@ begin
     perform pg_temp.expect_failure(format('select public.alterar_recursos_turma(%L::uuid[],%L,%L,%L::jsonb,true)',ids,'sala','Sala 5',p->'snapshot'),'Falha de armazenamento simulada');
     perform pg_temp.assert_ok((select count(*)=2 from public.aulas where id=any(ids) and sala='Sala 4'),'rollback integral das aulas');
     perform pg_temp.assert_ok((select count(*)=log_count from public.audit_logs),'não cria log de sucesso após falha');
+    p := public.reagendar_aulas_turma('[{"id":"40000000-0000-0000-0000-000000000001","nova_data":"2099-11-28"},{"id":"40000000-0000-0000-0000-000000000002","nova_data":"2099-11-28"}]','[{"id":"40000000-0000-0000-0000-000000000001"},{"id":"40000000-0000-0000-0000-000000000002"}]',false);
+    perform pg_temp.expect_failure(format('select public.reagendar_aulas_turma(%L::jsonb,%L::jsonb,true)','[{"id":"40000000-0000-0000-0000-000000000001","nova_data":"2099-11-28"},{"id":"40000000-0000-0000-0000-000000000002","nova_data":"2099-11-28"}]',p->'snapshot'),'Falha de armazenamento simulada');
+    perform pg_temp.assert_ok((select count(*)=2 from public.aulas where id=any(ids) and data='2099-11-14'),'rollback integral do reagendamento');
+    perform pg_temp.assert_ok((select count(*)=log_count from public.audit_logs),'rollback do histórico do reagendamento');
 end $$;
 reset role;
 select pg_temp.assert_ok(not has_function_privilege('anon','public.alterar_recursos_turma(uuid[],text,text,jsonb,boolean)','EXECUTE'),'anon não executa a função');
+select pg_temp.assert_ok(not has_function_privilege('anon','public.reagendar_aulas_turma(jsonb,jsonb,boolean)','EXECUTE'),'anon não reagenda');
 rollback;
 \echo 'OK: SQL real validou prévia, troca, RLS, permissões, conflitos, férias, dados obsoletos e rollback integral.'

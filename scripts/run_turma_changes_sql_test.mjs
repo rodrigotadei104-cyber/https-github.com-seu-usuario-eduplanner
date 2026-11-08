@@ -10,7 +10,8 @@ if (!cluster.startsWith(resolve('.tmp') + sep) || existsSync(resolve(cluster, 'p
 }
 const run = (database, sql) => spawnSync(binary,
     ['--single', '-D', cluster, '-j', '-c', 'log_min_error_statement=panic', database],
-    { input: sql + '\n\n', encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
+    // No modo --single -j, uma linha vazia termina a entrada mesmo dentro de $$.
+    { input: sql.split(/\r?\n/).filter(line => line.trim()).join('\n') + '\n\n', encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
 const create = run('postgres', 'create database eduplanner_turma_changes_test;');
 if ((create.status !== 0 || /(?:ERROR|FATAL):/.test(create.stderr || '')) && !/database "eduplanner_turma_changes_test" already exists/.test(create.stderr || '')) {
     throw new Error((create.stderr || create.error?.message || 'Erro ao criar banco de teste').slice(-2000));
