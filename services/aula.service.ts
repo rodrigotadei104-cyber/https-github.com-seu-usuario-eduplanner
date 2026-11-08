@@ -640,11 +640,8 @@ export const aulaService = {
             }
         }
 
-        // 3.5. Verificar conflito de instrutor/sala (se não forçado)
-        // IMPORTANTE: só checa conflito quando a AGENDA realmente muda (instrutor, data ou horário).
-        // Trocar apenas a sala (ou observações etc.) NÃO pode disparar conflito — a aula já ocupa
-        // aquele horário legitimamente. Antes, a checagem rodava sempre e um falso "conflito de
-        // instrutor" abortava o update (e, por tabela, a propagação "todas as aulas da turma").
+        // 3.5. Validar cada recurso somente quando sua ocupação muda.
+        // Trocar instrutor não muda a ocupação da sala; trocar sala não muda a do instrutor.
         const targetStatus = input.status || existing.status;
         const _norm = (v: any) => (v == null ? '' : String(v));
         const _mudou = (inVal: any, exVal: any, sliceLen?: number) => {
@@ -653,13 +650,14 @@ export const aulaService = {
             const b = sliceLen ? _norm(exVal).slice(0, sliceLen) : _norm(exVal);
             return a !== b;
         };
-        const agendaMudou =
-            _mudou((input as any).instrutor_id, existing.instrutor_id) ||
+        const horarioMudou =
             _mudou(input.data, existing.data, 10) ||
             _mudou(input.horario_inicio, existing.horario_inicio, 5) ||
             _mudou(input.horario_fim, existing.horario_fim, 5);
+        const agendaMudou = _mudou(input.instrutor_id, existing.instrutor_id) || horarioMudou;
+        const ocupacaoSalaMudou = _mudou(input.sala, existing.sala) || horarioMudou;
 
-        if (!forceUpdate && agendaMudou && targetStatus !== 'cancelada' && targetStatus !== 'concluida') {
+        if (!forceUpdate && (agendaMudou || ocupacaoSalaMudou) && targetStatus !== 'cancelada' && targetStatus !== 'concluida') {
             const checkData = {
                 instructorId: (input as any).instrutor_id || existing.instrutor_id,
                 date: input.data || existing.data,
@@ -668,7 +666,9 @@ export const aulaService = {
                 excludeAulaId: id
             };
 
-            const conflictCheck = await this.checkInstructorConflict(checkData);
+            const conflictCheck = agendaMudou
+                ? await this.checkInstructorConflict(checkData)
+                : { hasConflict: false, conflicts: [] };
 
             if (conflictCheck.hasConflict) {
                 await auditService.log({
@@ -691,8 +691,8 @@ export const aulaService = {
             }
 
             // 3.6. Verificar conflito de sala
-            const targetSala = input.sala || existing.sala;
-            if (targetSala) {
+            const targetSala = input.sala !== undefined ? input.sala : existing.sala;
+            if (targetSala && ocupacaoSalaMudou) {
                 const roomConflict = await this.checkRoomConflict({
                     sala: targetSala,
                     date: checkData.date,
