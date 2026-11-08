@@ -5,7 +5,7 @@ export const config = {
     maxDuration: 60,
 };
 
-const PRIMARY_MODEL = 'gemini-2.5-flash';
+const PRIMARY_MODEL = 'gemini-3.8-flash';
 
 // ---------------------------------------------------------------------------
 // Helpers de normalização (rede de segurança caso a IA devolva formatos crus)
@@ -169,6 +169,12 @@ ${temTexto ? `TEXTO DA MATRIZ:\n${text}` : 'A matriz está na imagem anexa.'}
 
     } catch (err: any) {
         console.error('[parse-course] Erro:', err);
+        if (err?.status === 402 || /\[402 Payment Required\]/i.test(err?.message || '')) {
+            return res.status(402).json({
+                error: 'Importação com IA indisponível: o serviço está sem créditos. Solicite ao administrador a regularização para continuar.',
+                code: 'AI_CREDITS_DEPLETED'
+            });
+        }
         return res.status(500).json({
             error: 'Falha ao interpretar a matriz.',
             details: err?.message || String(err)
