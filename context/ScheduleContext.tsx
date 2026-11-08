@@ -277,6 +277,7 @@ export const ScheduleProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         numeroTurma: a.numero_turma, // New field for Cohort separation
         cargaHorariaMateria: a.carga_horaria_materia,
         cursoId: a.curso_id,
+        nomeCursoLegado: a.nome_curso,
         materiaId: a.materia_id,
         tipoAula: a.tipo_aula || 'NORMAL',
         origem: a.origem,

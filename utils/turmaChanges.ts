@@ -9,7 +9,8 @@ export function canChangeTurmaLesson(aula: Aula, now = new Date()): boolean {
     const start = new Date(aula.data);
     const [hour, minute] = aula.horarioInicio.split(':').map(Number);
     start.setHours(hour, minute, 0, 0);
-    return start > now && !!(aula.turmaId || (aula.numeroTurma && aula.cursoId));
+    return start > now && !!(aula.turmaId || (aula.numeroTurma?.trim()
+        && (aula.cursoId || aula.nomeCursoLegado?.trim())));
 }
 
 export function turmaResource(aula: Aula, kind: TurmaChangeKind): string {
@@ -32,6 +33,7 @@ export function turmaLessonExpectation(aula: Aula): Record<string, unknown> {
         curso_id: aula.cursoId || null, materia_id: aula.materiaId || null,
         instrutor_id: aula.instrutorId || null, sala: aula.sala || '',
         data: localDateKey(aula.data), horario_inicio: aula.horarioInicio.slice(0, 5),
-        horario_fim: aula.horarioFim.slice(0, 5), status: aula.status
+        horario_fim: aula.horarioFim.slice(0, 5), status: aula.status,
+        ...(!aula.turmaId && !aula.cursoId ? { nome_curso: aula.nomeCursoLegado || null } : {})
     };
 }

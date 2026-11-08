@@ -22,6 +22,13 @@ assert.equal(helpers.turmaLessonExpectation(base).horarioInicio, undefined);
 assert.equal(helpers.turmaLessonExpectation(base).horario_inicio, '08:00');
 assert.equal(helpers.turmaLessonExpectation(base).data, '2026-11-14');
 assert.deepEqual(aulas, original);
+const legacy = { ...base, turmaId: undefined, cursoId: undefined, numeroTurma: '706794', nomeCursoLegado: 'Curso legado' };
+assert.equal(helpers.canChangeTurmaLesson(legacy, now), true);
+assert.equal(helpers.canChangeTurmaLesson({ ...legacy, numeroTurma: '706254' }, now), true);
+assert.equal(helpers.canChangeTurmaLesson({ ...legacy, nomeCursoLegado: ' ' }, now), false);
+assert.equal(helpers.canChangeTurmaLesson({ ...legacy, nomeCursoLegado: undefined, curso: 'Nome só para exibição' }, now), false);
+assert.equal(helpers.turmaLessonExpectation(legacy).nome_curso, 'Curso legado');
+assert.equal(helpers.turmaLessonExpectation(base).nome_curso, undefined);
 let allowed = true, rpcError, calls = [], reply;
 globalThis.turmaChangesDeps = {
     tenantService: { getCurrentTenantId: () => 'T' }, permissionService: { checkPermission: async () => allowed },

@@ -13,7 +13,7 @@ create table public.instrutores (id uuid primary key, tenant_id uuid not null, n
 create table public.cursos (id uuid primary key, tenant_id uuid not null, nome text);
 create table public.aulas (id uuid primary key, tenant_id uuid not null, turma_id uuid, numero_turma text,
     curso_id uuid, materia_id uuid, disciplina_id uuid, instrutor_id uuid, sala text, data date,
-    horario_inicio time, horario_fim time, status text, carga_horaria_materia numeric);
+    horario_inicio time, horario_fim time, status text, carga_horaria_materia numeric, nome_curso text);
 create table public.events (id uuid primary key, tenant_id uuid, instructor_id uuid, room text,
     name text, date date, start_time time, end_time time, type text, status text);
 create table public.audit_logs (id uuid default gen_random_uuid(), tenant_id uuid, user_id uuid,
@@ -45,6 +45,7 @@ insert into public.aulas (id,tenant_id,turma_id,numero_turma,curso_id,materia_id
 ('40000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000002','999999','30000000-0000-0000-0000-000000000001',null,'20000000-0000-0000-0000-000000000001','Sala 9','2099-11-21','08:00','10:00','agendada',2),
 ('40000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-000000000002','50000000-0000-0000-0000-000000000003','703601','30000000-0000-0000-0000-000000000001',null,'20000000-0000-0000-0000-000000000003','Sala 4','2099-11-14','08:00','10:00','agendada',2);
 \ir ../supabase/migrations/20261108145103_alterar_recursos_turma.sql
+\ir ../supabase/migrations/20261108151456_alterar_recursos_turma_legado.sql
 create function pg_temp.assert_ok(ok boolean, message text) returns void language plpgsql as
     $$ begin if ok is distinct from true then raise exception 'TESTE: %', message; end if; end $$;
 create function pg_temp.expect_failure(command text, message_part text) returns void language plpgsql as $$
@@ -75,7 +76,7 @@ begin
     perform pg_temp.expect_failure(format('select public.alterar_recursos_turma(%L::uuid[],%L,%L,%L::jsonb,true)',ids,'instrutor','20000000-0000-0000-0000-000000000002',preview->'snapshot'),'A agenda foi alterada');
     update public.aulas set instrutor_id='20000000-0000-0000-0000-000000000001' where id=any(ids);
     -- Ocupação por uma aula legada sem turma_id: não pode ser ignorada por NULL.
-    insert into public.aulas select '40000000-0000-0000-0000-000000000009',tenant_id,null,'outra',curso_id,null,null,'20000000-0000-0000-0000-000000000002','Sala 9',data,'08:30','09:30','agendada',2 from public.aulas where id=ids[1];
+    insert into public.aulas select '40000000-0000-0000-0000-000000000009',tenant_id,null,'outra',curso_id,null,null,'20000000-0000-0000-0000-000000000002','Sala 9',data,'08:30','09:30','agendada',2,null from public.aulas where id=ids[1];
     preview := public.alterar_recursos_turma(ids,'instrutor','20000000-0000-0000-0000-000000000002',expected,false);
     perform pg_temp.assert_ok(jsonb_array_length(preview->'conflicts')=1,'detecta conflito com aula legada');
     result := public.alterar_recursos_turma(ids,'instrutor','20000000-0000-0000-0000-000000000002',preview->'snapshot',true);
@@ -109,6 +110,31 @@ begin
     perform pg_temp.expect_failure(format('select public.alterar_recursos_turma(%L::uuid[],%L,%L,%L::jsonb,false)',ids,'instrutor','20000000-0000-0000-0000-000000000003',expected),'Instrutor indisponível');
     perform pg_temp.expect_failure($q$select public.alterar_recursos_turma(array['40000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000004']::uuid[],'sala','Sala 5','[{"id":"40000000-0000-0000-0000-000000000001"},{"id":"40000000-0000-0000-0000-000000000004"}]',false)$q$,'não está mais disponível');
     perform pg_temp.expect_failure($q$select public.alterar_recursos_turma(array['40000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000003']::uuid[],'sala','Sala 5','[{"id":"40000000-0000-0000-0000-000000000001"},{"id":"40000000-0000-0000-0000-000000000003"}]',false)$q$,'única turma');
+end $$;
+-- Mesmo formato das turmas 706794/706254: sem curso_id/turma_id, com nome_curso.
+do $$ declare
+ ids uuid[] := array['40000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002']::uuid[];
+ expected jsonb := '[{"id":"40000000-0000-0000-0000-000000000001"},{"id":"40000000-0000-0000-0000-000000000002"}]';
+ p jsonb; r jsonb;
+begin
+ update public.aulas set turma_id=null,curso_id=null,numero_turma='706794',nome_curso='Curso legado' where id=any(ids);
+ p := public.alterar_recursos_turma(ids,'sala','Sala 5',expected,false);
+ perform pg_temp.assert_ok((p->>'changedCount')::int=2,'prévia de turma legada sem IDs');
+ r := public.alterar_recursos_turma(ids,'sala','Sala 5',p->'snapshot',true);
+ perform pg_temp.assert_ok((r->>'applied')::boolean,'aplica troca em turma legada');
+ update public.aulas set sala='Sala 4',nome_curso='Outro curso' where id=ids[2];
+ perform pg_temp.expect_failure(format('select public.alterar_recursos_turma(%L::uuid[],%L,%L,%L::jsonb,false)',ids,'sala','Sala 6',expected),'única turma');
+ update public.aulas set sala='Sala 4',nome_curso='Curso legado' where id=any(ids);
+ insert into public.aulas select '40000000-0000-0000-0000-000000000009',tenant_id,null,numero_turma,null,null,null,instrutor_id,'Sala 6',data,'08:30','09:30','agendada',2,'Outro curso' from public.aulas where id=ids[1];
+ p := public.alterar_recursos_turma(ids,'sala','Sala 6',expected,false);
+ perform pg_temp.assert_ok(jsonb_array_length(p->'conflicts')=1,'mesmo número com outro curso continua sendo conflito');
+ update public.aulas set nome_curso='Curso legado' where id='40000000-0000-0000-0000-000000000009';
+ p := public.alterar_recursos_turma(ids,'sala','Sala 6',expected,false);
+ perform pg_temp.assert_ok(jsonb_array_length(p->'conflicts')=0,'fragmento da mesma turma legada não conflita consigo');
+ delete from public.aulas where id='40000000-0000-0000-0000-000000000009';
+ update public.aulas set nome_curso=' ' where id=any(ids);
+ perform pg_temp.expect_failure(format('select public.alterar_recursos_turma(%L::uuid[],%L,%L,%L::jsonb,false)',ids,'sala','Sala 6',expected),'única turma');
+ update public.aulas set turma_id='50000000-0000-0000-0000-000000000001',curso_id='30000000-0000-0000-0000-000000000001',numero_turma='703601',nome_curso=null where id=any(ids);
 end $$;
 select set_config('test.user_id','00000000-0000-0000-0000-000000000002',false);
 select pg_temp.expect_failure($q$select public.alterar_recursos_turma(array['40000000-0000-0000-0000-000000000001']::uuid[],'sala','Sala 5','[{"id":"40000000-0000-0000-0000-000000000001"}]',false)$q$,'não tem permissão');

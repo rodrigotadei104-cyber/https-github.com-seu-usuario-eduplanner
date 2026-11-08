@@ -77,6 +77,7 @@ export interface Aula {
   instrutor: string;
   curso: string;
   cursoId?: string; // ID do curso para buscar progresso
+  nomeCursoLegado?: string; // Nome original de aulas antigas sem vínculo de curso
   materia: string;
   materiaId?: string; // ID da matéria para buscar progresso
   sala?: string;

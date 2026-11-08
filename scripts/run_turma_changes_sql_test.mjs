@@ -16,7 +16,7 @@ if ((create.status !== 0 || /(?:ERROR|FATAL):/.test(create.stderr || '')) && !/d
     throw new Error((create.stderr || create.error?.message || 'Erro ao criar banco de teste').slice(-2000));
 }
 let sql = readFileSync(new URL('./test_turma_changes.sql', import.meta.url), 'utf8');
-sql = sql.replace(/^\\ir (.*)$/m, (_line, file) => readFileSync(new URL(file.trim(), new URL('./test_turma_changes.sql', import.meta.url)), 'utf8'))
+sql = sql.replace(/^\\ir (.*)$/gm, (_line, file) => readFileSync(new URL(file.trim(), new URL('./test_turma_changes.sql', import.meta.url)), 'utf8'))
     .replace(/^\\.*$/gm, '');
 const result = run('eduplanner_turma_changes_test', sql);
 if (result.status !== 0 || /(?:ERROR|FATAL):/.test(result.stderr || '')) throw new Error((result.stderr || result.stdout || result.error?.message || 'Teste SQL falhou').slice(-3500));

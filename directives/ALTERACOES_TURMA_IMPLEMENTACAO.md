@@ -69,3 +69,11 @@ Não existe `supabase_migrations.schema_migrations` neste banco. A instalação 
 Antes da instalação, o SQL e uma prévia real foram executados e revertidos integralmente. Após a instalação, outra prévia sob role `authenticated` confirmou a função. Nenhuma aula foi alterada. Testes PostgreSQL locais e build passaram novamente.
 
 Publicação da interface em andamento; verificar o commit e a conclusão do deploy antes de considerar a entrega publicada.
+
+## Correção de compatibilidade — turmas 706794 e 706254
+
+A primeira versão exigia turma_id ou curso_id para liberar a seleção. As duas turmas reportadas possuem aulas legadas com esses campos nulos e nome_curso preenchido, que já eram exibidas por Turmas. Portanto, aulas futuras válidas ficavam excluídas da nova operação.
+
+Foi preservado o nome original em `Aula.nomeCursoLegado` no carregamento. O filtro e a RPC agora aceitam o grupo legado identificado por tenant_id + numero_turma + nome_curso exato, quando curso_id e turma_id são nulos. Sem nome e sem IDs continua bloqueado. Cursos com nomes diferentes ou IDs diferentes não são unidos. Nenhuma identidade foi regravada nos registros existentes.
+
+A migração incremental `20261108151456_alterar_recursos_turma_legado.sql` substitui somente a função, mantendo os privilégios e a auditoria. Testes de regressão cobrem seleção, gravação de turma legada, rejeição de cursos misturados e conflitos de outra turma com o mesmo número. Ambos os grupos reais passaram pela prévia sob authenticated em transação revertida antes e depois da instalação. Nenhuma aula de produção foi alterada.
