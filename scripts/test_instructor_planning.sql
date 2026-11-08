@@ -64,6 +64,6 @@ end $$;
 reset role;
 drop trigger fail_routine_audit on public.audit_logs;
 select pg_temp.assert_ok(not has_function_privilege('anon','public.consultar_planejamento_instrutor(uuid,date,date)','execute'),'anon não consulta planejamento');
-select pg_temp.assert_ok(not has_function_privilege('anon','public.salvar_rotina_instrutor(uuid,jsonb,timestamptz)','execute'),'anon não salva rotina');
+select pg_temp.assert_ok(not has_function_privilege('anon','public.salvar_rotina_instrutor(uuid,jsonb,timestamptz,jsonb)','execute'),'anon não salva rotina');
 select pg_temp.assert_ok(not has_table_privilege('anon','public.instrutor_rotinas','select'),'anon não lê rotinas');
 set role authenticated;

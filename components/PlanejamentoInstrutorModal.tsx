@@ -8,7 +8,7 @@ import { computeInstructorPlanning, planningMinutes, planningTime, suggestInstru
 import type { RoutineWindow, PlanningSlot } from '../utils/instructorPlanning';
 import { instructorPlanningService } from '../services/instructorPlanning.service';
 import type { InstructorPlanningData } from '../services/instructorPlanning.service';
-import { RotinaInstrutorEditor } from './RotinaInstrutorEditor';
+import { RotinaInstrutorEditor, weekdayNames } from './RotinaInstrutorEditor';
 
 interface Props { isOpen:boolean;onClose:()=>void }
 const field='mt-1 block rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100';
@@ -22,6 +22,8 @@ export function PlanejamentoInstrutorModal({isOpen,onClose}:Props){
     const today=localDateKey(new Date());
     const [instructor,setInstructor]=useState(''),[from,setFrom]=useState(today),[to,setTo]=useState(shiftDateKey(today,27));
     const [data,setData]=useState<InstructorPlanningData|null>(null),[windows,setWindows]=useState<RoutineWindow[]>([]);
+    const [pauses,setPauses]=useState<RoutineWindow[]>([]),[reviewed,setReviewed]=useState(true);
+    const [historyPattern,setHistoryPattern]=useState<ReturnType<typeof suggestInstructorRoutine>|null>(null);
     const [simulated,setSimulated]=useState<PlanningSlot[]>([]),[starts,setStarts]=useState<Record<string,string>>({});
     const [duration,setDuration]=useState('240'),[exploreStart,setExploreStart]=useState('06:00'),[exploreEnd,setExploreEnd]=useState('23:00');
     const [alternatives,setAlternatives]=useState(false),[busy,setBusy]=useState(false),[saving,setSaving]=useState(false);
@@ -32,22 +34,22 @@ export function PlanejamentoInstrutorModal({isOpen,onClose}:Props){
     const invalidate=()=>{request.current++;setData(null);setSimulated([]);setStarts({});setWindows([]);setError('');setNotice('');};
     const load=async()=>{
         if(!instructor||busy||saving)return;const token=++request.current;setBusy(true);setError('');setNotice('');setData(null);setSimulated([]);setStarts({});
-        try{const result=await instructorPlanningService.load(instructor,from,to);if(token===request.current){setData(result);setWindows(result.routine.janelas);setReceivedAt(Date.now());}}
+        try{const result=await instructorPlanningService.load(instructor,from,to);if(token===request.current){setData(result);setWindows(result.routine.janelas);setPauses(result.routine.pausas);setReviewed(true);setHistoryPattern(null);setReceivedAt(Date.now());}}
         catch(err){if(token===request.current)setError(err instanceof Error?err.message:'Não foi possível consultar a agenda.');}
         finally{if(token===request.current)setBusy(false);}
     };
     const save=async()=>{
-        if(!data||saving||busy||!canSave)return;const token=request.current;setSaving(true);setError('');setNotice('');
-        try{const result=await instructorPlanningService.save(instructor,windows,data.routine.updated_at);if(token===request.current){setData({...data,routine:result});setNotice('Rotina salva para a unidade. A agenda de aulas não foi alterada.');}}
+        if(!data||saving||busy||!canSave||!reviewed)return;const token=request.current;setSaving(true);setError('');setNotice('');
+        try{const result=await instructorPlanningService.save(instructor,windows,data.routine.updated_at,pauses);if(token===request.current){setData({...data,routine:result});setNotice('Jornada e pausas salvas para a unidade. A agenda de aulas não foi alterada.');}}
         catch(err){if(token===request.current)setError(err instanceof Error?err.message:'Não foi possível salvar a rotina.');}
         finally{setSaving(false);}
     };
-    const suggest=()=>{if(!data)return;const result=suggestInstructorRoutine(data.history,data.historyFrom,data.historyTo);setWindows(result.windows);
-        setNotice(result.windows.length?`Sugestão baseada em ${result.daysObserved} dias com aulas nos últimos 84 dias. Foram usados horários repetidos em pelo menos dois dias do mesmo dia da semana. Revise os intervalos e salve apenas se representarem a rotina habitual.`:'Histórico insuficiente para sugerir uma rotina recorrente. Cadastre os intervalos manualmente.');};
-    const result=useMemo(()=>{if(!data)return{days:[],validation:''};try{return{days:computeInstructorPlanning({from,to,routine:windows,bookings:data.bookings,blocks:data.blocks,simulated,exploreStart:alternatives?exploreStart:'06:00',exploreEnd:alternatives?exploreEnd:'23:00',duration:Number(duration)}),validation:''};}catch(err){return{days:[],validation:err instanceof Error?err.message:'Revise os parâmetros.'};}},[data,from,to,windows,simulated,exploreStart,exploreEnd,duration,tick,alternatives]);
+    const suggest=()=>{if(!data)return;const result=suggestInstructorRoutine(data.history,data.historyFrom,data.historyTo);setHistoryPattern(result);
+        setNotice(result.windows.length?'O padrão abaixo mostra horários de aulas, não a jornada de trabalho nem as pausas de refeição. Ele ainda não foi aplicado à simulação.':'Histórico insuficiente para sugerir um padrão recorrente. Cadastre a jornada manualmente.');};
+    const result=useMemo(()=>{if(!data)return{days:[],validation:''};if(!reviewed)return{days:[],validation:'Revise a jornada e as pausas e confirme abaixo antes de calcular disponibilidade.'};try{return{days:computeInstructorPlanning({from,to,routine:windows,breaks:pauses,bookings:data.bookings,blocks:data.blocks,simulated,exploreStart:alternatives?exploreStart:'06:00',exploreEnd:alternatives?exploreEnd:'23:00',duration:Number(duration)}),validation:''};}catch(err){return{days:[],validation:err instanceof Error?err.message:'Revise os parâmetros.'};}},[data,from,to,windows,simulated,exploreStart,exploreEnd,duration,tick,alternatives,pauses,reviewed]);
     const stale=!!data&&Date.now()-receivedAt>5*60000;
-    const dirty=!!data&&JSON.stringify(windows)!==JSON.stringify(data.routine.janelas);
-    const routineError=validateRoutine(windows);
+    const dirty=!!data&&(JSON.stringify(windows)!==JSON.stringify(data.routine.janelas)||JSON.stringify(pauses)!==JSON.stringify(data.routine.pausas));
+    const routineError=validateRoutine(windows)||validateRoutine(pauses);
     const totalHabitual=result.days.reduce((sum,d)=>sum+d.livres.length,0);
     const habitualCount=result.days.reduce((sum,d)=>sum+d.livres.filter(s=>s.comportaBloco).length,0),extraCount=result.days.reduce((sum,d)=>sum+d.alternativas.filter(s=>s.comportaBloco).length,0);
     const add=(slot:PlanningSlot)=>{
@@ -72,12 +74,15 @@ export function PlanejamentoInstrutorModal({isOpen,onClose}:Props){
             </fieldset>
             <p className="mt-2 text-xs text-slate-500">Uma nova consulta ou mudança de instrutor/período reinicia o rascunho e os ajustes locais da rotina. A rotina salva continua disponível.</p>
             {data&&<div className="mt-5 grid items-start gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
-                <aside className="space-y-4"><details open className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"><summary className="cursor-pointer font-bold">Rotina habitual</summary><p className="my-3 text-xs text-slate-500">Referência semanal compartilhada pela unidade. Ajustes abaixo afetam a simulação; salve para reutilizar com este instrutor.</p>
-                    <button type="button" className={`${button} mb-3 w-full`} disabled={busy||saving} onClick={suggest}>Sugerir pelo histórico</button>
-                    <RotinaInstrutorEditor windows={windows} disabled={busy||saving} onChange={value=>{setWindows(value);setNotice('Rotina ajustada apenas nesta simulação.');}}/>
+                <aside className="space-y-4"><details open className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"><summary className="cursor-pointer font-bold">Rotina habitual</summary><p className="my-3 text-xs text-slate-500">Informe a jornada de trabalho e as pausas reais. Horários de aulas e horas-aula de 50 minutos não definem o expediente nem a janta.</p>
+                    <button type="button" className={`${button} mb-3 w-full`} disabled={busy||saving} onClick={suggest}>Ver padrão de aulas do histórico</button>
+                    {historyPattern&&historyPattern.windows.length>0&&<div className="mb-3 rounded-lg border border-amber-300 p-3 text-sm dark:border-amber-800"><p className="font-bold">Padrão de aulas observado</p><p className="mt-1 text-xs">{historyPattern.daysObserved} dias com aulas. Não identifica janta, almoço ou expediente completo.</p><ul className="my-2 space-y-1 text-xs">{historyPattern.windows.map((w,index)=><li key={index}>{weekdayNames[w.dia]} · {w.inicio}–{w.fim}</li>)}</ul><button type="button" className={button} onClick={()=>{setWindows(historyPattern.windows);setReviewed(false);setSimulated([]);setStarts({});setHistoryPattern(null);setNotice('Padrão copiado como rascunho. Corrija a jornada e as pausas reais antes de confirmar.');}}>Copiar como rascunho da jornada</button></div>}
+                    <RotinaInstrutorEditor windows={windows} disabled={busy||saving} onChange={value=>{setWindows(value);setReviewed(false);setSimulated([]);setStarts({});setNotice('Rotina ajustada apenas nesta simulação.');}}/>
+                    <details className="mt-4 rounded-lg border border-amber-300 p-3 dark:border-amber-800" open><summary className="cursor-pointer font-bold">Refeições e pausas protegidas</summary><p className="my-2 text-xs">Esses horários nunca serão oferecidos como disponibilidade, nem fora da rotina.</p><RotinaInstrutorEditor protectedBreaks windows={pauses} disabled={busy||saving} onChange={value=>{setPauses(value);setReviewed(false);setSimulated([]);setStarts({});setNotice('Pausas ajustadas apenas nesta simulação.');}}/></details>
+                    <label className="mt-3 flex items-start gap-2 text-sm"><input type="checkbox" checked={reviewed} onChange={e=>setReviewed(e.target.checked)} disabled={busy||saving}/><span>Confirmei a jornada e os intervalos reais de refeição e descanso.</span></label>
                     {routineError&&<p className="mt-2 text-sm text-rose-700 dark:text-rose-300">{routineError}</p>}
-                    {canSave&&<button type="button" disabled={!dirty||!!routineError||saving||busy} className={`${primary} mt-3 w-full`} onClick={save}>{saving?'Salvando…':'Salvar rotina para a unidade'}</button>}
-                    <p className="mt-2 text-xs text-slate-500">{dirty?'Há ajustes não salvos.':data.routine.updated_at?'Rotina salva carregada.':'Nenhuma rotina salva. Cadastre ou revise uma sugestão.'} O histórico reflete agendamentos; pode não representar a jornada de trabalho completa.</p>
+                    {canSave&&<button type="button" disabled={!dirty||!reviewed||!!routineError||saving||busy} className={`${primary} mt-3 w-full`} onClick={save}>{saving?'Salvando…':'Salvar jornada e pausas'}</button>}
+                    <p className="mt-2 text-xs text-slate-500">{dirty?'Há ajustes não salvos.':data.routine.updated_at?'Jornada salva carregada.':'Nenhuma jornada salva. Cadastre o expediente e as pausas.'} Alterar a jornada ou pausas reinicia o rascunho.</p>
                 </details>
                 <section className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"><h3 className="font-bold">Parâmetros da simulação</h3><label className="mt-3 block text-sm">Duração de cada bloco (minutos relógio)<input type="number" min={15} max={720} step={15} value={duration} className={`${field} w-full`} onChange={e=>setDuration(e.target.value)}/></label><p className="mt-1 text-xs text-slate-500">Ex.: 240 minutos = 4 horas de agenda, incluindo eventuais intervalos que você planejar.</p>
                     <label className="mt-4 flex items-start gap-2 text-sm"><input type="checkbox" checked={alternatives} onChange={e=>setAlternatives(e.target.checked)}/><span>Mostrar horários fora da rotina</span></label>
@@ -89,7 +94,7 @@ export function PlanejamentoInstrutorModal({isOpen,onClose}:Props){
                     {stale&&<p role="alert" className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">A consulta tem mais de cinco minutos. Atualize a agenda antes de adicionar novos blocos. O rascunho será reiniciado.</p>}
                     {data.legacyCount>0&&<p className="mb-3 text-xs text-slate-500">{data.legacyCount} compromissos antigos foram identificados pelo nome do instrutor. Foram considerados ocupados por segurança.</p>}
                     {!windows.length&&<p className="mb-3 rounded-lg bg-slate-100 p-3 text-sm dark:bg-slate-800">Defina a rotina habitual para priorizar horários. Você também pode ativar a visualização fora da rotina.</p>}
-                    {result.validation?<p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{result.validation}</p>:<div className="space-y-3">{result.days.map(day=><article key={day.data} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"><h4 className="mb-3 font-bold capitalize">{labelDate(day.data)}</h4>{day.bloqueios.length>0?<p className="text-sm text-rose-700 dark:text-rose-300">{day.bloqueios.join(' · ')}</p>:<><div className="space-y-2">{day.livres.map(renderSlot)}{alternatives&&day.alternativas.map(renderSlot)}</div>{!day.livres.length&&(!alternatives||!day.alternativas.length)&&<p className="text-sm text-slate-500">Sem intervalo livre na rotina deste dia. Consulte os compromissos abaixo ou ative horários fora da rotina.</p>}</>}{day.ocupacoes.length>0&&<details className="mt-3 text-xs text-slate-500"><summary className="cursor-pointer">Ver {day.ocupacoes.length} compromissos da agenda</summary><ul className="mt-2 space-y-1">{day.ocupacoes.map(o=><li key={o.id}>{o.diaInteiro?'Dia inteiro':`${o.inicio.slice(0,5)}–${o.fim.slice(0,5)}`} · {o.descricao}</li>)}</ul></details>}</article>)}</div>}
+                    {result.validation?<p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{result.validation}</p>:<div className="space-y-3">{result.days.map(day=><article key={day.data} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"><h4 className="mb-3 font-bold capitalize">{labelDate(day.data)}</h4>{day.bloqueios.length>0?<p className="text-sm text-rose-700 dark:text-rose-300">{day.bloqueios.join(' · ')}</p>:<><div className="space-y-2">{day.livres.map(renderSlot)}{alternatives&&day.alternativas.map(renderSlot)}</div>{!day.livres.length&&(!alternatives||!day.alternativas.length)&&<p className="text-sm text-slate-500">Sem intervalo livre na rotina deste dia. Consulte os compromissos abaixo ou ative horários fora da rotina.</p>}</>}{day.pausas.length>0&&<ul className="mt-3 space-y-1 text-xs text-amber-800 dark:text-amber-200">{day.pausas.map(p=><li key={p.id}>{p.inicio}–{p.fim} · {p.descricao} · protegido</li>)}</ul>}{day.ocupacoes.length>0&&<details className="mt-3 text-xs text-slate-500"><summary className="cursor-pointer">Ver {day.ocupacoes.length} compromissos da agenda</summary><ul className="mt-2 space-y-1">{day.ocupacoes.map(o=><li key={o.id}>{o.diaInteiro?'Dia inteiro':`${o.inicio.slice(0,5)}–${o.fim.slice(0,5)}`} · {o.descricao}</li>)}</ul></details>}</article>)}</div>}
                     <p className="mt-4 text-xs text-slate-500">Esta é uma consulta da disponibilidade do instrutor; salas serão conferidas ao cadastrar as aulas. A disponibilidade reflete a consulta acima. Outros usuários podem alterar a agenda; confirme novamente antes de cadastrar aulas.</p>
                 </section>
             </div>}

@@ -5,7 +5,7 @@ import { validateRoutine, planningDates } from '../utils/instructorPlanning';
 import { validDateKey } from '../utils/turmaReschedule';
 import type { RoutineWindow, PlanningBooking, PlanningBlock } from '../utils/instructorPlanning';
 
-export interface InstructorRoutine { janelas: RoutineWindow[]; updated_at: string | null }
+export interface InstructorRoutine { janelas: RoutineWindow[]; pausas: RoutineWindow[]; updated_at: string | null }
 export interface InstructorPlanningData {
     routine: InstructorRoutine; bookings: PlanningBooking[]; history: PlanningBooking[]; blocks: PlanningBlock[];
     loadedAt: string; historyFrom: string; historyTo: string; legacyCount: number;
@@ -18,14 +18,14 @@ function bookings(value: unknown): PlanningBooking[] {
     if (!Array.isArray(value)) throw new Error('Agenda incompleta. Atualize a consulta.');
     return value.map(row => {
         if (!row || typeof row.id !== 'string' || !validDateKey(row.data)) throw new Error('A agenda retornou registros inválidos. Confira o cadastro.');
-        return { id: row.id, data: row.data, inicio: String(row.inicio || ''), fim: String(row.fim || ''), descricao: String(row.descricao || 'Compromisso'), diaInteiro: row.diaInteiro === true };
+        return { id: row.id, data: row.data, inicio: String(row.inicio || ''), fim: String(row.fim || ''), descricao: String(row.descricao || 'Compromisso'), diaInteiro: row.diaInteiro === true, protegido:row.protegido===true };
     });
 }
 function routine(value: unknown): InstructorRoutine {
-    if (value === null) return { janelas: [], updated_at: null };
+    if (value === null) return { janelas: [], pausas: [], updated_at: null };
     const row = value as InstructorRoutine;
-    if (!row || validateRoutine(row.janelas) || typeof row.updated_at !== 'string') throw new Error('Rotina recebida inválida. Confira o cadastro antes de simular.');
-    return { janelas: row.janelas, updated_at: row.updated_at };
+    if (!row || validateRoutine(row.janelas) || validateRoutine(row.pausas||[]) || typeof row.updated_at !== 'string') throw new Error('Rotina recebida inválida. Confira o cadastro antes de simular.');
+    return { janelas: row.janelas, pausas: row.pausas||[], updated_at: row.updated_at };
 }
 export const instructorPlanningService = {
     async load(instructorId: string, from: string, to: string): Promise<InstructorPlanningData> {
@@ -36,15 +36,16 @@ export const instructorPlanningService = {
             || !Array.isArray(data.feriados) || !Array.isArray(data.bloqueios)) throw new Error('Consulta incompleta. Atualize a agenda.');
         const blocks = [...data.feriados, ...data.bloqueios];
         if (blocks.some(b => !validDateKey(b?.data) || typeof b?.descricao !== 'string')) throw new Error('Calendário incompleto. Atualize a consulta.');
-        return { routine: routine(data.routine), bookings: [...bookings(data.aulas), ...bookings(data.eventos)], history: bookings(data.historico),
+        return { routine: routine(data.routine), bookings: [...bookings(data.aulas), ...bookings(data.eventos).filter(e=>!e.protegido)], history: bookings(data.historico),
             blocks, loadedAt: data.loaded_at, historyFrom: data.history_from, historyTo: data.history_to,
             legacyCount: data.aulas.filter((a: { legacy?: boolean }) => a.legacy === true).length };
     },
-    async save(instructorId: string, windows: RoutineWindow[], version: string | null): Promise<InstructorRoutine> {
+    async save(instructorId: string, windows: RoutineWindow[], version: string | null, pauses:RoutineWindow[]=[]): Promise<InstructorRoutine> {
         tenantService.getCurrentTenantId();
         if (!await permissionService.checkPermission('MANAGE_REGISTRATIONS','RotinaInstrutor')) throw new Error('Você não tem permissão para salvar a rotina da unidade.');
         const errorText = validateRoutine(windows); if (errorText) throw new Error(errorText);
-        const { data, error } = await supabase.rpc('salvar_rotina_instrutor', { p_instrutor: instructorId, p_janelas: windows, p_version: version });
+        const pauseError=validateRoutine(pauses);if(pauseError)throw new Error(pauseError);
+        const { data, error } = await supabase.rpc('salvar_rotina_instrutor', { p_instrutor: instructorId, p_janelas: windows, p_version: version, p_pausas:pauses });
         if (error) throw fail(error);
         return routine(data);
     }

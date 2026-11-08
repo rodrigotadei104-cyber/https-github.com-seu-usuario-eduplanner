@@ -63,3 +63,17 @@ Instalar somente esta migração em transação, validar a consulta no esquema r
 Usuário informou ausência de disponibilidade de janeiro a maio. Consulta somente leitura confirmou zero aulas de 01/01 a 31/05/2027. A rotina salva tem intervalos de 3h/3h20 em vários dias, enquanto o bloco inicial era de 240 minutos. O cálculo filtrava essas faixas e a interface apresentava uma mensagem genérica, escondendo disponibilidade real.
 
 A correção mantém todas as faixas livres, separa o total de faixas das que comportam o bloco e informa a duração disponível. Faixas menores exibem orientação e botão desabilitado; diminuir para 180 minutos libera os intervalos 13:00–16:20 e 19:00–22:00. Nenhum ajuste automático na rotina salva nem na agenda. Teste de regressão e comparação minuto a minuto cobrem também lacunas menores que o bloco.
+
+## Correção da modelagem — jornada e pausas protegidas
+
+A alteração acima resolveu a visibilidade das lacunas, mas não a origem do problema: horários de aulas, especialmente de 50 minutos, não definem jornada nem alimentação. O usuário informou a jornada real da Giovanna e confirmou: segunda a sexta 13:00–17:00 e 18:00–22:00, com janta protegida 18:00–19:00; sábado preservado.
+
+- Nova coluna `instrutor_rotinas.pausas`, com intervalos semanais protegidos e descrição, validados no banco. Refeições e descansos são subtraídos tanto da jornada quanto das alternativas.
+- Espaços entre turnos da jornada também são protegidos automaticamente. Portanto, sábado 08–12/13–17 não gera uma alternativa de aula 12–13.
+- O histórico passa a ser visualizado como padrão de aulas, sem substituir a jornada automaticamente. Para copiar o padrão como rascunho, é necessário revisar jornada/pausas e confirmar antes do cálculo ou salvamento. Ajustes reiniciam os blocos simulados.
+- A hora-aula de 50 minutos não altera a jornada. Blocos continuam em minutos de agenda; lacunas residuais menores que a aula não podem ser adicionadas como se comportassem o bloco.
+- `salvar_rotina_instrutor` ganha quarto argumento opcional `p_pausas`. Chamadas antigas de três argumentos preservam as pausas existentes, em vez de apagá-las.
+- A consulta inclui pausas/intervalos entre turnos como ocupações protegidas para clientes antigos. O cliente novo usa a configuração semanal no cálculo local para permitir revisão explícita do rascunho.
+- RLS, controle de versão e auditoria são mantidos. Migração criada pela CLI: `20261108211704_planejamento_pausas_protegidas.sql`.
+
+Testes cobrem janta dentro/fora da jornada, almoço entre turnos, aulas de 50 minutos, preservação de pausas por clientes antigos, consulta, permissões e auditoria. O ajuste real da Giovanna é feito via RPC, sob a identidade do solicitante identificado como Rodrigo Tadei (admin ativo e autor atual da rotina), com versão bloqueada e preservação de sábado/domingo. O usuário confirmou expressamente essa configuração; nenhuma aula deve ser alterada.

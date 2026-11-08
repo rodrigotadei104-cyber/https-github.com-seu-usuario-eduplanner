@@ -1,11 +1,11 @@
 import { localDateKey } from './turmaChanges';
 import { validDateKey } from './turmaReschedule';
 
-export interface RoutineWindow { dia: number; inicio: string; fim: string }
-export interface PlanningBooking { id: string; data: string; inicio: string; fim: string; descricao: string; diaInteiro?: boolean }
+export interface RoutineWindow { dia: number; inicio: string; fim: string; descricao?: string }
+export interface PlanningBooking { id: string; data: string; inicio: string; fim: string; descricao: string; diaInteiro?: boolean; protegido?: boolean }
 export interface PlanningBlock { data: string; descricao: string }
 export interface PlanningSlot { data: string; inicio: string; fim: string; habitual: boolean; comportaBloco?: boolean }
-export interface PlanningDay { data: string; livres: PlanningSlot[]; alternativas: PlanningSlot[]; ocupacoes: PlanningBooking[]; bloqueios: string[] }
+export interface PlanningDay { data: string; livres: PlanningSlot[]; alternativas: PlanningSlot[]; ocupacoes: PlanningBooking[]; bloqueios: string[]; pausas: PlanningBooking[] }
 export const planningMinutes = (value: string): number => {
     if (!/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value)) return NaN;
     return Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
@@ -43,10 +43,11 @@ export function planningDates(from: string,to: string): string[] {
     while(localDateKey(date)<=to){result.push(localDateKey(date));if(result.length>180)throw new Error('Consulte até 180 dias por simulação.');if(localDateKey(date)===to)break;date.setDate(date.getDate()+1);}
     return result;
 }
-export function computeInstructorPlanning(input: { from:string;to:string;routine:RoutineWindow[];bookings:PlanningBooking[];blocks:PlanningBlock[];
+export function computeInstructorPlanning(input: { from:string;to:string;routine:RoutineWindow[];breaks?:RoutineWindow[];bookings:PlanningBooking[];blocks:PlanningBlock[];
     simulated:PlanningSlot[]; exploreStart:string;exploreEnd:string;duration:number;now?:Date }): PlanningDay[] {
     const {routine,bookings,blocks,simulated,duration}=input;const now=input.now||new Date();
     const invalid=validateRoutine(routine);if(invalid)throw new Error(invalid);
+    const invalidBreak=validateRoutine(input.breaks||[]);if(invalidBreak)throw new Error(`Intervalos protegidos: ${invalidBreak}`);
     const explore:Interval=[planningMinutes(input.exploreStart),planningMinutes(input.exploreEnd)];
     if(!explore.every(Number.isFinite)||explore[1]<=explore[0]||!Number.isInteger(duration)||duration<15||duration>720)throw new Error('Revise a faixa de consulta e a duração (15 a 720 minutos).');
     return planningDates(input.from,input.to).map(data=>{
@@ -56,11 +57,15 @@ export function computeInstructorPlanning(input: { from:string;to:string;routine
         if(ocupacoes.some(b=>!b.diaInteiro&&(!Number.isFinite(planningMinutes(b.inicio))||!Number.isFinite(planningMinutes(b.fim))||planningMinutes(b.fim)<=planningMinutes(b.inicio))))bloqueios.push('Compromisso com horário inválido; conferir agenda');
         if(data<today)bloqueios.push('Data passada');
         const busy:Interval[]=ocupacoes.filter(b=>!b.diaInteiro).map(b=>[planningMinutes(b.inicio),Math.min(1440,planningMinutes(b.fim)+(Number(b.fim.slice(6,8))>0?1:0))]);
+        const routineDay:Interval[]=routine.filter(w=>w.dia===day.getDay()).map(w=>[planningMinutes(w.inicio),planningMinutes(w.fim)]);
+        const turns=mergePlanningIntervals(routineDay);
+        const pausas=(input.breaks||[]).filter(w=>w.dia===day.getDay()).map((w,index)=>({id:`pausa-${index}`,data,inicio:w.inicio,fim:w.fim,descricao:w.descricao||'Intervalo protegido',protegido:true}));
+        turns.slice(0,-1).forEach((turn,index)=>{const next=turns[index+1];if(turn[1]<next[0])pausas.push({id:`entre-turnos-${index}`,data,inicio:planningTime(turn[1]),fim:planningTime(next[0]),descricao:'Intervalo entre turnos',protegido:true});});
+        busy.push(...pausas.map(p=>[planningMinutes(p.inicio),planningMinutes(p.fim)] as Interval));
         busy.push(...simulated.filter(b=>b.data===data).map(b=>[planningMinutes(b.inicio),planningMinutes(b.fim)] as Interval));
         if(data===today)busy.push([0,Math.min(1440,now.getHours()*60+now.getMinutes()+1)]);
-        const routineDay:Interval[]=routine.filter(w=>w.dia===day.getDay()).map(w=>[planningMinutes(w.inicio),planningMinutes(w.fim)]);
         const make=(parts:Interval[],habitual:boolean)=>parts.map(([a,b])=>({data,inicio:planningTime(a),fim:planningTime(b),habitual,comportaBloco:b-a>=duration}));
-        return {data,ocupacoes,bloqueios,livres:bloqueios.length?[]:make(subtract(routineDay,busy),true),
+        return {data,ocupacoes,bloqueios,pausas,livres:bloqueios.length?[]:make(subtract(routineDay,busy),true),
             alternativas:bloqueios.length?[]:make(subtract([explore],[...busy,...routineDay]),false)};
     });
 }

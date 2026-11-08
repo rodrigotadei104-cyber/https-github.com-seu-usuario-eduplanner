@@ -57,6 +57,7 @@ insert into public.aulas (id,tenant_id,turma_id,numero_turma,curso_id,materia_id
 \ir ../supabase/migrations/20261108152450_reagendar_aulas_turma.sql
 \ir ../supabase/migrations/20261108200201_reagendamento_corrigir_datas_passadas.sql
 \ir ../supabase/migrations/20261108202152_rotina_habitual_instrutores.sql
+\ir ../supabase/migrations/20261108211704_planejamento_pausas_protegidas.sql
 create function pg_temp.assert_ok(ok boolean, message text) returns void language plpgsql as
     $$ begin if ok is distinct from true then raise exception 'TESTE: %', message; end if; end $$;
 create function pg_temp.expect_failure(command text, message_part text) returns void language plpgsql as $$
@@ -161,6 +162,7 @@ alter table public.aulas add column nome_instrutor text;
 alter table public.aulas add column nome_materia text;
 set role authenticated;
 \ir test_instructor_planning.sql
+\ir test_planning_protected_breaks.sql
 reset role;
 create function pg_temp.fail_second_row() returns trigger language plpgsql as $$ begin
     if new.id='40000000-0000-0000-0000-000000000002' then raise exception 'Falha de armazenamento simulada'; end if;
