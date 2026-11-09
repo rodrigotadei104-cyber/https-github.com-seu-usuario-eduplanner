@@ -3,11 +3,51 @@ import type { PlanningBooking, PlanningBlock, PlanningSlot, RoutineWindow } from
 
 export interface PlanningTurn extends PlanningSlot { status:'disponivel'|'ocupado'|'simulado'; nome:string; motivo:string }
 export interface PlanningTurnDay { data:string; turnos:PlanningTurn[]; bloqueios:string[]; ocupacoes:PlanningBooking[] }
+export interface WorkPeriodGroup { dias:number[]; periodos:Array<{inicio:string;fim:string}> }
+export function groupWorkPeriods(windows:RoutineWindow[]):WorkPeriodGroup[]{
+    const groups=new Map<string,WorkPeriodGroup>();
+    for(const dia of [1,2,3,4,5,6,0]){
+        const periodos=windows.filter(w=>w.dia===dia).map(({inicio,fim})=>({inicio,fim})).sort((a,b)=>a.inicio.localeCompare(b.inicio));
+        if(!periodos.length)continue;const key=JSON.stringify(periodos);
+        if(groups.has(key))groups.get(key)!.dias.push(dia);else groups.set(key,{dias:[dia],periodos});
+    }
+    return [...groups.values()];
+}
+export const workPeriodsFromGroups=(groups:WorkPeriodGroup[]):RoutineWindow[]=>groups.flatMap(g=>g.dias.flatMap(dia=>g.periodos.map(p=>({dia,...p}))));
+export function assignWorkDay(groups:WorkPeriodGroup[],index:number,dia:number,enabled:boolean):WorkPeriodGroup[]{
+    return groups.map((g,i)=>({...g,dias:i===index?(enabled?[...new Set([...g.dias,dia])]:g.dias.filter(d=>d!==dia)):enabled?g.dias.filter(d=>d!==dia):g.dias}));
+}
 export function suggestedWorkPeriods(saved:RoutineWindow[],history:PlanningBooking[],from:string,to:string){
-    if(saved.length)return{windows:saved,source:'Referência cadastrada'};
     const suggested=suggestInstructorRoutine(history,from,to);
-    if(suggested.windows.length)return{windows:suggested.windows,source:'Sugestão pelo histórico · ajustável'};
-    return{windows:[1,2,3,4,5].flatMap(dia=>[{dia,inicio:'08:00',fim:'12:00'},{dia,inicio:'13:00',fim:'17:00'}]),source:'Referência inicial · ajuste se necessário'};
+    const dates=new Map<string,Array<[number,number]>>();
+    for(const b of history){const d=new Date(`${b.data}T12:00:00`),a=planningMinutes(b.inicio),z=planningMinutes(b.fim);
+        if(!b.diaInteiro&&b.data>=from&&b.data<=to&&Number.isFinite(d.getTime())&&Number.isFinite(a)&&Number.isFinite(z)&&z>a)dates.set(b.data,[...(dates.get(b.data)||[]),[a,z]]);
+    }
+    const windows=[...saved],historicalDays:number[]=[];
+    for(const dia of [1,2,3,4,5,6,0]){
+        if(saved.some(w=>w.dia===dia))continue;
+        let inferred=suggested.windows.filter(w=>w.dia===dia);
+        if(!inferred.length){
+            // Horários variáveis ou só uma ocorrência não devem apagar o dia observado.
+            const patterns=new Map<string,{count:number;last:string;parts:Array<[number,number]>}>();
+            for(const [date,intervals]of dates)if(new Date(`${date}T12:00:00`).getDay()===dia){
+                const parts=mergePlanningIntervals(intervals).filter(([a,b])=>b-a>=30);if(!parts.length)continue;
+                const key=JSON.stringify(parts),old=patterns.get(key);patterns.set(key,{count:(old?.count||0)+1,last:old&&old.last>date?old.last:date,parts});
+            }
+            const best=[...patterns.values()].sort((a,b)=>b.count-a.count||b.last.localeCompare(a.last))[0];
+            inferred=(best?.parts||[]).map(([a,b])=>({dia,inicio:planningTime(a),fim:planningTime(b)}));
+        }
+        // Fragmentos de disciplinas no mesmo turno não são novos turnos nem pausas de trabalho.
+        const byTurn=new Map<string,RoutineWindow>();
+        for(const w of inferred){const a=planningMinutes(w.inicio),b=planningMinutes(w.fim);
+            const key=b<=720?'manha':a>=1080?'noite':a>=720&&b<=1080?'tarde':`${w.inicio}-${w.fim}`;
+            const old=byTurn.get(key);byTurn.set(key,old?{dia,inicio:old.inicio<w.inicio?old.inicio:w.inicio,fim:old.fim>w.fim?old.fim:w.fim}:w);
+        }
+        const additions=[...byTurn.values()].sort((a,b)=>a.inicio.localeCompare(b.inicio)).slice(0,Math.min(4,28-windows.length));
+        if(additions.length){windows.push(...additions);historicalDays.push(dia);}
+    }
+    if(windows.length)return{windows,source:saved.length?(historicalDays.length?'Referência cadastrada + dias do histórico':'Referência cadastrada'):'Sugestão pelo histórico · ajustável',historicalDays};
+    return{windows:[1,2,3,4,5].flatMap(dia=>[{dia,inicio:'08:00',fim:'12:00'},{dia,inicio:'13:00',fim:'17:00'}]),source:'Referência inicial · ajuste se necessário',historicalDays};
 }
 export function protectedWorkBreaks(routine:RoutineWindow[],pauses:RoutineWindow[]):RoutineWindow[]{
     const result=[...pauses];

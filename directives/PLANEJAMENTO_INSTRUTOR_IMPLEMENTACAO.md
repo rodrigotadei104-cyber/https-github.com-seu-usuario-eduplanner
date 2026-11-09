@@ -91,3 +91,13 @@ O usuário rejeitou a configuração obrigatória e as sobras de minutos. Confir
 - Não há migração ou alteração real de rotina/aulas nesta simplificação. API, isolamento e dados existentes são preservados.
 
 `utils/instructorTurns.ts` e testes adicionais validam turnos inteiros, ausência de sobras de aulas de 50 minutos, período escolhido fora da sugestão, exceção explícita de intervalos, bloqueios, sobreposição de rascunhos e conflitos após atualização.
+
+## Horários diferentes por dia e sábados no histórico
+
+O usuário apontou que o mesmo período era aplicado a todos os dias e confirmou o exemplo de sábado 08–12 e 13–17. A correção permite grupos independentes de dias, sem cadastros obrigatórios: **Escolher meus horários → + Dias com outro horário**. Marcar sábado no novo grupo o retira do grupo anterior automaticamente; editar os períodos desse grupo preserva os demais.
+
+A sugestão anterior retornava apenas a referência cadastrada, mesmo quando ela omitia sábado e havia histórico desse dia. Agora preserva os dias cadastrados e acrescenta dias ausentes observados no histórico. Se os horários variam ou existe apenas uma ocorrência, usa um padrão observado representativo, como sugestão ajustável. Fragmentos do mesmo turno histórico são consolidados para não gerar uma falsa pausa entre disciplinas. Não altera a referência persistida.
+
+Conferência somente leitura identificou oito instrutores ativos com aulas de sábado nos 84 dias anteriores. O algoritmo corrigido incluiu sábado para os oito, incluindo Giovanna com 08–12/13–17. A tela mostra dias com turnos ocupados também por padrão; o filtro opcional é **Somente dias disponíveis**, evitando ocultar sábados ocupados como se não houvesse sugestão.
+
+Testes cobrem referência de seg-sex com histórico de sábado, sábado com um registro/horários variáveis, consolidação de fragmentos, agrupamento por padrões diferentes, edição independente e transferência de dias sem duplicidade. Nenhum dado de jornada ou aula foi alterado nesta correção; o exemplo informado não foi usado para sobrescrever o cadastro da Giovanna.
