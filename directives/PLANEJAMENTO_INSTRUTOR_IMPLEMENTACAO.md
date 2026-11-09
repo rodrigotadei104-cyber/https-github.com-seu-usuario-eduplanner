@@ -101,3 +101,11 @@ A sugestão anterior retornava apenas a referência cadastrada, mesmo quando ela
 Conferência somente leitura identificou oito instrutores ativos com aulas de sábado nos 84 dias anteriores. O algoritmo corrigido incluiu sábado para os oito, incluindo Giovanna com 08–12/13–17. A tela mostra dias com turnos ocupados também por padrão; o filtro opcional é **Somente dias disponíveis**, evitando ocultar sábados ocupados como se não houvesse sugestão.
 
 Testes cobrem referência de seg-sex com histórico de sábado, sábado com um registro/horários variáveis, consolidação de fragmentos, agrupamento por padrões diferentes, edição independente e transferência de dias sem duplicidade. Nenhum dado de jornada ou aula foi alterado nesta correção; o exemplo informado não foi usado para sobrescrever o cadastro da Giovanna.
+
+## Impressão das datas livres
+
+Após consultar a agenda, **Imprimir datas livres** abre um relatório próprio e a impressão do navegador, permitindo imprimir ou salvar como PDF. O relatório inclui instrutor, período, horários considerados, data/hora da consulta e uma tabela de dias da semana e turnos inteiros disponíveis. Respeita os horários personalizados, sábados, pausas e eventual exceção explícita aos intervalos. Não inclui descrições dos compromissos nem turnos ocupados/bloqueados.
+
+A disponibilidade é recalculada sobre a agenda consultada, com `simulated: []`: turnos adicionados ao rascunho continuam no relatório quando estão livres na agenda real. O relatório explica esse comportamento e informa que a consulta não reserva horários nem verifica salas. Nenhum dado é enviado para IA ou gravado no banco. Janelas bloqueadas pelo navegador geram orientação para liberar a impressão.
+
+O gerador de HTML escapa todos os textos dinâmicos. Testes verificam sábado, ordenação das datas, exclusão de conflitos/feriados, preservação da disponibilidade real diante de rascunhos, ausência de descrições privadas, escape de HTML e relatório vazio. Build e TypeScript são verificados; a impressão física/PDF ainda depende de conferência no navegador do usuário.

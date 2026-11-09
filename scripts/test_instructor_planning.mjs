@@ -96,6 +96,32 @@ assert.deepEqual(turns.workPeriodsFromGroups(editedGroups).filter(w=>w.dia!==6),
 const moved=turns.assignWorkDay([{dias:[1,2,3,4,5,6],periodos:grouped[0].periodos},{dias:[],periodos:grouped[1].periodos}],1,6,true);
 assert.equal(moved[0].dias.includes(6),false);assert.deepEqual(moved[1].dias,[6]);
 assert.equal(turns.workPeriodsFromGroups(moved).filter(w=>w.dia===6).length,2,'um dia não recebe horários de dois grupos por acidente');
+// Relatório usa agenda real, sem reservar turnos do rascunho e sem expor compromissos.
+const {buildInstructorAvailabilityReport}=await load('../utils/instructorAvailabilityPrint.ts');
+const reportInput={...turnsInput,from:'2027-01-11',to:'2027-01-16',windows:[
+ {dia:1,inicio:'08:00',fim:'12:00'},{dia:1,inicio:'13:00',fim:'17:00'},
+ {dia:6,inicio:'08:00',fim:'12:00'},{dia:6,inicio:'13:00',fim:'17:00'}],pauses:[],
+ bookings:[{id:'ocupado',data:'2027-01-11',inicio:'13:00',fim:'14:00',descricao:'Compromisso confidencial'}],
+ simulated:[]};
+const reportDays=turns.computeInstructorTurns(reportInput);
+const printMetadata={instructor:'Giovanna <script>alert("x")</script> & equipe',from:reportInput.from,to:reportInput.to,
+ loadedAt:'2026-11-09T15:30:00Z',source:'Horários escolhidos por você',intervalException:false,days:reportDays};
+const report=buildInstructorAvailabilityReport(printMetadata);
+assert.ok(report.includes('2 dias · 3 turnos inteiros'));
+assert.ok(report.includes('sábado'));
+assert.ok(report.indexOf('11/01/2027</td>')<report.indexOf('16/01/2027</td>'));
+assert.ok(!report.includes('Compromisso confidencial'));
+assert.ok(!report.includes('<script>'));
+assert.ok(report.includes('&lt;script&gt;'));
+const simulatedReport=turns.computeInstructorTurns({...reportInput,simulated:[{data:'2027-01-11',inicio:'08:00',fim:'12:00',habitual:true}]});
+assert.equal(simulatedReport[0].turnos[0].status,'simulado');
+assert.equal(reportDays[0].turnos[0].status,'disponivel','rascunho não retira turno da agenda real impressa');
+const blockedDays=turns.computeInstructorTurns({...reportInput,blocks:[{data:'2027-01-16',descricao:'Feriado'}]});
+const blockedReport=buildInstructorAvailabilityReport({...printMetadata,days:blockedDays,intervalException:true});
+assert.ok(blockedReport.includes('1 dia · 1 turno inteiro'));
+assert.ok(!blockedReport.includes('16/01/2027</td>'));
+assert.ok(blockedReport.includes('Exceção selecionada'));
+assert.ok(buildInstructorAvailabilityReport({...printMetadata,days:[]}).includes('Nenhum turno inteiro livre'));
 let calls=[],allowed=true,error=null;
 const reply={loaded_at:'2026-11-08T12:00:00Z',history_from:'2026-08-16',history_to:'2026-11-07',routine:null,aulas:[],historico:[],eventos:[],feriados:[],bloqueios:[]};
 globalThis.planningServiceDeps={validateRoutine:h.validateRoutine,planningDates:h.planningDates,validDateKey:dateUtils.validDateKey,
