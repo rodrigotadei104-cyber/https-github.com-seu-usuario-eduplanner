@@ -5,7 +5,7 @@ const today=localDateKey(new Date());
 const mode=new URLSearchParams(location.search).get('mode');
 const initial:RoutineWindow[]=[1,2,3,4,5].flatMap(dia=>[{dia,inicio:'08:00',fim:'12:00'},{dia,inicio:'13:00',fim:'17:00'}]);
 let saved={janelas:initial,pausas:[] as RoutineWindow[],updated_at:new Date().toISOString()};
-export const useSchedule=()=>({instrutores:[{id:'demo',nome:'Instrutor de demonstração'}],userProfile:{role:mode==='viewer'?'viewer':'admin'}});
+export const useSchedule=()=>({instrutores:[{id:'demo',nome:'Giovanna (demonstração)'}],userProfile:{role:mode==='viewer'?'viewer':'admin'},refreshData:async()=>{}});
 export const instructorPlanningService={
  async load(_id:string,from:string,to:string){
   if(mode==='error')throw new Error('Não foi possível consultar toda a agenda. Nenhuma disponibilidade foi calculada.');
@@ -17,4 +17,19 @@ export const instructorPlanningService={
   return{routine:saved,bookings,history,blocks:[{data:shiftDateKey(from,4),descricao:'Recesso fictício'}],loadedAt:new Date().toISOString(),historyFrom:shiftDateKey(today,-84),historyTo:shiftDateKey(today,-1),legacyCount:0};
  },
  async save(_id:string,janelas:RoutineWindow[],version:string|null,pausas:RoutineWindow[]=[]){if(mode==='viewer')throw new Error('Sem permissão.');if(version!==saved.updated_at)throw new Error('Rotina alterada. Recarregue.');saved={janelas,pausas,updated_at:new Date().toISOString()};return saved;}
+};
+const course={id:'course',tenantId:'demo',nomeCurso:'Curso de demonstração',cargaTotalHoras:40,tipoHoraMin:'50',ativo:true};
+const subjects=[{id:'a',tenantId:'demo',cursoId:'course',nomeDisciplina:'Fundamentos',cargaHoras:16,tipoDisciplina:'teorica',ordem:1},
+ {id:'b',tenantId:'demo',cursoId:'course',nomeDisciplina:'Prática orientada',cargaHoras:24,tipoDisciplina:'pratica',ordem:2}];
+export const catalogoService={async getCursos(){return[course];}};
+export class CourseCommitUncertainError extends Error{}
+let lostResponse=false;
+export const coursePlanningService={
+ async load(_course:string,instructor:string,from:string,to:string,room:string){return{course,subjects,planning:await instructorPlanningService.load(instructor,from,to),roomBookings:room?[{id:'room-event',data:shiftDateKey(from,1),inicio:'08:00',fim:'12:00',descricao:'Sala ocupada'}]:[]};},
+ async submit(request:{id:string;aulas:unknown[]},apply:boolean){
+  if(mode==='viewer')throw new Error('Sem permissão para criar.');
+  if(apply&&mode==='conflict')throw new Error('Há conflito de instrutor ou sala com outra aula. Atualize a proposta.');
+  if(apply&&mode==='connection'&&!lostResponse){lostResponse=true;throw new CourseCommitUncertainError('Sem resposta');}
+  return{applied:apply,turmaId:apply?request.id:null,count:request.aulas.length,snapshot:{demo:true}};
+ }
 };

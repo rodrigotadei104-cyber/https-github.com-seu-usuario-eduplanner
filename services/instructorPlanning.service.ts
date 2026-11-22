@@ -27,18 +27,21 @@ function routine(value: unknown): InstructorRoutine {
     if (!row || validateRoutine(row.janelas) || validateRoutine(row.pausas||[]) || typeof row.updated_at !== 'string') throw new Error('Rotina recebida inválida. Confira o cadastro antes de simular.');
     return { janelas: row.janelas, pausas: row.pausas||[], updated_at: row.updated_at };
 }
+export function parseInstructorPlanningData(data: any): InstructorPlanningData {
+    if (!data || typeof data.loaded_at !== 'string' || !Number.isFinite(Date.parse(data.loaded_at)) || !validDateKey(data.history_from) || !validDateKey(data.history_to)
+        || !Array.isArray(data.feriados) || !Array.isArray(data.bloqueios)) throw new Error('Consulta incompleta. Atualize a agenda.');
+    const blocks = [...data.feriados, ...data.bloqueios];
+    if (blocks.some(b => !validDateKey(b?.data) || typeof b?.descricao !== 'string')) throw new Error('Calendário incompleto. Atualize a consulta.');
+    return { routine: routine(data.routine), bookings: [...bookings(data.aulas), ...bookings(data.eventos).filter(e=>!e.protegido)], history: bookings(data.historico),
+        blocks, loadedAt: data.loaded_at, historyFrom: data.history_from, historyTo: data.history_to,
+        legacyCount: data.aulas.filter((a: { legacy?: boolean }) => a.legacy === true).length };
+}
 export const instructorPlanningService = {
     async load(instructorId: string, from: string, to: string): Promise<InstructorPlanningData> {
         tenantService.getCurrentTenantId(); planningDates(from, to);
         const { data, error } = await supabase.rpc('consultar_planejamento_instrutor', { p_instrutor: instructorId, p_inicio: from, p_fim: to });
         if (error) throw fail(error);
-        if (!data || typeof data.loaded_at !== 'string' || !Number.isFinite(Date.parse(data.loaded_at)) || !validDateKey(data.history_from) || !validDateKey(data.history_to)
-            || !Array.isArray(data.feriados) || !Array.isArray(data.bloqueios)) throw new Error('Consulta incompleta. Atualize a agenda.');
-        const blocks = [...data.feriados, ...data.bloqueios];
-        if (blocks.some(b => !validDateKey(b?.data) || typeof b?.descricao !== 'string')) throw new Error('Calendário incompleto. Atualize a consulta.');
-        return { routine: routine(data.routine), bookings: [...bookings(data.aulas), ...bookings(data.eventos).filter(e=>!e.protegido)], history: bookings(data.historico),
-            blocks, loadedAt: data.loaded_at, historyFrom: data.history_from, historyTo: data.history_to,
-            legacyCount: data.aulas.filter((a: { legacy?: boolean }) => a.legacy === true).length };
+        return parseInstructorPlanningData(data);
     },
     async save(instructorId: string, windows: RoutineWindow[], version: string | null, pauses:RoutineWindow[]=[]): Promise<InstructorRoutine> {
         tenantService.getCurrentTenantId();

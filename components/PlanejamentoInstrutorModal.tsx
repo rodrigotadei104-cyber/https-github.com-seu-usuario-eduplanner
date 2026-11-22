@@ -6,6 +6,7 @@ import {localDateKey} from '../utils/turmaChanges';
 import {shiftDateKey} from '../utils/turmaReschedule';
 import {computeInstructorTurns,protectedWorkBreaks,suggestedWorkPeriods,groupWorkPeriods,workPeriodsFromGroups} from '../utils/instructorTurns';
 import {PlanningPeriodGroups} from './PlanningPeriodGroups';
+import {CoursePlanningPanel} from './CoursePlanningPanel';
 import {buildInstructorAvailabilityReport} from '../utils/instructorAvailabilityPrint';
 import type {PlanningTurn,WorkPeriodGroup} from '../utils/instructorTurns';
 import type {PlanningSlot,RoutineWindow} from '../utils/instructorPlanning';
@@ -20,6 +21,7 @@ const primary='rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white
 const weekdayNames=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const dateLabel=(d:string)=>format(new Date(`${d}T12:00:00`),'EEE, dd/MM/yyyy',{locale:ptBR});
 export function PlanejamentoInstrutorModal({isOpen,onClose}:Props){
+ const [flow,setFlow]=useState<'availability'|'course'>('availability'),[courseBusy,setCourseBusy]=useState(false);
  const {instrutores}=useSchedule();const dialog=useRef<HTMLDialogElement>(null),request=useRef(0),loadedInstructor=useRef('');
  const today=localDateKey(new Date());
  const [instructor,setInstructor]=useState(''),[from,setFrom]=useState(today),[to,setTo]=useState(shiftDateKey(today,27));
@@ -28,7 +30,7 @@ export function PlanejamentoInstrutorModal({isOpen,onClose}:Props){
  const [groups,setGroups]=useState<WorkPeriodGroup[]>([]);
  const [exact,setExact]=useState(false),[onlyOptions,setOnlyOptions]=useState(false);
  const [simulated,setSimulated]=useState<Draft[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[tick,setTick]=useState(0);
- useEffect(()=>{const el=dialog.current;if(isOpen){setInstructor('');loadedInstructor.current='';setData(null);setSimulated([]);setMode('suggestion');setExact(false);setBusy(false);setError('');setFrom(today);setTo(shiftDateKey(today,27));setOnlyOptions(false);if(!el?.open)el?.showModal();}else el?.close();return()=>{request.current++;el?.close();};},[isOpen]);
+ useEffect(()=>{const el=dialog.current;if(isOpen){setFlow('availability');setCourseBusy(false);setInstructor('');loadedInstructor.current='';setData(null);setSimulated([]);setMode('suggestion');setExact(false);setBusy(false);setError('');setFrom(today);setTo(shiftDateKey(today,27));setOnlyOptions(false);if(!el?.open)el?.showModal();}else el?.close();return()=>{request.current++;el?.close();};},[isOpen]);
  useEffect(()=>{if(!isOpen)return;const timer=window.setInterval(()=>setTick(v=>v+1),60000);return()=>window.clearInterval(timer);},[isOpen]);
  const invalidate=()=>{request.current++;setData(null);setError('');};
  const load=async()=>{
@@ -65,9 +67,12 @@ export function PlanejamentoInstrutorModal({isOpen,onClose}:Props){
   printWindow.focus();printWindow.setTimeout(()=>{if(!printWindow.closed)printWindow.print();},250);
  };
  const add=(turn:PlanningTurn)=>{if(busy||turn.status!=='disponivel')return;setSimulated(previous=>[...previous,{data:turn.data,inicio:turn.inicio,fim:turn.fim,habitual:mode==='suggestion',excecao:mode==='custom'&&exact}]);};
- return <dialog ref={dialog} aria-labelledby="planning-title" onCancel={e=>{e.preventDefault();onClose();}} className="m-auto max-h-[94vh] w-[min(1160px,96vw)] overflow-hidden rounded-2xl border-0 bg-white p-0 text-slate-800 shadow-2xl backdrop:bg-black/55 dark:bg-slate-900 dark:text-slate-100">
-  <div className="flex max-h-[94vh] flex-col"><header className="flex items-start justify-between gap-4 border-b border-slate-200 p-5 dark:border-slate-700"><div><p className="text-xs font-bold uppercase tracking-widest text-teal-700 dark:text-teal-300">Mapa de Instrutores</p><h2 id="planning-title" className="mt-1 text-xl font-bold">Dias e turnos para planejar</h2><p className="mt-1 text-sm text-slate-500">Escolha o instrutor, consulte o período e adicione os turnos úteis ao rascunho.</p></div><button type="button" onClick={onClose} className={button}>Fechar</button></header>
+ return <dialog ref={dialog} aria-labelledby="planning-title" onCancel={e=>{e.preventDefault();if(!courseBusy)onClose();}} className="m-auto max-h-[94vh] w-[min(1160px,96vw)] overflow-hidden rounded-2xl border-0 bg-white p-0 text-slate-800 shadow-2xl backdrop:bg-black/55 dark:bg-slate-900 dark:text-slate-100">
+  <div className="flex max-h-[94vh] flex-col"><header className="flex items-start justify-between gap-4 border-b border-slate-200 p-5 dark:border-slate-700"><div><p className="text-xs font-bold uppercase tracking-widest text-teal-700 dark:text-teal-300">Mapa de Instrutores</p><h2 id="planning-title" className="mt-1 text-xl font-bold">Simular planejamento</h2><p className="mt-1 text-sm text-slate-500">Consulte os turnos livres ou monte uma proposta de cronograma para um curso.</p></div><button type="button" onClick={onClose} disabled={courseBusy} className={button}>Fechar</button></header>
   <div className="overflow-y-auto p-5">
+   <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Tipo de planejamento"><button type="button" className={flow==='availability'?primary:button} aria-pressed={flow==='availability'} disabled={busy||courseBusy} onClick={()=>setFlow('availability')}>Consultar disponibilidade</button><button type="button" className={flow==='course'?primary:button} aria-pressed={flow==='course'} disabled={busy||courseBusy} onClick={()=>setFlow('course')}>Montar cronograma de curso</button></div>
+   {isOpen&&flow==='course'&&<CoursePlanningPanel onBusyChange={setCourseBusy}/>}
+   <div hidden={flow!=='availability'}>
    {error&&<p role="alert" className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-900 dark:bg-rose-950 dark:text-rose-100">{error}</p>}
    <fieldset disabled={busy} className="flex flex-wrap items-end gap-3"><legend className="sr-only">Instrutor e período da consulta</legend>
     <label className="min-w-56 flex-1 text-sm font-semibold">Instrutor<select className={`${field} w-full`} value={instructor} onChange={e=>{invalidate();setInstructor(e.target.value);loadedInstructor.current='';setSimulated([]);}}><option value="">Selecione um instrutor</option>{[...instrutores].sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=><option key={i.id} value={i.id}>{i.nome}</option>)}</select></label>
@@ -92,6 +97,7 @@ export function PlanejamentoInstrutorModal({isOpen,onClose}:Props){
     </div>
     <p className="mt-4 text-xs text-slate-500">A sugestão é uma referência para planejar. Você pode escolher outros horários sem alterar o cadastro do instrutor. Salas serão verificadas ao cadastrar as aulas. Fechar esta tela ou trocar o instrutor encerra o rascunho.</p>
    </>}
+   </div>
   </div></div>
  </dialog>;
 }

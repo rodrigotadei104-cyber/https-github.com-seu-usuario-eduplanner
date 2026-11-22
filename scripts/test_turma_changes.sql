@@ -186,5 +186,6 @@ end $$;
 reset role;
 select pg_temp.assert_ok(not has_function_privilege('anon','public.alterar_recursos_turma(uuid[],text,text,jsonb,boolean)','EXECUTE'),'anon não executa a função');
 select pg_temp.assert_ok(not has_function_privilege('anon','public.reagendar_aulas_turma(jsonb,jsonb,boolean,text)','EXECUTE'),'anon não reagenda');
+\ir test_course_planning.sql
 rollback;
 \echo 'OK: SQL real validou prévia, troca, RLS, permissões, conflitos, férias, dados obsoletos e rollback integral.'
