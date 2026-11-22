@@ -1,6 +1,6 @@
 # Cronograma de curso pela disponibilidade do instrutor
 
-Data: 22/11/2026. Estado: implementado e validado localmente; publicação e conferência do esquema real pendentes de autorização específica de ambiente.
+Data: 22/11/2026. Implementação e validação do fluxo de cronograma pela disponibilidade real do instrutor. A seção final registra a validação no esquema de produção e a autorização de publicação.
 
 ## Pedido e comportamento
 
@@ -48,3 +48,17 @@ Seguir `DEPLOY_SAFETY_PROTOCOL.md` e `.agent/ENVIRONMENT_MEMORY.md`. Destinos pr
 Antes de instalar, inspecionar em leitura o esquema/grants reais (incluindo colunas, tipos, defaults, RLS e privilégios de lock), catálogo e disponibilidade. Fazer preflight transacional da migração com rollback e chamadas de consulta/conferência sob authenticated. Não criar turmas reais para testar. Instalar isoladamente `20261122210859_cronograma_disponibilidade_curso.sql`; não executar db push de migrações antigas. Repetir leitura e advisors, então publicar frontend via Git após autorização e conferir deploy/bundle e interface autenticada.
 
 Para reverter a interface, retornar ao commit anterior. As funções e a política novas podem permanecer sem uso ou ser removidas em migração reversa após reverter o frontend. Não excluir turmas/aulas legítimas criadas pelo usuário. A instalação desta migração só cria duas funções e uma política; não altera os dados da agenda.
+
+## Validação real e autorização em 22/11/2026
+
+- O usuário autorizou explicitamente com “sim” após a identificação dos destinos e a validação real. A demonstração fictícia foi considerada insuficiente para sua homologação e não foi usada como evidência de disponibilidade real.
+- Esquema, constraints, defaults, ausência de triggers e grants reais inspecionados pela CLI autenticada, destino explícito `eduplanner-prod (ubhtibihkpwocgazwtur)`. O MCP recusou consultas por falta de permissão; não houve novo login ou troca de conta.
+- Confirmados Rodrigo Tadei admin ativo na unidade `a0000000-0000-0000-0000-000000000001` e a Giovanna ativa, `62141ab9-4fd2-4c10-a2b3-b0319371bd5d`. Outro cadastro Giovanna está inativo e não foi usado.
+- Dados reais de 22/11/2026 a 20/05/2027: 93 aulas, 17 eventos efetivos, pausas protegidas e 7 ocupações da Sala 1. A consulta bruta retorna 275 eventos ao incluir as pausas.
+- Código real de serviço, geração e validação consumiu o JSON das consultas reais. Uma checagem independente por segundos comparou cada aula proposta com compromissos, pausas, sala e dias bloqueados; também conferiu os minutos por disciplina.
+- Inglês Básico - Nível 1: 40h, hora-aula 50min, 2.000 minutos, 12 aulas propostas de 27/11/2026 a 07/01/2027. NR 10 - Segurança em Instalações e Serviços em Eletricidade: 40h, hora-aula 60min, 2.400 minutos, 17 aulas de 27/11/2026 a 08/01/2027. As duas propostas passaram sem conflito e pela prévia no esquema real. Nenhuma foi gravada.
+- Preflight transacional integralmente revertido, seguido de instalação isolada somente desta migração em transação. Conferência repetida sob `authenticated` antes e depois da instalação, com RLS ativa. Não foi feito db push de migrações antigas.
+- O ramo de confirmação foi percorrido com snapshot deliberadamente inválido: conferiu os privilégios reais de lock e rejeitou antes do INSERT. Hashes da agenda permaneceram iguais e os UUIDs de teste não existem em Turmas. A gravação completa foi testada apenas no PostgreSQL local descartável.
+- Cursos com dados inconsistentes identificados e preservados: Operador de Drones, cadastrado com 40h mas disciplinas somando 37h; NR 10 SEP, cadastrado com 40h mas disciplinas somando 48h. O fluxo bloqueia a geração nesses casos. Nenhuma correção automática do catálogo.
+- Main remota antes da publicação: `dd0ac91`; implementação: `c18daf6`. Os arquivos de verificação `.tmp/course-*` e dados exportados não fazem parte do commit de publicação.
+- Advisors de segurança: 7 avisos antes e os mesmos 7 depois, sem alertas novos ou referências às funções novas. Os avisos existentes dizem respeito às funções antigas e à proteção contra senhas vazadas, sem mudanças neste escopo.
